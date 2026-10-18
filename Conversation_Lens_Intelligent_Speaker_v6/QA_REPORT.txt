@@ -1,0 +1,40 @@
+Conversation Lens v6 — QA report — 2026-10-18
+Verdict: PASS WITH DECLARED LIMITATIONS (experimental real-person speaker attribution)
+
+CODE CHECKS
+- Python server.py compilation: PASS
+- Browser JavaScript syntax parse: PASS
+- Shell launcher static validation: PASS
+
+CHROMIUM UI TESTS (simulated getUserMedia, MediaRecorder, WebAudio, HTTP)
+- Desktop 1200 x 830: PASS, no JavaScript exceptions or horizontal overflow.
+- Mobile 375 x 830: PASS, no JavaScript exceptions or horizontal overflow.
+- Microphone consent gate; session open; visibly updated input level meter: PASS.
+- Silence-guided auto-segment after vocal signal + >900ms silence, 8.9s fallback timer: PASS in simulation.
+- Auto spoken-name opt-in OFF by default; phrase creates Dale? label; distinct audio strengthens candidate: PASS using mocked transcription and embedding.
+- Stop microphone, release tracks, reset meter, revoke capture session: PASS.
+- Restart obtains a new session; Erase all session data clears transcript, revokes capture and clears speaker UI profiles: PASS.
+
+BACKEND HTTP + FFMPEG TESTS
+- Actual WebM decoded by real installed FFmpeg: PASS. Whisper transcript and vectors are mocked.
+- Spoken introduction parsing and false-positive exclusions: PASS.
+- v5 voice safety regressions: Unknown/Mixed, ambiguous introductions, opt-out, exact-audio replay dedupe: PASS.
+- Big Mac AI response evidence exact-substring validation and fabricated-quote rejection: PASS using a fake Ollama response.
+- Host/Origin/X-Lens-Token authorization, explicit capture consent, independent speaker consent: PASS.
+- Missing session ID or stale ID rejected: PASS.
+- Stop closes the active capture lease while Whisper is still running: PASS (<0.7s in test).
+- Whisper result arriving after revocation discarded, with no additional voiceprints: PASS.
+- Closing stale session ID cannot close newer session: PASS.
+- Session-wide erase (explicit confirm) clears all profiles; in-progress enrollment cannot repopulate wiped profiles: PASS.
+
+UNVERIFIED/NOT TESTED
+- Real Brave microphone from the user MacBook and a live two-person conversation: REQUIRED physical check.
+- Real-world accuracy/precision/recall of speaker matching and phrase attribution: NOT established.
+- True fine-grained diarization inside overlapped voices: NOT implemented.
+- Actual Big Mac coaching in this v6 browser test: mocked offline; model connectivity proven in the earlier v2 workflow, not re-proven here.
+- The container Chromium build prohibits browsing its own localhost HTTP service (ERR_BLOCKED_BY_ADMINISTRATOR); HTTP backend tests and browser interaction tests were run separately. Do not call it full end-to-end proof.
+
+STATUS
+Functionality: Experimental runnable browser+Python build.
+Confidence: Code paths and regressions tested; no unsupported biometric accuracy claim.
+Privacy: Localhost default, two opt-in controls, ephemeral files, RAM-only voiceprints, revocable capture and explicit erase.
