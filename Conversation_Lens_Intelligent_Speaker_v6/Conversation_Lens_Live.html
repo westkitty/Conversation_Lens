@@ -155,7 +155,9 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
          <label for="vadHardCap">Hard window cap <output id="vadHardCapValue">8900ms</output><input type="range" id="vadHardCap" min="4000" max="9000" step="100" value="8900"></label>
          <label for="pcmPreRoll">PCM pre-roll <output id="pcmPreRollValue">0ms</output><input type="range" id="pcmPreRoll" min="0" max="500" step="50" value="0"></label>
          <label for="pcmPostRoll">PCM post-roll <output id="pcmPostRollValue">0ms</output><input type="range" id="pcmPostRoll" min="0" max="500" step="50" value="0"></label>
-       </div><div class="row"><button id="pauseIntakeBtn" class="btn small ghost" type="button">Pause new-window intake</button><span id="skipCount" class="micro">0 skipped</span></div>
+       </div><label class="check"><input id="pcmEditHold" type="checkbox"><span>Hold PCM windows for sample-accurate review before transcription. The queue remains bounded; Stop still offers Keep/Drop.</span></label>
+       <div id="pcmEditor" class="custom-rules" hidden><strong>Buffered PCM editor</strong><div class="micro">Waveform is drawn from the in-memory 16 kHz samples. Split and boundary edits block speaker-name learning.</div><canvas id="pcmEditCanvas" class="energy-plot" width="600" height="64" aria-label="Selected buffered PCM waveform"></canvas><label class="small-label" for="pcmEditWindow">Buffered window<select class="field" id="pcmEditWindow"></select></label><label class="small-label" for="pcmEditBoundary">Cut / shared boundary position <output id="pcmEditBoundaryValue">50%</output><input id="pcmEditBoundary" type="range" min="0" max="1000" step="1" value="500"></label><div class="row"><button id="pcmEditApply" class="btn small ghost" type="button">Split window</button><button id="pcmEditMerge" class="btn small ghost" type="button">Merge with next</button><button id="pcmEditRelease" class="btn small" type="button">Transcribe held windows</button></div><div id="pcmEditStatus" class="micro" role="status"></div></div>
+       <div class="row"><button id="pauseIntakeBtn" class="btn small ghost" type="button">Pause new-window intake</button><span id="skipCount" class="micro">0 skipped</span></div>
        <div id="skippedWindows" aria-live="polite"></div><div class="row"><button id="replayPCM" class="btn small ghost" type="button" hidden>Replay latest processed PCM window</button><audio id="pcmReplayAudio" controls preload="none" hidden aria-label="Latest processed PCM window replay"></audio></div>
      </div>
      <div class="interim" id="interim"  data-empty="true" aria-live="off">Recognized speech appears here as you talk.</div>
@@ -255,7 +257,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
  const stt={ready:false,reason:'Checking local Whisper engine',stream:null,recorder:null,chunkTimer:null,
     queue:[],sending:false,controller:null,inFlight:null,stopping:false,windowSerial:0,generation:0,readyToken:false,dropped:0,capture:'',lastPCMClip:null,pcmReplayUrl:'',
     context:null,source:null,meter:null,meterData:null,meterTimer:null,pcmCapture:null,pcmState:null,noiseFloor:.004,
-    inputDetected:false,windowStarted:0,windowVoiceMs:0,windowLastVoiceAt:0,windowHasMeter:false,
+    inputDetected:false,windowStarted:0,windowVoiceMs:0,windowLastVoiceAt:0,windowHasMeter:false,pcmEditHold:false,
      vad:{threshold:.009,silenceMs:900,minSpeechMs:250,hardCapMs:8900},
      series:[],cuts:[],durations:[],skipped:[],skipSerial:0,pausedIntake:false,
     levelMax:0,meterStarted:0};
@@ -671,7 +673,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
    if(stt.pcmState?.ring)stt.pcmState.ring.erase();stt.pcmState=null;
    const capture=stt.capture;stt.capture='';closeCapture(capture,true);
    if(stt.controller){stt.controller.abort();stt.controller=null}
-   stt.queue.length=0;stt.pausedIntake=false;clearPCMReplay();
+   stt.queue.length=0;stt.pausedIntake=false;stt.pcmEditHold=false;$('pcmEditHold').checked=false;clearPCMReplay();renderPCMEditor();
     for(const marker of stt.skipped)marker.item=null;
     updateQueueStatus();
    const rec=stt.recorder;stt.recorder=null;
@@ -734,13 +736,36 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
      const rendered=p.timeline.render(segment.id,{preRollMs:Number($('pcmPreRoll').value),postRollMs:Number($('pcmPostRoll').value)});
      const clip=new Blob([rendered.wav],{type:'audio/wav'});
      const item={id:'pcm_'+(++stt.windowSerial),clip,speaker:$('micSpeaker').value,language:$('language').value.slice(0,2),autoNames:$('autoNames').checked&&$('consent').checked&&!rendered.forceMixed,generation:stt.generation,forceMixed:rendered.forceMixed,pcmWindow:segment.id};
-     p.timeline.setStatus(segment.id,'processing');
+     if(!stt.pcmEditHold)p.timeline.setStatus(segment.id,'processing');
      if(stt.pausedIntake&&!stt.stopping){skipWindow(item,'Intake paused');p.timeline.setStatus(segment.id,'dropped');return true}
      if(stt.queue.length>=3){const old=stt.queue.shift();skipWindow(old,'Transcription backlog');if(old.pcmWindow)try{p.timeline.setStatus(old.pcmWindow,'dropped')}catch(e){}}
      stt.queue.push(item);stt.durations.push(Math.round((end-start)/16));if(stt.durations.length>36)stt.durations.shift();updateDurationHistory();
-     p.cursor=end;updateQueueStatus();if(!stt.stopping)sendLocalQueue();return true;
+     p.cursor=end;renderPCMEditor();updateQueueStatus();if(!stt.stopping&&!stt.pcmEditHold)sendLocalQueue();return true;
    }catch(error){setMsg('PCM window was rejected locally: '+error.message);return false}
  }
+ function renderPCMEditor(){
+   const panel=$('pcmEditor'),enabled=!!stt.pcmState&&$('pcmMode').checked&&stt.pcmEditHold;panel.hidden=!enabled;if(!enabled)return;
+   const select=$('pcmEditWindow'),prior=select.value,items=stt.queue.filter(item=>item.pcmWindow&&stt.pcmState.timeline.buffered().some(s=>s.id===item.pcmWindow));select.replaceChildren();
+   for(const item of items){const seg=stt.pcmState.timeline.get(item.pcmWindow),option=document.createElement('option');option.value=seg.id;option.textContent=seg.id+' · '+((seg.end-seg.start)/16000).toFixed(2)+'s'+(seg.edited?' · edited':'');select.append(option)}
+   if([...select.options].some(option=>option.value===prior))select.value=prior;
+   const selected=items.find(item=>item.pcmWindow===select.value),canvas=$('pcmEditCanvas'),ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.strokeStyle='#66c8bc';ctx.beginPath();ctx.moveTo(0,canvas.height/2);ctx.lineTo(canvas.width,canvas.height/2);ctx.stroke();
+   $('pcmEditApply').disabled=!selected;$('pcmEditMerge').disabled=!selected;$('pcmEditRelease').disabled=!items.length;
+   if(!selected){$('pcmEditStatus').textContent='No buffered PCM windows to edit.';return}
+   const timeline=stt.pcmState.timeline,seg=timeline.get(selected.pcmWindow),samples=stt.pcmState.ring.slice(seg.start,seg.end),bins=Math.min(300,canvas.width),step=Math.max(1,Math.floor(samples.length/bins));ctx.strokeStyle='#7bc9b4';ctx.beginPath();
+   for(let x=0;x<bins;x++){let peak=0;for(let j=x*step;j<Math.min(samples.length,(x+1)*step);j++)peak=Math.max(peak,Math.abs(samples[j]/32768));const y=peak*(canvas.height*.46);ctx.moveTo(x*canvas.width/bins,canvas.height/2-y);ctx.lineTo(x*canvas.width/bins,canvas.height/2+y)}ctx.stroke();
+   const at=timeline.segments.findIndex(s=>s.id===seg.id),next=timeline.segments[at+1],nextQueued=next&&items.find(item=>item.pcmWindow===next.id);$('pcmEditMerge').disabled=!(nextQueued&&seg.end===next.start);$('pcmEditStatus').textContent='Selected '+seg.id+' · samples '+seg.start+'–'+seg.end+' · '+(seg.edited?'edited; speaker learning blocked':'unmodified');
+ }
+ function pcmRenderedQueueItem(segment,template){const rendered=stt.pcmState.timeline.render(segment.id,{preRollMs:Number($('pcmPreRoll').value),postRollMs:Number($('pcmPostRoll').value)});return {...template,id:'pcm_'+(++stt.windowSerial),clip:new Blob([rendered.wav],{type:'audio/wav'}),pcmWindow:segment.id,forceMixed:rendered.forceMixed,autoNames:template.autoNames&&!rendered.forceMixed}}
+ function applyPCMEdit(){
+   const selected=stt.queue.find(item=>item.pcmWindow===$('pcmEditWindow').value),p=stt.pcmState;if(!selected||!p)return;
+   try{const timeline=p.timeline,seg=timeline.get(selected.pcmWindow),index=timeline.segments.indexOf(seg),next=timeline.segments[index+1],nextItem=next&&stt.queue.find(item=>item.pcmWindow===next.id),fraction=Number($('pcmEditBoundary').value)/1000;let feedback='';
+     if(nextItem&&seg.end===next.start){const leftQueueIndex=stt.queue.indexOf(selected);if(stt.queue.indexOf(nextItem)!==leftQueueIndex+1)throw Error('Adjacent audio windows are not adjacent in the review queue');const min=timeline.minFrames,raw=Math.round(seg.start+(next.end-seg.start)*fraction),at=Math.max(seg.start+min,Math.min(next.end-min,raw));timeline.moveBoundary(seg.id,next.id,at);const left=pcmRenderedQueueItem(seg,selected),right=pcmRenderedQueueItem(next,nextItem);stt.queue[leftQueueIndex]=left;stt.queue[leftQueueIndex+1]=right;feedback='Moved the shared boundary to sample '+at+'. Name learning is blocked for both edited windows.'}
+     else{const min=timeline.minFrames,raw=Math.round(seg.start+(seg.end-seg.start)*fraction),at=Math.max(seg.start+min,Math.min(seg.end-min,raw)),[left,right]=timeline.split(seg.id,at),leftItem=pcmRenderedQueueItem(left,selected),rightItem=pcmRenderedQueueItem(right,selected),queueIndex=stt.queue.indexOf(selected);stt.queue.splice(queueIndex,1,leftItem,rightItem);feedback='Split at sample '+at+'. Name learning is blocked for both edited windows.'}
+     renderPCMEditor();updateQueueStatus();$('pcmEditStatus').textContent=feedback;
+   }catch(error){$('pcmEditStatus').textContent='Edit rejected: '+error.message}
+ }
+ function mergePCMEdit(){const selected=stt.queue.find(item=>item.pcmWindow===$('pcmEditWindow').value),p=stt.pcmState;if(!selected||!p)return;try{const timeline=p.timeline,seg=timeline.get(selected.pcmWindow),index=timeline.segments.indexOf(seg),next=timeline.segments[index+1],nextItem=next&&stt.queue.find(item=>item.pcmWindow===next.id),queueIndex=stt.queue.indexOf(selected);if(!nextItem)throw Error('Select an adjacent buffered window');if(stt.queue.indexOf(nextItem)!==queueIndex+1)throw Error('Adjacent audio windows are not adjacent in the review queue');const merged=timeline.merge(seg.id,next.id),combined=pcmRenderedQueueItem(merged,selected);stt.queue.splice(queueIndex,2,combined);renderPCMEditor();updateQueueStatus()}catch(error){$('pcmEditStatus').textContent='Merge rejected: '+error.message}}
+ function releasePCMEdits(){if(!stt.pcmState)return;stt.pcmEditHold=false;$('pcmEditHold').checked=false;for(const item of stt.queue)if(item.pcmWindow)try{stt.pcmState.timeline.setStatus(item.pcmWindow,'processing')}catch(e){}renderPCMEditor();updateQueueStatus();sendLocalQueue()}
  function acceptPCMSamples(samples,generation){
    if(generation!==stt.generation||(!state.wantsListen&&!stt.stopping)||!stt.pcmState)return;
    const p=stt.pcmState,added=p.ring.append(samples),n=samples.length;
@@ -759,7 +784,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
    const ring=new LensPCM.PCM16Ring({maxSeconds:45}),timeline=new LensPCM.WindowTimeline(ring,{minEditMs:250,maxRenderMs:9000});timeline.setCaptureID(stt.capture);
    stt.pcmState={ring,timeline,cursor:0,windowStart:null,lastVoiceAt:0,voiceMs:0,lastCutMs:0};
    const mic=new LensPCMCapture.MicCapture({stream,stopTracks:false,onPCM:samples=>acceptPCMSamples(samples,generation),onError:error=>{if(generation===stt.generation)setMsg('PCM capture error: '+error.message)}});
-   await mic.start();if(generation!==stt.generation||!state.wantsListen){await mic.stop();ring.erase();stt.pcmState=null;return false}stt.pcmCapture=mic;return true;
+   await mic.start();if(generation!==stt.generation||!state.wantsListen){await mic.stop();ring.erase();stt.pcmState=null;return false}stt.pcmCapture=mic;renderPCMEditor();return true;
  }
 
  function createLocalWindow(generation){
@@ -795,7 +820,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
   scheduleHardCap(recorder);
  }
  async function sendLocalQueue(){
-  if(stt.sending||!stt.queue.length)return;
+  if(stt.sending||!stt.queue.length||(stt.pcmEditHold&&stt.queue.some(item=>item.pcmWindow)))return;
   stt.sending=true;updateQueueStatus();
   try{
    while(stt.queue.length&&state.wantsListen){
@@ -911,7 +936,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
   if(recorder&&recorder.state!=='inactive')await new Promise(resolve=>{let done=false;const finish=()=>{if(done)return;done=true;clearTimeout(timer);resolve()};const timer=setTimeout(finish,1500);recorder.addEventListener?.('stop',finish,{once:true});try{recorder.stop()}catch(e){finish()}});
   if(freezeConfirmed)pending.push(...[...(stt.inFlight?[stt.inFlight]:[]),...stt.queue].filter((item,index,list)=>item?.clip&&list.findIndex(x=>x.id===item.id)===index).slice(0,4));
   const generation=++stt.generation;stt.stopping=false;
-  stt.capture='';stt.queue.length=0;stt.inFlight=null;
+  stt.capture='';stt.queue.length=0;stt.inFlight=null;stt.pcmEditHold=false;$('pcmEditHold').checked=false;renderPCMEditor();
   if(stt.controller){stt.controller.abort();stt.controller=null}
   stopMeter();clearPCMReplay();const stream=stt.stream;stt.stream=null;if(stream)for(const track of stream.getTracks())track.stop();
   stt.pausedIntake=false;for(const marker of stt.skipped)marker.item=null;updateQueueStatus();syncButtons();
@@ -1064,6 +1089,9 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
  $('autoNames').addEventListener('change',()=>{if(state.wantsListen&&!$('autoNames').checked){stop();setMsg('Speaker-name learning revoked; capture stopped to discard pending audio. Press Start to continue without it.')}const box=$('introductionStatus');if($('autoNames').checked){box.dataset.state='idle';box.textContent='Natural introductions enabled for this session, with everyone’s consent. Speak a name and continue with a sentence.'}else{box.dataset.state='idle';box.textContent='Spoken-name learning OFF. Voiceprints already enrolled for this session remain until you choose Forget profiles or close the server.'}});
  $('enrollName').addEventListener('input',syncButtons);$('enrollConsent').addEventListener('change',syncButtons);$('enrollDuration').addEventListener('change',syncButtons);$('enrollBtn').addEventListener('click',beginEnroll);$('forgetBtn').addEventListener('click',()=>forgetSpeakers());
  $('replayPCM').addEventListener('click',()=>{const audio=$('pcmReplayAudio');audio.play().catch(()=>setMsg('PCM replay could not start. Use the audio controls to retry.'))});
+ $('pcmEditHold').addEventListener('change',()=>{stt.pcmEditHold=$('pcmEditHold').checked;if(!stt.pcmEditHold){releasePCMEdits();return}renderPCMEditor();$('pcmEditStatus').textContent=stt.pcmState?'New PCM windows will remain buffered until you release them.':'Hold is set for the next sample-accurate PCM capture.'});
+ $('pcmEditWindow').addEventListener('change',renderPCMEditor);$('pcmEditBoundary').addEventListener('input',()=>{$('pcmEditBoundaryValue').textContent=(Number($('pcmEditBoundary').value)/10).toFixed(1)+'%'});$('pcmEditApply').addEventListener('click',applyPCMEdit);$('pcmEditMerge').addEventListener('click',mergePCMEdit);$('pcmEditRelease').addEventListener('click',releasePCMEdits);
+ $('pcmMode').addEventListener('change',renderPCMEditor);
  $('pcmMode').addEventListener('change',()=>{$('captureModeStatus').textContent=$('pcmMode').checked?'Capture mode: AudioWorklet PCM requested; MediaRecorder fallback remains available.':'Capture mode: MediaRecorder fallback.'});
  for(const [id,out] of [['pcmPreRoll','pcmPreRollValue'],['pcmPostRoll','pcmPostRollValue']])$(id).addEventListener('input',()=>$(out).textContent=$(id).value+'ms');
  $('customRuleForm').addEventListener('submit',event=>{event.preventDefault();const phrase=$('customRulePhrase').value.trim(),observation=$('customRuleObservation').value.trim(),nextLine=$('customRuleNext').value.trim(),priority=Number($('customRulePriority').value);if(phrase.length<3||observation.length<10||observation.length>220||nextLine.length>180||!Number.isInteger(priority)||![1,3,5].includes(priority)||customRules.length>=8){setMsg('Rule not added. Use a 3–80 character phrase, 10–220 character observation, and no more than eight rules.');return}if(customRules.some(rule=>rule.phrase.toLocaleLowerCase()===phrase.toLocaleLowerCase())){setMsg('That literal phrase already has a rule.');return}customRules.push({phrase,observation,nextLine,priority});$('customRuleForm').reset();renderCustomRules();scheduleAnalysis();setMsg('Owner-defined literal cue rule added for this session.')});renderCustomRules();

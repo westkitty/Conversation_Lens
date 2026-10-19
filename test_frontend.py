@@ -427,13 +427,26 @@ with sync_playwright() as p:
         before_pcm=page.evaluate('window.fake.transcribe')
         page.locator('#pcmPreRoll').fill('100')
         page.evaluate("window.fake.transcriptQueue.push({text:'Overlapping test speakers.',speaker:{label:'Mixed',evidence:{possibleOverlap:true,speechSeconds:1.2}}})")
-        page.locator('#consent').check();page.locator('#pcmMode').check();page.locator('#startBtn').click()
+        page.locator('#consent').check();page.locator('#pcmMode').check();page.locator('#pcmEditHold').check();page.locator('#startBtn').click()
         page.wait_for_function("document.querySelector('#captureModeStatus').textContent.includes('bounded in-memory ring')")
-        page.wait_for_function(f'window.fake.transcribe>{before_pcm}',timeout=7000)
+        page.wait_for_function("!document.querySelector('#pcmEditor').hidden && document.querySelector('#pcmEditWindow').options.length===1",timeout=7000)
+        assert page.evaluate('window.fake.transcribe')==before_pcm,'Held PCM must remain unsubmitted during editing'
+        page.locator('#pcmEditApply').click()
+        page.wait_for_function("document.querySelector('#pcmEditWindow').options.length===2")
+        page.locator('#pcmEditBoundary').fill('600')
+        page.locator('#pcmEditApply').click()
+        assert 'Moved the shared boundary' in page.locator('#pcmEditStatus').inner_text()
+        page.locator('#pcmEditMerge').click()
+        page.wait_for_function("document.querySelector('#pcmEditWindow').options.length===1")
+        page.locator('#pcmEditApply').click()
+        page.wait_for_function("document.querySelector('#pcmEditWindow').options.length===2")
+        page.locator('#pcmEditRelease').click()
+        page.wait_for_function(f'window.fake.transcribe>={before_pcm+2}',timeout=7000)
         page.wait_for_function("window.fake.pcmUploads.length>0",timeout=3000)
         pcm=page.evaluate('window.fake.pcmUploads.at(-1)')
         assert pcm['contentType']=='audio/wav' and pcm['bytes']>50000 and pcm['forceMixed']=='true',pcm
-        page.wait_for_function("document.querySelectorAll('.turn').length===1",timeout=3000)
+        assert page.evaluate('window.fake.pcmUploads.length')==2,'Split windows must both be sent as canonical WAV'
+        page.wait_for_function("document.querySelectorAll('.turn').length===2",timeout=3000)
         assert page.locator('#replayPCM').is_visible() and page.locator('#pcmReplayAudio').get_attribute('src').startswith('blob:'), 'Latest processed PCM audio should be replayable from its bounded in-memory clip'
         assert 'overlap 1 (1.2s)' in page.locator('#talkTimeStats').inner_text()
         page.locator('#stopBtn').click();page.wait_for_function("document.querySelector('#statusText').textContent==='NOT LISTENING'")
@@ -442,6 +455,6 @@ with sync_playwright() as p:
         assert not errors,errors
         overflow=page.evaluate('document.documentElement.scrollWidth-innerWidth')
         assert overflow<=0,overflow
-        print('PASS Brave/Chromium',width,'simulated voice, capture lease, meter, silence auto-segmentation, PCM WAV integration, transcript, Stop, Erase, lifecycle, no overflow')
+        print('PASS Brave/Chromium',width,'simulated voice, capture lease, meter, PCM split/move/merge WAV editing, replay, transcript, Stop, Erase, lifecycle, no overflow')
         page.close()
     browser.close()

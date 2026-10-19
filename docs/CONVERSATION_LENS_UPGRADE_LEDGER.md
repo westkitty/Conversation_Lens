@@ -177,7 +177,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | ID | Requirement | Current evidence / implementation | Status | Remaining gap |
 |---:|---|---|---|---|
 | 1 | Persistent pinned coaching rail | Live HTML `.hero-cue`; `test_frontend.py` desktop/mobile | PASS | None observed in current browser checks |
-| 2 | Energy/silence graph; drag split/merge | Live HTML VAD graph; production PCM timeline in `experiments/packet-a/lens_pcm_core.js` | PARTIAL | Graph is meter based; PCM split/merge editor is not connected to production UI |
+| 2 | Energy/silence graph; drag split/merge | Production PCM hold/editor draws the bounded ring waveform and supports sample-index split, draggable shared-boundary adjustment and adjacent merge; QA-venv `test_frontend.py` executes split/move/merge/re-split at 1200px and 375px | PARTIAL | Physical AudioWorklet editing and acoustic usefulness remain unverified; MediaRecorder fallback has no PCM editor |
 | 3 | In-place speaker reassignment | Live HTML transcript speaker select; `test_frontend.py` reassignment | PASS | None observed in current browser checks |
 | 4 | Grounded evidence drawer | Live HTML evidence drawer; `test_frontend.py` cosine and margin display | PASS | Evidence remains measurements, not calibrated probabilities |
 | 5 | Keyboard controls | Live HTML keyboard handlers; `test_frontend.py` M and numeric assignment | PASS | Full shortcut set not independently enumerated |
@@ -215,7 +215,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 37 | Soft cap/merge suggestion | At six of eight profiles, `speaker_status()` returns up to three cross-profile raw-cosine candidate pairs; frontend displays review hints and never merges automatically; backend and desktop/mobile tests | PASS | Cosine hints are uncalibrated, tested only with synthetic vectors, and require owner judgment |
 | 38 | Window-length distribution | Live HTML rolling median/range and observed 1–9 s canvas histogram; `test_frontend.py` verifies histogram pixels after captured windows | PASS | No persisted history; distribution resets per session |
 | 39 | Whisper model switcher | No production model switcher | BLOCKED | Must inventory installed models and verify reload/rollback before exposing switch |
-| 40 | Adjustable pre-roll/post-roll | Live HTML PCM controls; production PCM rendering uses `WindowTimeline.render` | PARTIAL | No production sample-boundary edit UI or physical roll-content proof |
+| 40 | Adjustable pre-roll/post-roll | Live HTML PCM roll sliders feed production timeline rendering; production PCM editor regenerates canonical WAV after each edit | PARTIAL | Browser WAV path is synthetic; real microphone roll content and device acceptance remain unverified |
 | 41 | Overlap Mixed + no name learning | `server.py` force-Mixed veto; backend regression and drain hash tests | PASS | Natural two-speaker overlap not tested |
 | 42 | Speaker embedding RAM/compact | Owner-invoked lossy compaction keeps the most cosine-separated pair and reports discarded count; backend unit/HTTP checks and frontend desktop/mobile path | PASS | Compaction changes in-memory match exemplars and cannot be undone; no profile is saved |
 | 43 | Structured performance and lease logs | Metadata-only bounded events for decode, VAD, ASR, embedding, speaker match, audio request and Ollama; relative stage graph; lease owner/age; backend and browser tests | PASS | Event log is a 120-entry RAM ring; per-window timestamps and exhaustive failure injection remain untested |
@@ -346,3 +346,8 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 
 - The latest successfully processed PCM window remains available as one in-memory WAV with native playback controls while capture is active. Stop revokes its object URL and clears the retained clip; MediaRecorder clips are not retained for replay.
 - QA-venv `test_frontend.py` checks that the replay control receives a blob URL after synthetic PCM transcription and releases it on Stop at 1200px and 375px. Requirement 53 remains PARTIAL because replay history is limited to one PCM clip and playback was validated through browser state, not a physical speaker.
+
+## Production PCM window editor — 2026-10-19
+
+- Connected the Packet A `WindowTimeline` to a production hold/review flow. While the owner holds PCM intake, bounded buffered WAV windows appear in a sample-indexed waveform editor. The owner can split a window, move the shared boundary between adjacent windows, merge adjacent windows, and then release the queue for transcription. Every edited segment is re-rendered from the original 16 kHz ring and forces Mixed/no-name-learning. Stop still owns Keep/Drop disposition; edits do not bypass capture leases.
+- QA-venv `test_frontend.py` drives the production synthetic capture path through hold, split, boundary move, merge, split, two WAV submissions, Mixed veto, replay and Stop cleanup at 1200px and 375px. `lens_pcm_core.js` separately covers exact sample continuity and WAV encoding. Requirements 2 and 40 remain PARTIAL because the physical microphone AudioWorklet path and real pre/post-roll content have not been accepted on-device; MediaRecorder fallback remains unchanged.
