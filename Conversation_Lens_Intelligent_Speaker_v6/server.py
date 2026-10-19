@@ -957,6 +957,29 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.respond(403, {'error': 'Forbidden host'})
             return
         path = urllib.parse.urlparse(self.path).path
+        brand_assets = {
+            'DEX_Quorum_04_Approved_Compact_Logo.png',
+            'DEX_Quorum_01_Core_Conversation_Logo.png',
+            'Third_Ear_01_Listening_Logo.png',
+            'DEX_Aside_02_Side_Eye_Logo.png',
+            'DEX_Quorum_10_Overall_Banner.png',
+        }
+        if path.startswith('/assets/brand/'):
+            name = path.removeprefix('/assets/brand/')
+            if name not in brand_assets:
+                self.respond(404, {'error': 'Not found'})
+                return
+            asset = APP_DIR.parent / 'assets' / 'brand' / name
+            try:
+                content = asset.read_bytes()
+            except OSError:
+                self.respond(404, {'error': 'Not found'})
+                return
+            self.send_response(200)
+            self.headers_base('image/png', len(content))
+            self.end_headers()
+            self.wfile.write(content)
+            return
         if path == '/api/health':
             with CAPTURE_LOCK:
                 occupied = CAPTURE_SESSION is not None

@@ -1,0 +1,52 @@
+{
+  "source_folder_id": "14kdYPhW9fH0wb65-5HSBE3TsxMUzah51",
+  "assets": [
+    {
+      "filename": "DEX_Quorum_04_Approved_Compact_Logo.png",
+      "drive_file_id": "14WhP_1AXKNkOCI5a_FuOQeiNHu26w-RB",
+      "sha256": "233d3d8ed11c813c94b7ff2da31b6916f85ff5a103ca7be1ad6c395b3ff76e8f",
+      "dimensions": "1254x1254",
+      "mime_type": "image/png",
+      "intended_use": "Crisp compact Quorum emblem beside the transcript heading and macOS application icon"
+    },
+    {
+      "filename": "DEX_Quorum_01_Core_Conversation_Logo.png",
+      "drive_file_id": "1wgOK6w7TVJEcUAEXPYUEi4kjog6h_tka",
+      "sha256": "233d3d8ed11c813c94b7ff2da31b6916f85ff5a103ca7be1ad6c395b3ff76e8f",
+      "dimensions": "1254x1254",
+      "mime_type": "image/png",
+      "intended_use": "Low-opacity background watermark behind the Quorum transcript"
+    },
+    {
+      "filename": "Third_Ear_01_Listening_Logo.png",
+      "drive_file_id": "15mJo4tN4TkA0CcfBR81kmynS9gEvKbew",
+      "sha256": "a64f1b03ce83a0bd55e051255cebbb73299bcaf9a19e36ad9f4d3e292f6d7b72",
+      "dimensions": "1254x1254",
+      "mime_type": "image/png",
+      "intended_use": "Low-opacity watermark behind the live audio instrument and expanded audio settings"
+    },
+    {
+      "filename": "DEX_Aside_02_Side_Eye_Logo.png",
+      "drive_file_id": "1QQzPaa7lsMGo3Vneqd69XpYQbrf-Cb2p",
+      "sha256": "a5400f8473b5f2f359cc5e521a73e0231628cd781f74ada615c3d91a794ee351",
+      "dimensions": "1254x1254",
+      "mime_type": "image/png",
+      "intended_use": "Low-opacity background watermark behind the Aside observation workspace"
+    },
+    {
+      "filename": "DEX_Quorum_10_Overall_Banner.png",
+      "drive_file_id": "1abOpC-RMKRhbTPimuKrSnBHvnCH1TNLN",
+      "sha256": "53cf557b3f6777fc96589214abc4c17f4db4a4b7fcc877b7dd189be747e9c248",
+      "dimensions": "1774x887",
+      "mime_type": "image/png",
+      "intended_use": "Actual product landing artwork before a conversation begins"
+    }
+  ],
+  "excluded_assets": [
+    {
+      "filename": "Third_Ear_02_REJECTED_Extra_Limb.png",
+      "drive_file_id": "1WJFD0bcDY2PzYzF-hIdiLz77bXfJW_16",
+      "reason": "Explicitly rejected artwork; never bundle or use"
+    }
+  ]
+}

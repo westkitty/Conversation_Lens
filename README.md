@@ -1,4 +1,4 @@
-# Conversation Lens v6 — Adaptive Speaker Edition
+# Conversation Lens v6 — DEX//QUORUM
 
 Local-first, experimental live conversation observation and coaching for macOS. **New sessions are context-agnostic by default**: no topic, prior situation, relationship, or named participants are preloaded. Add optional context only when you want to. Brave records audio with consent; the MacBook transcribes locally through Whisper; the speaker-embedding worker attempts session-scoped speaker identification; optional AI coaching runs on a private Big Mac Ollama tunnel.
 
@@ -32,6 +32,17 @@ From this repository root:
 - **Speaker soft cap:** at six temporary profiles, the app may show up to three raw-cosine review pairs before the eight-profile hard cap. They are uncalibrated hints; the app never merges profiles automatically.
 - **Local stage timings:** the diagnostics panel shows recent decode, speech gate, Whisper, speaker, full audio-request and Ollama durations from a bounded metadata-only ring. Transcript words and embeddings are not logged.
 - **Offline topic-shift hint:** local cues compare the content words in two adjacent three-passage windows and link a possible vocabulary shift to its source passage. This is a lexical hint, not semantic classification or proof that the topic changed.
+- **DEX//QUORUM transcript-first workspace:** Quorum’s approved Drive artwork and banner are bundled locally with checksums; the transcript is the primary pane, DEX//ASIDE stays beside it, and Third Ear’s waveform and live level meter remain visible. Existing controls keep their element identities and handlers inside categorized Settings. The app now builds as `Dex Quorum.app` with the `com.stinkyweasel.dexquorum` identity.
+
+## Native macOS app
+
+Build and replace the Conversation Lens Dock tile with the verified Dex Quorum app:
+
+```bash
+/bin/zsh ./macos/build_macos_app.sh --install-dock
+```
+
+The old `Conversation Lens.app` bundle remains installed. The Dock script replaces only its matching Dock entry, preserves unrelated Dock items, and keeps the brand assets local; the wrapper continues to load the active checkout’s local server.
 
 ## Tests
 

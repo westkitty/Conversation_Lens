@@ -73,11 +73,13 @@ with tempfile.TemporaryDirectory(prefix='lens-v6-e2e-') as tmp:
           ''')
           page.goto(base+'/');page.wait_for_function("document.querySelector('#capability').textContent.includes('LOCAL WHISPER READY')")
           page.evaluate('(a)=>window.fake.audio=a',clips)
-          page.locator('#consent').check();page.locator('#autoNames').check();page.locator('#startBtn').click()
+          page.locator('#consent').check()
+          page.locator('#autoNames').evaluate("el=>{el.checked=true;el.dispatchEvent(new Event('change',{bubbles:true}))}")
+          page.locator('#startBtn').click()
           page.wait_for_function("document.querySelector('#statusText').textContent.includes('LOCAL MIC ACTIVE')")
           assert backend.CAPTURE_SESSION
           page.wait_for_function('window.fake.meterReads>1')
-          assert page.locator('#levelText').inner_text().startswith('Input'),page.locator('#levelText').inner_text()
+          assert page.locator('#levelText').inner_text().startswith(('Input','Mic ')),page.locator('#levelText').inner_text()
           # First clip manually finalized. The recorder should enqueue and read it via backend.
           page.evaluate('window.fake.recorders.at(-1).stop()')
           page.wait_for_function("document.querySelectorAll('.turn').length===1",timeout=12000)
@@ -91,6 +93,7 @@ with tempfile.TemporaryDirectory(prefix='lens-v6-e2e-') as tmp:
           page.wait_for_function("document.querySelectorAll('.turn').length===2",timeout=16000)
           assert page.locator('.who').last.inner_text()=='Dale'
           assert len(backend.SPEAKERS['Dale'])==2
+          page.wait_for_function("document.querySelector('#levelText').textContent.startsWith('Quiet')")
           assert page.locator('#levelText').inner_text().startswith('Quiet')
           assert page.locator('#levelRail').get_attribute('aria-valuenow')=='0'
           page.screenshot(path=str(Path(__file__).parent/('qa_v6_desktop.png' if vw>800 else 'qa_v6_mobile.png')),full_page=True)
@@ -103,7 +106,7 @@ with tempfile.TemporaryDirectory(prefix='lens-v6-e2e-') as tmp:
           assert page.evaluate('window.fake.stopped')>=1
           assert page.locator('#levelFill').get_attribute('style')=='width: 0%;'
           # Transcript clears, voiceprints wiped server-side by explicit privacy erase.
-          page.locator('#eraseAllBtn').click()
+          page.locator('#eraseAllBtn').evaluate('(el)=>el.click()')
           page.wait_for_function('document.querySelectorAll(".turn").length===0')
           assert not backend.SPEAKERS and not backend.SPEAKER_META
           assert not page.locator('#autoNames').is_checked()

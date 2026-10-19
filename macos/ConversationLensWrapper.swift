@@ -3,8 +3,8 @@ import Darwin
 import Foundation
 import WebKit
 
-private let expectedProduct = "Conversation Lens"
-private let windowTitle = "Conversation Lens v6 — Adaptive Listening + Speaker Memory"
+private let expectedProduct = "DEX Quorum"
+private let windowTitle = "DEX//QUORUM — Live Conversational Intelligence"
 
 @main
 struct ConversationLensWrapperMain {
@@ -126,7 +126,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         spinner.translatesAutoresizingMaskIntoConstraints = false
         spinner.startAnimation(nil)
 
-        statusLabel = NSTextField(labelWithString: "Starting Conversation Lens v6 local engine…")
+        statusLabel = NSTextField(labelWithString: "Starting DEX Quorum local engine…")
         statusLabel.textColor = .secondaryLabelColor
         statusLabel.font = .monospacedSystemFont(ofSize: 13, weight: .medium)
         statusLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -237,7 +237,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     private func launchBackendAndConnect() {
         guard let appDir = locateAppDirectory() else {
             showBlockingError(
-                title: "Conversation Lens v6 repository not found",
+                title: "DEX Quorum source not found",
                 message: "Expected /Users/andrew/Conversation_Lens/Conversation_Lens_Intelligent_Speaker_v6/server.py."
             )
             return
@@ -247,7 +247,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         ensureSpeakerSetupIfNeeded(in: appDir)
 
         let logDir = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Logs/ConversationLens", isDirectory: true)
+            .appendingPathComponent("Library/Logs/DexQuorum", isDirectory: true)
         try? FileManager.default.createDirectory(at: logDir, withIntermediateDirectories: true)
         let logURL = logDir.appendingPathComponent("server.log")
         FileManager.default.createFile(atPath: logURL.path, contents: nil)
@@ -291,8 +291,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
                     }
                 } else {
                     self.showBlockingError(
-                        title: "Conversation Lens server did not respond",
-                        message: "Check ~/Library/Logs/ConversationLens/server.log for details."
+                        title: "DEX Quorum server did not respond",
+                        message: "Check ~/Library/Logs/DexQuorum/server.log for details."
                     )
                 }
             }

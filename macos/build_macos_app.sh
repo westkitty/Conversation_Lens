@@ -3,11 +3,11 @@ set -euo pipefail
 
 REPO_ROOT="$(cd -- "$(dirname -- "$0")/.." && pwd)"
 MACOS_DIR="$REPO_ROOT/macos"
-APP_BUNDLE="$HOME/Applications/Conversation Lens.app"
+APP_BUNDLE="$HOME/Applications/Dex Quorum.app"
 CONTENTS_DIR="$APP_BUNDLE/Contents"
 MACOS_BIN_DIR="$CONTENTS_DIR/MacOS"
 RESOURCES_DIR="$CONTENTS_DIR/Resources"
-DRIVE_ASSET="/Volumes/wc2tb/stationary/assets/brand/source/west-cat-logo-original.png"
+DRIVE_ASSET="$REPO_ROOT/assets/brand/DEX_Quorum_04_Approved_Compact_Logo.png"
 ICON_PNG="$MACOS_DIR/ConversationLensIcon.png"
 
 mkdir -p "$MACOS_BIN_DIR" "$RESOURCES_DIR"
@@ -37,17 +37,17 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
   <key>CFBundleDevelopmentRegion</key>
   <string>en</string>
   <key>CFBundleDisplayName</key>
-  <string>Conversation Lens</string>
+  <string>Dex Quorum</string>
   <key>CFBundleExecutable</key>
   <string>ConversationLensWrapper</string>
   <key>CFBundleIconFile</key>
   <string>AppIcon</string>
   <key>CFBundleIdentifier</key>
-  <string>com.stinkyweasel.conversation-lens</string>
+  <string>com.stinkyweasel.dexquorum</string>
   <key>CFBundleInfoDictionaryVersion</key>
   <string>6.0</string>
   <key>CFBundleName</key>
-  <string>Conversation Lens</string>
+  <string>Dex Quorum</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
@@ -59,7 +59,7 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
   <key>NSHighResolutionCapable</key>
   <true/>
   <key>NSMicrophoneUsageDescription</key>
-  <string>Conversation Lens uses your microphone for local, consent-gated speech transcription and tentative speaker identification on this MacBook.</string>
+  <string>Dex Quorum uses your microphone for local, consent-gated speech transcription and tentative speaker identification on this MacBook.</string>
   <key>NSAppTransportSecurity</key>
   <dict>
     <key>NSAllowsLocalNetworking</key>
@@ -113,29 +113,46 @@ else:
 
 raw = subprocess.check_output(["defaults", "export", "com.apple.dock", "-"])
 dock = plistlib.loads(raw)
-apps = dock.get("persistent-apps", [])
+backup_path = os.path.expanduser(
+    "~/Library/Preferences/com.apple.dock.plist.backup-before-dexquorum-"
+    + __import__("datetime").datetime.now().strftime("%Y%m%d-%H%M%S")
+)
+with open(backup_path, "wb") as backup_file:
+    backup_file.write(raw)
+stored_apps = dock.get("persistent-apps", [])
+apps = []
+legacy_path = os.path.abspath(os.path.expanduser("~/Applications/Conversation Lens.app"))
 
 already = False
-for item in apps:
+replaced_legacy = False
+for item in stored_apps:
     td = item.get("tile-data", {})
     url = td.get("file-data", {}).get("_CFURLString", "")
-    if td.get("file-label") == "Conversation Lens" or url.rstrip("/") == app_url.rstrip("/"):
-        td["file-label"] = "Conversation Lens"
+    installed_path = urllib.parse.unquote(url.removeprefix("file://")).rstrip("/")
+    is_target = td.get("file-label") == "Dex Quorum" or installed_path == app_path.rstrip("/")
+    is_legacy = installed_path == legacy_path.rstrip("/") and td.get("file-label") == "Conversation Lens"
+    if is_target or is_legacy:
+        replaced_legacy = replaced_legacy or is_legacy
+        if already:
+            continue
+        td["file-label"] = "Dex Quorum"
         td["file-data"] = {"_CFURLString": app_url, "_CFURLStringType": 15}
+        td["bundle-identifier"] = "com.stinkyweasel.dexquorum"
         already = True
+    apps.append(item)
 
 if not already:
     apps.append({
         "tile-type": "file-tile",
         "tile-data": {
-            "file-label": "Conversation Lens",
+            "file-label": "Dex Quorum",
             "file-data": {
                 "_CFURLString": app_url,
                 "_CFURLStringType": 15,
             },
         },
     })
-    dock["persistent-apps"] = apps
+dock["persistent-apps"] = apps
 
 out = plistlib.dumps(dock, fmt=plistlib.FMT_BINARY)
 proc = subprocess.Popen(["defaults", "import", "com.apple.dock", "-"], stdin=subprocess.PIPE)
@@ -143,7 +160,8 @@ proc.communicate(out)
 if proc.returncode != 0:
     raise SystemExit(proc.returncode)
 subprocess.run(["killall", "Dock"], check=False)
-print("Pinned Conversation Lens.app to macOS Dock:", app_url)
+print("Pinned Dex Quorum.app to macOS Dock; legacy Conversation Lens entry replaced:", replaced_legacy, app_url)
+print("Saved pre-change Dock preferences to:", backup_path)
 PY
 fi
 
