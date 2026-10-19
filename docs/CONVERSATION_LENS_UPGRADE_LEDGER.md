@@ -228,7 +228,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 50 | Rate limit and backpressure | Bounded queue/retry in app; Packet A 429 retention test | PASS | Main app saturation not stress-tested |
 | 51 | Finish/drop in-flight shutdown | Freeze, exact-hash drain lease, per-window Keep/Drop; backend tests | PASS | No physical multi-pending-window race test |
 | 52 | Versioned server-client messages | Protocol v3 required on protected requests; 426 mismatch regression | PASS | No older client compatibility matrix |
-| 53 | Recent-window replay/debug | Skipped live clips can be reprocessed while lease remains active | PARTIAL | Processed-window debug replay is absent |
+| 53 | Recent-window replay/debug | Skipped live clips remain reprocessable; latest successfully processed PCM WAV is playable with native audio controls while the bounded capture session remains active | PARTIAL | Only one processed PCM window is retained for replay; MediaRecorder processed-window replay and multi-item history are absent; Stop releases replay bytes |
 | 54 | Snapshot/restore | Version-1 JSON snapshot with SHA-256 validation, bounded validation, atomic transcript/coaching/private-field restore; frontend checksum and rollback test | PARTIAL | Snapshot records how many private audio notes were omitted, but does not restore note annotations or speaker profiles; no long-session size trial |
 | 55 | Multi-tab lease visibility/transfer | Explicit takeover/invalidation; `/api/health` exposes opaque tab owner and age; backend and mocked browser tests verify data and UI | PARTIAL | Physical two-tab takeover remains unverified |
 | 56 | Custom local cue rules | New session-only rule editor with max 8 literal phrase matches, bounded observation/question text, priority and source link; `test_frontend.py` asserts a live match and cleanup on Erase | PASS | Rules are literal substrings, not semantic conditions; no persistence |
@@ -341,3 +341,8 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 
 - Added an explicit 7-second standard and 10-second longer follow-up selection. The chosen duration is used by the recorder timer; the existing server 10-second audio cap remains authoritative. `test_frontend.py` verifies that the control updates the record action at both target widths.
 - Requirement 35 remains PARTIAL because no natural voice comparison has measured enrollment quality or recognition improvement from a longer sample.
+
+## Processed PCM replay — 2026-10-19
+
+- The latest successfully processed PCM window remains available as one in-memory WAV with native playback controls while capture is active. Stop revokes its object URL and clears the retained clip; MediaRecorder clips are not retained for replay.
+- QA-venv `test_frontend.py` checks that the replay control receives a blob URL after synthetic PCM transcription and releases it on Stop at 1200px and 375px. Requirement 53 remains PARTIAL because replay history is limited to one PCM clip and playback was validated through browser state, not a physical speaker.

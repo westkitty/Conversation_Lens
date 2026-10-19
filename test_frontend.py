@@ -434,8 +434,10 @@ with sync_playwright() as p:
         pcm=page.evaluate('window.fake.pcmUploads.at(-1)')
         assert pcm['contentType']=='audio/wav' and pcm['bytes']>50000 and pcm['forceMixed']=='true',pcm
         page.wait_for_function("document.querySelectorAll('.turn').length===1",timeout=3000)
+        assert page.locator('#replayPCM').is_visible() and page.locator('#pcmReplayAudio').get_attribute('src').startswith('blob:'), 'Latest processed PCM audio should be replayable from its bounded in-memory clip'
         assert 'overlap 1 (1.2s)' in page.locator('#talkTimeStats').inner_text()
         page.locator('#stopBtn').click();page.wait_for_function("document.querySelector('#statusText').textContent==='NOT LISTENING'")
+        assert page.locator('#replayPCM').is_hidden() and page.locator('#pcmReplayAudio').get_attribute('src') is None,'Stop must release the replay clip URL'
         assert page.evaluate('window.fake.drains.length')==0
         assert not errors,errors
         overflow=page.evaluate('document.documentElement.scrollWidth-innerWidth')
