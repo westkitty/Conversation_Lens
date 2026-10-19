@@ -170,6 +170,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
     <div class="action-row"><button class="btn primary" id="enrollBtn" type="button" disabled>Record a voice sample (7s)</button><button class="btn ghost" id="forgetBtn" type="button">Forget voice profiles</button></div>
     <div class="row" style="margin-top:10px;align-items:end"><label class="small-label" for="speakerLockName">Pin a speaker label for future windows<select class="field" id="speakerLockName"><option value="">No lock</option></select></label><label class="small-label" for="speakerLockCount">Windows<input class="field" id="speakerLockCount" type="number" min="1" max="20" value="3"></label><button id="speakerLockBtn" class="btn small" type="button">Pin label</button></div><div id="speakerLockStatus" class="micro" role="status">No speaker label pinned.</div>
     <div id="speakerProfiles" class="speaker-profiles" aria-live="polite"><div class="quiet">No speakers enrolled.</div></div>
+    <div id="speakerMergeSuggestions" class="micro" role="status" aria-live="polite"></div>
     <p class="note" id="enrollMessage" role="status">Self-introductions are <strong>provisional claims</strong>, not identity proof. The acoustic model can confuse similar voices; a name can always be corrected. Audio with overlaps or weak matches remains Unknown/Mixed.</p>
     <div class="speaker-memory" id="speakerMemory">Voiceprint RAM: 0 bytes</div><div id="talkTimeStats" class="speaker-memory">Attributed speech spans: none measured yet.</div><div class="speaker-presence" id="speakerPresence">Possible voices this session: none yet</div>
   </section>
@@ -259,7 +260,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
  const goals={observe:['notice what was actually said without assuming a topic or objective.','“Which point would be useful to clarify next?”'],understand:['clarify terms, questions, or differing interpretations.','“What does that mean in this conversation?”'],resolve:['identify decisions, owners, and practical next steps.','“What decision or next step, if any, was agreed?”'],repair:['check for misunderstandings and possible repair openings.','“What would help clarify what was meant?”'],boundary:['make requests, requirements, and preferences explicit.','“Is this a requirement, a preference, or a proposal?”']};
   const where={me:'Me',other:'Other',shared:'Unassigned',mixed:'Mixed'};
  const speakerLabel=k=>typeof k==='string'&&k.startsWith('name:')?k.slice(5):where[k]||'Unassigned';
- const speaker={ready:false,profiles:[],detected:new Set(),enrolling:false,active:null,controller:null,stream:null,recorder:null,timer:null,generation:0,ramBytes:0,lockName:'',lockRemaining:0};
+ const speaker={ready:false,profiles:[],mergeSuggestions:[],detected:new Set(),enrolling:false,active:null,controller:null,stream:null,recorder:null,timer:null,generation:0,ramBytes:0,lockName:'',lockRemaining:0};
  const talkStats={byName:new Map(),attributedSeconds:0,mixedSeconds:0,overlapSeconds:0,unknownSeconds:0,unmeasuredWindows:0,mixedWindows:0,overlapWindows:0,unknownWindows:0};
   const ui={selectedId:null,cues:[],lastCue:'',bookmarks:new Set(),highlights:new Set()};
   const savedSetting=(key,fallback)=>{try{return localStorage.getItem('lens-'+key)||fallback}catch(e){return fallback}};
@@ -429,7 +430,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
    if(val.protocol!==3)throw Error('Local server protocol mismatch. Relaunch the matching Conversation Lens version.');
    ai.token=val.token;ai.ready=!!val.ready;ai.model=val.model||'';
    stt.ready=!!(val.stt&&val.stt.ready);
-   stt.reason=val.stt&&val.stt.reason || 'Local speech unavailable';speaker.ready=!!(val.speakers&&val.speakers.ready);speaker.profiles=val.speakers&&Array.isArray(val.speakers.profiles)?val.speakers.profiles:[];
+   stt.reason=val.stt&&val.stt.reason || 'Local speech unavailable';speaker.ready=!!(val.speakers&&val.speakers.ready);speaker.profiles=val.speakers&&Array.isArray(val.speakers.profiles)?val.speakers.profiles:[];speaker.mergeSuggestions=val.speakers?.mergeSuggestions||[];
     speaker.ramBytes=val.speakers?.ramBytes||0;
     if(val.ollamaDefaults&&!$('ollamaUrl').dataset.touched){
       $('ollamaUrl').value=val.ollamaDefaults.url||$('ollamaUrl').value;
@@ -825,7 +826,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
        intro&&isNamed&&['candidate','heard-only'].includes(intro.state)?'Self-introduction: '+voice.label+' — provisional; not verified':
        isNamed?'Tentative acoustic match: '+voice.label+(provisional?' — provisional; not verified':' — verify manually'):(voice.reason||'Unknown voice');
      if(intro){const box=$('introductionStatus');box.dataset.state=intro.state||'idle';box.textContent=(intro.message||'Heard an introduction')+' · The voice identity is not guaranteed.';
-       try{const profiles=await fetch('/api/speakers',{cache:'no-store'}).then(x=>x.json());if(item.generation!==stt.generation||!state.wantsListen)break;if(profiles&&profiles.speakers&&Array.isArray(profiles.speakers.profiles)){speaker.profiles=profiles.speakers.profiles;speaker.ramBytes=profiles.speakers.ramBytes||0;renderSpeakers()}}catch(e){/* transcript remains usable if profile refresh fails */}}
+       try{const profiles=await fetch('/api/speakers',{cache:'no-store'}).then(x=>x.json());if(item.generation!==stt.generation||!state.wantsListen)break;if(profiles&&profiles.speakers&&Array.isArray(profiles.speakers.profiles)){speaker.profiles=profiles.speakers.profiles;speaker.mergeSuggestions=profiles.speakers.mergeSuggestions||[];speaker.ramBytes=profiles.speakers.ramBytes||0;renderSpeakers()}}catch(e){/* transcript remains usable if profile refresh fails */}}
      if(isNamed){if(!provisional){speaker.detected.delete(voice.label+'?');speaker.detected.add(voice.label)}else if(!speaker.detected.has(voice.label)){speaker.detected.add(voice.label+'?')}}
      $('speakerPresence').textContent='Possible voices this session: '+([...speaker.detected].join(' · ')||'none yet');
      if(item.pcmWindow&&stt.pcmState)try{stt.pcmState.timeline.setStatus(item.pcmWindow,'done')}catch(e){}
@@ -972,6 +973,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
     boost.addEventListener('click',()=>boostSpeaker(p.name,seconds?0:120));
     row.append(boost);
     const btn=document.createElement('button');btn.className='btn small ghost';btn.type='button';btn.textContent='Remove';btn.setAttribute('aria-label','Forget '+p.name);btn.addEventListener('click',()=>forgetSpeakers(p.name));row.append(btn);target.append(row)}
+  const review=$('speakerMergeSuggestions');review.replaceChildren();if(speaker.profiles.length>=6){const cap=document.createElement('p');cap.textContent='Soft cap: '+speaker.profiles.length+' of 8 temporary profiles. Review similar profiles before enrolling more. Similarity is a raw cosine hint, not identity proof; no profiles are merged automatically.';review.append(cap);for(const candidate of speaker.mergeSuggestions||[]){const item=document.createElement('p');item.textContent='Review possible duplicate: '+candidate.left+' / '+candidate.right+' · raw cosine '+Number(candidate.cosine).toFixed(3);review.append(item)}}else review.textContent='';
   const lock=$('speakerLockName'),locked=speaker.lockName;lock.replaceChildren();const none=document.createElement('option');none.value='';none.textContent='No lock';lock.append(none);
   for(const p of speaker.profiles.filter(x=>x.samples>0)){const option=document.createElement('option');option.value=p.name;option.textContent=p.name;lock.append(option)}
   lock.value=[...lock.options].some(o=>o.value===locked)?locked:'';updateSpeakerLockStatus();
@@ -1009,7 +1011,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
       $('enrollMessage').textContent='Analyzing local voice sample…';const controller=new AbortController();speaker.controller=controller;
       try{const clip=new Blob(parts,{type:rec.mimeType||mime||'audio/webm'});const response=await fetch('/api/speakers/enroll',{method:'POST',headers:{'Content-Type':clip.type,'X-Lens-Token':ai.token,'X-Lens-Protocol':'3','X-Lens-Speaker':name,'X-Lens-Voice-Consent':'confirmed'},body:clip,signal:controller.signal});const data=await response.json().catch(()=>({}));if(!response.ok)throw Error(data.error||'Enrollment failed');if(gen!==speaker.generation)return;
         $('enrollMessage').textContent=data.message+'. '+name+': '+data.samples+' sample(s).';$('enrollConsent').checked=false;
-        const status=await fetch('/api/speakers',{cache:'no-store'}).then(x=>x.json());if(gen!==speaker.generation)return;speaker.profiles=status.speakers.profiles;speaker.ramBytes=status.speakers.ramBytes||0;renderSpeakers();
+        const status=await fetch('/api/speakers',{cache:'no-store'}).then(x=>x.json());if(gen!==speaker.generation)return;speaker.profiles=status.speakers.profiles;speaker.mergeSuggestions=status.speakers.mergeSuggestions||[];speaker.ramBytes=status.speakers.ramBytes||0;renderSpeakers();
       }catch(e){if(e.name!=='AbortError'&&gen===speaker.generation)$('enrollMessage').textContent=e.message||'Enrollment failed';}
       finally{if(gen===speaker.generation){speaker.enrolling=false;speaker.controller=null;syncButtons()}}
     };
@@ -1025,7 +1027,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
        body:JSON.stringify({name,seconds})});
      const data=await response.json();
      if(!response.ok)throw Error(data.error||'Could not change voice boost');
-     speaker.profiles=data.speakers?.profiles||[];
+     speaker.profiles=data.speakers?.profiles||[];speaker.mergeSuggestions=data.speakers?.mergeSuggestions||[];
      speaker.ramBytes=data.speakers?.ramBytes||0;
      renderSpeakers();
      $('enrollMessage').textContent=seconds?
@@ -1034,7 +1036,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
    }catch(e){$('enrollMessage').textContent=e.message||'Boost request failed'}
  }
  async function forgetSpeakers(name){if(speaker.enrolling)return;if(!ai.token)return;if(!name&&!window.confirm('Forget every enrolled session voiceprint?'))return;
-  try{const res=await fetch('/api/speakers/forget',{method:'POST',headers:{'X-Lens-Token':ai.token,'Content-Type':'application/json'},body:JSON.stringify(name?{name}:{all:true})});const obj=await res.json();if(!res.ok)throw Error(obj.error||'Forget failed');speaker.profiles=obj.speakers.profiles;speaker.ramBytes=obj.speakers.ramBytes||0;speaker.detected.clear();$('speakerPresence').textContent='Possible voices this session: none yet';renderSpeakers();$('enrollMessage').textContent='Voiceprints discarded from server RAM. Existing transcript text is not changed.'}catch(e){$('enrollMessage').textContent=e.message||'Could not clear profiles'}
+  try{const res=await fetch('/api/speakers/forget',{method:'POST',headers:{'X-Lens-Token':ai.token,'Content-Type':'application/json'},body:JSON.stringify(name?{name}:{all:true})});const obj=await res.json();if(!res.ok)throw Error(obj.error||'Forget failed');speaker.profiles=obj.speakers.profiles;speaker.mergeSuggestions=obj.speakers.mergeSuggestions||[];speaker.ramBytes=obj.speakers.ramBytes||0;speaker.detected.clear();$('speakerPresence').textContent='Possible voices this session: none yet';renderSpeakers();$('enrollMessage').textContent='Voiceprints discarded from server RAM. Existing transcript text is not changed.'}catch(e){$('enrollMessage').textContent=e.message||'Could not clear profiles'}
  }
  $('editForm').addEventListener('submit',event=>{event.preventDefault();const turn=state.turns.find(t=>t.id===editingId);const value=clean($('editText').value);if(!turn||!value){$('editError').textContent='Enter the corrected words before saving.';return}if(value!==turn.text){turn.text=value;turn.edited=true;invalidateAI(true);renderTranscript();analyze();scheduleAI()}$('editDialog').close();editingId=null;syncButtons()});
  $('cancelEditBtn').addEventListener('click',()=>$('editDialog').close());
@@ -1050,7 +1052,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
    await stop();cancelEnroll();
    try{
      const data=await postCapture('/api/session/erase',{confirm:true});
-     speaker.profiles=data.speakers?.profiles||[];
+     speaker.profiles=data.speakers?.profiles||[];speaker.mergeSuggestions=data.speakers?.mergeSuggestions||[];
      $('enrollConsent').checked=false;$('autoNames').checked=false;
      clearVoiceNotes();$('context').value='';$('privateNote').value='';renderContextPin();$('customFragment').value='';$('coachPreset').value='';$('groundingMode').value='exact';$('aim').value='observe';$('manualSpeaker').value='shared';customRules.length=0;renderCustomRules();
      $('enrollName').value='';$('consent').checked=false;

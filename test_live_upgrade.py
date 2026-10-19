@@ -20,6 +20,14 @@ def unit(i):
 def vectors(first=0,second=0):
     return {'full':unit(first),'first':unit(first),'second':unit(second),'speech_seconds':3.4}
 
+saved_profiles=s.SPEAKERS
+s.SPEAKERS={f'Profile{i}':[unit(0 if i<2 else i),unit(0 if i<2 else i)] for i in range(6)}
+soft_cap=s.speaker_status()
+assert soft_cap['softCap']==6 and soft_cap['hardCap']==8
+assert any(item['left']=='Profile0' and item['right']=='Profile1' and item['cosine']==1.0 for item in soft_cap['mergeSuggestions'])
+s.SPEAKERS=saved_profiles
+print('PASS speaker soft-cap similarity suggestions are bounded raw-vector hints')
+
 s.forget_speakers()
 s.SPEAKERS.update({'Dale':[unit(0),unit(0)],'Morgan':[unit(1),unit(1)]})
 matching=s.speaker_evidence(vectors(0,0))

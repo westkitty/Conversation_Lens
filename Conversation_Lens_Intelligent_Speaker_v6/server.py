@@ -33,6 +33,8 @@ UPSTREAM_TIMEOUT = 45
 MODEL_LOCK = threading.Lock()
 STT_LOCK = threading.Lock()
 MAX_AUDIO_BODY = 2_500_000
+SPEAKER_SOFT_CAP = 6
+SPEAKER_HARD_CAP = 8
 WHISPER_MODEL = Path(os.environ.get('LENS_WHISPER_MODEL', str(Path.home() / 'Library/Application Support/DexDictate/Models/ggml-base.bin')))
 WHISPER_BIN = os.environ.get('LENS_WHISPER_BIN', '') or shutil.which('whisper-cli')
 FFMPEG_BIN = shutil.which('ffmpeg')
@@ -338,7 +340,19 @@ def speaker_status():
                 entry['source'] = 'conversation'
                 entry['tentative'] = not entry['active']
             names.append(entry)
-    return {'ready': bool(ready), 'profiles': names, 'ramBytes': sum(len(v) * 8 for vectors in SPEAKERS.values() for v in vectors), 'ephemeral': True,
+        merge_suggestions=[]
+        if len(SPEAKERS)>=SPEAKER_SOFT_CAP:
+            enrolled=[(name,vectors[-4:]) for name,vectors in SPEAKERS.items() if len(vectors)>=2]
+            for index,(left,left_vectors) in enumerate(enrolled):
+                for right,right_vectors in enrolled[index+1:]:
+                    left_best=[max(similarity(a,b) for b in right_vectors) for a in left_vectors]
+                    right_best=[max(similarity(b,a) for a in left_vectors) for b in right_vectors]
+                    score=(sum(left_best)/len(left_best)+sum(right_best)/len(right_best))/2
+                    if score>=0.82:merge_suggestions.append({'left':left,'right':right,'cosine':round(score,3)})
+            merge_suggestions=sorted(merge_suggestions,key=lambda item:item['cosine'],reverse=True)[:3]
+    return {'ready': bool(ready), 'profiles': names, 'mergeSuggestions':merge_suggestions,
+            'softCap':SPEAKER_SOFT_CAP,'hardCap':SPEAKER_HARD_CAP,
+            'ramBytes': sum(len(v) * 8 for vectors in SPEAKERS.values() for v in vectors), 'ephemeral': True,
             'reason': 'Voice model ready; natural introductions may establish tentative speakers (with opt-in)' if ready
                       else 'Install the local speaker-model dependency using Setup_Speakers.command'}
 
@@ -520,7 +534,7 @@ def recognize_introduction(text, vectors, audio_id=None):
                        {'name':name,'state':'strengthened','message':name+' now has two distinct audio windows; attribution remains tentative'}
             return {'label': name, 'reason': 'Spoken name and previous sample agree; still a tentative attribution', 'possible': [name], 'level': 'probable' if len(SPEAKERS[name])>=2 else 'provisional'}, \
                    {'name': name, 'state': 'heard-existing', 'message': 'Name matches an existing session candidate'}
-        if len(SPEAKERS) >= 8:
+        if len(SPEAKERS) >= SPEAKER_HARD_CAP:
             return {'label':'Unknown','reason':'Maximum session speaker count reached','possible':[]}, \
                    {'name':name,'state':'full','message':'Maximum eight speaker profiles reached'}
         if ranked and (ranked[0][1] >= 0.98 or (ranked[0][1] >= AUTO_MATCH_MIN + 0.04 and len(SPEAKERS.get(ranked[0][0], [])) >= 2)):
@@ -637,7 +651,7 @@ def enroll_speaker(name, payload, media_type):
         if epoch != PROFILE_EPOCH:
             raise ValueError('Enrollment canceled because the speaker registry was erased')
         # Bound all voiceprint data in RAM, no automatic saving or unconsented updates.
-        if name not in SPEAKERS and len(SPEAKERS) >= 8:
+        if name not in SPEAKERS and len(SPEAKERS) >= SPEAKER_HARD_CAP:
             raise ValueError('Eight speaker profiles maximum')
         if audio_digest in ENROLLMENT_AUDIO_IDS.get(name, set()):
             raise ValueError('That exact recording was already used. Record a fresh voice sample.')

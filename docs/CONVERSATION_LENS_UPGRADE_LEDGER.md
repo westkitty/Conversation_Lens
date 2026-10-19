@@ -212,7 +212,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 34 | Instant speaker drop | Per-profile Remove immediately clears only that RAM voice profile; `test_frontend.py` verifies no confirmation and transcript label preservation | PASS | Forget All still requires confirmation |
 | 35 | Longer follow-up enrollment sample | Existing sample guidance | PARTIAL | Guided longer follow-up flow is absent |
 | 36 | Raw cosine/margin available | `server.py` evidence and evidence drawer; `test_frontend.py` values | PASS | None observed in current checks |
-| 37 | Soft cap/merge suggestion | Existing profile count cap | PARTIAL | No soft-cap merge suggestion workflow |
+| 37 | Soft cap/merge suggestion | At six of eight profiles, `speaker_status()` returns up to three cross-profile raw-cosine candidate pairs; frontend displays review hints and never merges automatically; backend and desktop/mobile tests | PASS | Cosine hints are uncalibrated, tested only with synthetic vectors, and require owner judgment |
 | 38 | Window-length distribution | Live HTML rolling median/range and observed 1–9 s canvas histogram; `test_frontend.py` verifies histogram pixels after captured windows | PASS | No persisted history; distribution resets per session |
 | 39 | Whisper model switcher | No production model switcher | BLOCKED | Must inventory installed models and verify reload/rollback before exposing switch |
 | 40 | Adjustable pre-roll/post-roll | Live HTML PCM controls; production PCM rendering uses `WindowTimeline.render` | PARTIAL | No production sample-boundary edit UI or physical roll-content proof |
@@ -307,3 +307,8 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 ## Export evidence follow-up — 2026-10-19
 
 - QA-venv `test_frontend.py` downloaded and inspected the Markdown session export and plain transcript export. Both contain the selected passage text and `★ [highlight]` markers; the plain export uses its distinct filename and omits coaching sections. Rows 23 and 24 are PASS for these exercised exports.
+
+## Speaker soft-cap follow-up — 2026-10-19
+
+- Added a six-profile soft cap before the existing eight-profile hard cap. The server computes up to three bidirectional average-best cosine candidate pairs from the latest four vectors per enrolled profile. The UI labels the raw score as a review hint, states it is not identity proof, and does not merge profiles.
+- `test_live_upgrade.py` verifies synthetic normalized vectors produce the expected candidate; QA-venv `test_frontend.py` verifies the soft-cap text and non-automatic behavior at 1200px and 375px. Requirement 37 is PASS for that suggestion path; real voice-profile similarity calibration is not established.

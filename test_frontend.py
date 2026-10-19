@@ -14,11 +14,11 @@ for module in ('lens_pcm_core.js','lens_pcm_capture.js'):
     source=(root/'experiments'/'packet-a'/module).read_text()
     html=html.replace(f'<script src="/packet-a/{module}"></script>',f'<script>{source}</script>')
 stub='''<script>
-window.fake={recorders:[],stopped:0,quiet:false,meterReads:0,transcribe:0,confirmCount:0,pcmUploads:[],drains:[],token:'ready-token',capture:null,closed:[],frozen:[],profiles:[],transcriptQueue:[],
+window.fake={recorders:[],stopped:0,quiet:false,meterReads:0,transcribe:0,confirmCount:0,pcmUploads:[],drains:[],token:'ready-token',capture:null,closed:[],frozen:[],profiles:[],mergeSuggestions:[],transcriptQueue:[],
              dataSize:950,errors:[],voiceEnabled:[],captureLeaseSequence:0,aiRequests:0,aiBodies:[],busy:false,takeovers:0};
 window.fetch=async(path,opts={})=>{
  const ok=(v)=>new Response(JSON.stringify(v),{status:200,headers:{'Content-Type':'application/json'}});
- if(path==='/api/status')return ok({app:'conversation-lens',protocol:3,token:window.fake.token,ready:true,model:'mock-local',stt:{ready:true},speakers:{ready:true,profiles:window.fake.profiles}});
+ if(path==='/api/status')return ok({app:'conversation-lens',protocol:3,token:window.fake.token,ready:true,model:'mock-local',stt:{ready:true},speakers:{ready:true,profiles:window.fake.profiles,mergeSuggestions:window.fake.mergeSuggestions}});
  if(path==='/api/capture/open'){
   const request=JSON.parse(opts.body);if(!request.consent)throw Error('consent missing');
   if(window.fake.busy&&!request.takeover)return new Response(JSON.stringify({error:'Capture already active in another tab. Stop it or explicitly approve takeover.'}),{status:409,headers:{'Content-Type':'application/json'}});
@@ -357,6 +357,10 @@ with sync_playwright() as p:
         page.locator('#startBtn').click();page.wait_for_function("document.querySelector('#statusText').textContent.includes('LOCAL MIC ACTIVE')")
         assert page.evaluate('window.fake.capture') is not None
         assert page.evaluate('window.fake.takeovers')==1
+        page.evaluate("window.fake.profiles=Array.from({length:6},(_,i)=>({name:'Profile'+i,samples:2,active:true}));window.fake.mergeSuggestions=[{left:'Profile0',right:'Profile1',cosine:.94}]")
+        page.locator('#aiReconnect').click()
+        page.wait_for_function("document.querySelector('#speakerMergeSuggestions').textContent.includes('raw cosine 0.940')")
+        assert 'no profiles are merged automatically' in page.locator('#speakerMergeSuggestions').inner_text().lower()
         page.locator('#eraseAllBtn').click()
         page.wait_for_function("document.querySelectorAll('.turn').length===0")
         assert page.locator('#voiceNoteList audio').count()==0,'Erase all must discard private voice-note audio'

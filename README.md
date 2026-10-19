@@ -29,6 +29,7 @@ From this repository root:
 - **Lease visibility:** the local diagnostics view reports the active capture tab's opaque session label and lease age; takeover still requires an explicit owner action.
 - **Sticky context:** owner-entered context and the private note remain visible in a separate read-only bar while scrolling; the bar starts empty and clears with Erase.
 - **Private voice notes:** press `A` outside input fields (or use the transcript control) to record a short private note for the selected passage while conversation capture is stopped. Notes remain local in memory, are never transcribed or included in exports/snapshots, and clear on Erase or page exit.
+- **Speaker soft cap:** at six temporary profiles, the app may show up to three raw-cosine review pairs before the eight-profile hard cap. They are uncalibrated hints; the app never merges profiles automatically.
 
 ## Tests
 
