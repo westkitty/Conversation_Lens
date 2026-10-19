@@ -201,7 +201,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 23 | One-click Markdown/plain exports | `test_frontend.py` downloads and inspects both Markdown session and plain transcript outputs | PASS | None observed in current browser checks |
 | 24 | Bookmarks/highlights in export | `test_frontend.py` verifies `★ [highlight]` markers and transcript text in both exports | PASS | None observed in current browser checks |
 | 25 | Coaching pause, hot ASR | Live HTML pause and capture lifecycle | PARTIAL | Hot ASR action is not separately measured in this run |
-| 26 | Smart debounce/manual immediate cue | Live HTML scheduling and manual cue action | PARTIAL | Debounce latency and cancellation races lack focused timing tests |
+| 26 | Smart debounce/manual immediate cue | QA-venv `test_frontend.py` measures automatic request delay/coalescing, manual immediate request, serialized in-flight follow-up, and stale-result suppression at 1200px/375px | PASS | Timing uses a controlled mock endpoint; real Ollama latency and cancellation behavior under network failure remain unmeasured |
 | 27 | Coaching timeline and per-card regenerate | Per-card action regenerates only the selected history card through opted-in local Ollama; frontend asserts the selected card's result | PASS | Requires user-enabled Ollama; source uses the current transcript context |
 | 28 | Grounding badge/retry looser | Live HTML grounding state and retry control | PASS | Retry interaction not exercised in this turn |
 | 29 | Private note/goal for next AI call | `server.py` Ollama payload; `test_live_upgrade.py` private note assertion | PASS | None observed in current tests |
@@ -392,3 +392,8 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 
 - On Brave, the first localhost tab started real microphone capture. A second tab received the existing-session prompt; confirming takeover made the first tab fail its next local capture request with “Capture unavailable or frozen” while the second tab remained active. During the second lease, `/api/health` reported `captureActive: true`, an opaque `captureOwner`, and age 8 seconds. The second tab was stopped and the local server exited, clearing its RAM session.
 - Requirement 55 is PASS for physical lease transfer and owner/age visibility. Audio content from this brief smoke was uncontrolled and was not used as recognition evidence or exported.
+
+## Coaching debounce and stale-response checks — 2026-10-19
+
+- Extended the browser test endpoint with controllable response delay and request timestamps. The desktop/mobile user flow now verifies that rapid automatic updates coalesce inside the debounce/rate-limit window, manual Get Cue starts without that wait, a changed passage queues behind the active request, and the older response is not rendered over current content.
+- QA-venv `test_frontend.py` passed at 1200px and 375px. Requirement 26 is PASS for client scheduling and stale-result suppression; the endpoint is mocked, so live Ollama network cancellation and end-to-end provider latency remain unmeasured.

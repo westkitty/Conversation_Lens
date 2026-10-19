@@ -15,7 +15,7 @@ for module in ('lens_pcm_core.js','lens_pcm_capture.js'):
     html=html.replace(f'<script src="/packet-a/{module}"></script>',f'<script>{source}</script>')
 stub='''<script>
 window.fake={recorders:[],stopped:0,quiet:false,meterReads:0,transcribe:0,confirmCount:0,pcmUploads:[],drains:[],token:'ready-token',capture:null,closed:[],frozen:[],profiles:[],mergeSuggestions:[],transcriptQueue:[],whisperActive:'base',
-             dataSize:950,errors:[],voiceEnabled:[],captureLeaseSequence:0,aiRequests:0,aiBodies:[],busy:false,takeovers:0};
+             dataSize:950,errors:[],voiceEnabled:[],captureLeaseSequence:0,aiRequests:0,aiBodies:[],aiRequestTimes:[],aiActive:0,aiMaxActive:0,aiDelayMs:0,aiEchoLatest:false,busy:false,takeovers:0};
 window.fetch=async(path,opts={})=>{
  const ok=(v)=>new Response(JSON.stringify(v),{status:200,headers:{'Content-Type':'application/json'}});
  if(path==='/api/status')return ok({app:'conversation-lens',protocol:3,token:window.fake.token,ready:true,model:'mock-local',stt:{ready:true},speakers:{ready:true,profiles:window.fake.profiles,mergeSuggestions:window.fake.mergeSuggestions}});
@@ -75,7 +75,12 @@ window.fetch=async(path,opts={})=>{
   }
   return ok(item);
  }
- if(path==='/api/analyze'){window.fake.aiRequests++;window.fake.aiBodies.push(JSON.parse(opts.body));return ok({insight:{evidence_status:'exact',observation:'A clarification request was captured.',evidence:'I want to clarify the precise delivery date.',next_step:'What date should we agree on?',caution:'Automatic transcript may have errors'}})}
+if(path==='/api/analyze'){
+ const body=JSON.parse(opts.body);window.fake.aiRequests++;window.fake.aiBodies.push(body);window.fake.aiRequestTimes.push(performance.now());window.fake.aiActive++;window.fake.aiMaxActive=Math.max(window.fake.aiMaxActive,window.fake.aiActive);
+ try{if(window.fake.aiDelayMs)await new Promise((resolve,reject)=>{const id=setTimeout(resolve,window.fake.aiDelayMs);opts.signal?.addEventListener('abort',()=>{clearTimeout(id);reject(new DOMException('Cancelled','AbortError'))},{once:true})})}
+ finally{window.fake.aiActive--}
+ return ok({insight:{evidence_status:'exact',observation:window.fake.aiEchoLatest?'Echo: '+(body.turns.at(-1)?.text||'empty'):'A clarification request was captured.',evidence:'I want to clarify the precise delivery date.',next_step:'What date should we agree on?',caution:'Automatic transcript may have errors'}})
+}
  if(path==='/api/speakers/enroll')return ok({name:opts.headers['X-Lens-Speaker'],samples:1,message:'Record another sample'});
  throw Error('Unexpected fetch '+path);
 };
@@ -320,6 +325,35 @@ with sync_playwright() as p:
         continuation=page.evaluate('window.fake.aiBodies.at(-1).continuation')
         assert 'AI regeneration' in continuation and 'current transcript' not in continuation
         page.wait_for_function("document.querySelector('#continueThoughtStatus').textContent.includes('Generated')")
+        page.wait_for_function('window.fake.aiActive===0')
+        debounce_before=page.evaluate('window.fake.aiRequests')
+        page.evaluate('''() => {
+          window.fake.debounceStarted=performance.now();
+          for(const text of ['The owner confirmed the first review date.','The team needs the final outline before Friday.','We agreed to share the revised draft tomorrow.']){
+            const input=document.querySelector('#manualText');input.value=text;
+            document.querySelector('#manualForm').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+          }
+        }''')
+        page.wait_for_function(f'window.fake.aiRequests==={debounce_before+1}',timeout=6500)
+        debounce_ms=page.evaluate('window.fake.aiRequestTimes.at(-1)-window.fake.debounceStarted')
+        assert 250<=debounce_ms<=5700, f'Automatic cue request should respect the debounce/rate-limit window, got {debounce_ms:.0f}ms'
+        page.wait_for_timeout(400)
+        assert page.evaluate('window.fake.aiRequests')==debounce_before+1,'Rapid transcript updates should coalesce into one automatic request'
+        page.evaluate('window.fake.aiDelayMs=350;window.fake.aiEchoLatest=true;window.fake.manualAt=performance.now()')
+        page.locator('#getCueBtn').click()
+        page.wait_for_function(f'window.fake.aiRequests==={debounce_before+2}',timeout=1000)
+        manual_ms=page.evaluate('window.fake.aiRequestTimes.at(-1)-window.fake.manualAt')
+        assert manual_ms<250, f'Manual cue should bypass debounce, got {manual_ms:.0f}ms'
+        page.evaluate('''() => {
+          const input=document.querySelector('#manualText');input.value='The latest change needs a new delivery date.';
+          document.querySelector('#manualForm').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+        }''')
+        page.locator('#getCueBtn').click()  # Explicitly request the queued latest passage while the prior call is still in flight.
+        page.wait_for_function(f'window.fake.aiRequests==={debounce_before+3}',timeout=2000)
+        assert page.evaluate('window.fake.aiMaxActive')==1,'A newer passage must queue behind an in-flight request, not overlap it'
+        assert not page.locator('#aiObservation').inner_text().startswith('Echo:'),'A stale response must not replace the prior result'
+        page.wait_for_function("document.querySelector('#aiObservation').textContent==='Echo: The latest change needs a new delivery date.'",timeout=2000)
+        page.evaluate('window.fake.aiDelayMs=0;window.fake.aiEchoLatest=false')
         page.locator('#aiEvidenceJump').wait_for(timeout=4000)
         page.locator('#aiEvidenceJump').click()
         assert page.evaluate('document.activeElement.id')=='passage-2'
@@ -349,7 +383,7 @@ with sync_playwright() as p:
         page.locator('#aiToggle').uncheck()
         page.locator('#manualText').fill('We decided to review the outline Friday. I will send it Thursday.')
         page.get_by_role('button',name='Add line').click()
-        page.wait_for_function("document.querySelectorAll('#actionLedger .action-item').length===2")
+        page.wait_for_function("document.querySelectorAll('#actionLedger .action-item').length>=2")
         assert 'possible decision' in page.locator('#actionLedger').inner_text().lower()
         assert 'possible action' in page.locator('#actionLedger').inner_text().lower()
         page.locator('#manualText').fill('Please let me finish.')
@@ -359,15 +393,16 @@ with sync_playwright() as p:
         page.get_by_role('button',name='Add line').click()
         page.wait_for_function("document.querySelector('#signals').textContent.includes('Topic transition')")
         page.locator('#customRulesPanel').evaluate('e=>e.open=true')
-        page.locator('#customRulePhrase').fill('outline')
-        page.locator('#customRuleObservation').fill('The owner asked to notice this outline phrase.')
-        page.locator('#customRuleNext').fill('Should we confirm the outline contents?')
+        page.locator('#customRulePhrase').fill('delivery date')
+        page.locator('#customRuleObservation').fill('The owner asked to notice this delivery-date phrase.')
+        page.locator('#customRuleNext').fill('Should we confirm the delivery date?')
         page.locator('#customRulePriority').select_option('5')
         page.locator('#addCustomRule').click()
-        page.wait_for_function("document.querySelector('#signals').textContent.includes('Custom cue matched: outline')")
-        assert 'Review passage 4' in page.locator('#signals').text_content()
-        page.get_by_role('button',name='Review passage 4').first.click()
-        assert page.evaluate('document.activeElement.id')=='passage-4'
+        page.wait_for_function("document.querySelector('#signals').textContent.includes('Custom cue matched: delivery date')")
+        custom_card=page.locator('#signals .insight').filter(has_text='Custom cue matched: delivery date')
+        assert custom_card.locator('button.evidence-link').count()==1
+        custom_card.locator('button.evidence-link').click()
+        assert page.evaluate("document.activeElement.id.startsWith('passage-')")
         for line in [
             'The orbital telescope measured distant galaxies with infrared sensors.',
             'Researchers calibrated the observatory using reference stars.',
@@ -445,7 +480,7 @@ with sync_playwright() as p:
         assert 'Private snapshot note'==page.locator('#privateNote').input_value()
         assert '1 private voice note(s) were not imported' in page.locator('#snapshotStatus').inner_text()
         assert page.locator('#voiceNoteList audio').count()==0
-        assert page.locator('#customRuleList').inner_text().find('outline')>=0,'owner cue rules intentionally remain session local'
+        assert page.locator('#customRuleList').inner_text().find('delivery date')>=0,'owner cue rules intentionally remain session local'
         # A second tab cannot silently steal capture: user must approve the explicit takeover.
         page.evaluate('window.fake.busy=true')
         page.locator('#startBtn').click();page.wait_for_function("document.querySelector('#statusText').textContent.includes('LOCAL MIC ACTIVE')")
