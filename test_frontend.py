@@ -367,9 +367,21 @@ with sync_playwright() as p:
         assert 'Review passage 4' in page.locator('#signals').text_content()
         page.get_by_role('button',name='Review passage 4').first.click()
         assert page.evaluate('document.activeElement.id')=='passage-4'
+        page.evaluate('window.fake.quiet=false');page.wait_for_function("window.fake.recorders.at(-1)?.state==='recording'");page.wait_for_timeout(350)
+        page.locator('#pauseIntakeBtn').click();page.evaluate('window.fake.recorders.at(-1).stop()')
+        page.wait_for_function("document.querySelector('#skippedWindows').textContent.includes('Intake paused') && document.querySelector('#skippedWindows').textContent.includes('Reprocess buffered audio')")
+        retry_count=page.evaluate('window.fake.transcribe')
+        turn_count=page.locator('.turn').count()
+        page.get_by_role('button',name='Reprocess buffered audio').click()
+        page.wait_for_function(f'window.fake.transcribe>{retry_count}')
+        page.wait_for_function(f'document.querySelectorAll(".turn").length>{turn_count}')
+        assert '1 skipped' in page.locator('#skipCount').inner_text()
+        page.locator('#pauseIntakeBtn').click();page.evaluate('window.fake.quiet=true');page.wait_for_timeout(200)
         page.screenshot(path=str(root/('qa_v6_desktop.png' if width>800 else 'qa_v6_mobile.png')),full_page=True)
+        page.evaluate("window.confirm=(message)=>{window.fake.confirmCount++;return !String(message||'').startsWith('Keep pending audio window')}")
         page.locator('#stopBtn').click()
         page.wait_for_function("document.querySelector('#statusText').textContent==='NOT LISTENING'")
+        page.evaluate("window.confirm=()=>{window.fake.confirmCount++;return true}")
         page.wait_for_function('window.fake.closed.length>=1')
         assert page.evaluate('window.fake.capture') is None
         assert page.evaluate('window.fake.stopped')>=1
@@ -453,6 +465,7 @@ with sync_playwright() as p:
         page.wait_for_function("document.querySelector('#captureModeStatus').textContent.includes('bounded in-memory ring')")
         page.wait_for_function("!document.querySelector('#pcmEditor').hidden && document.querySelector('#pcmEditWindow').options.length===1",timeout=7000)
         assert page.evaluate('window.fake.transcribe')==before_pcm,'Held PCM must remain unsubmitted during editing'
+        assert 'held for PCM edit' in page.locator('#workerQueue').inner_text() and 'pcm_' in page.locator('#workerQueue').inner_text()
         page.locator('#pcmEditApply').click()
         page.wait_for_function("document.querySelector('#pcmEditWindow').options.length===2")
         page.locator('#pcmEditBoundary').fill('600')
@@ -463,6 +476,7 @@ with sync_playwright() as p:
         page.locator('#pcmEditApply').click()
         page.wait_for_function("document.querySelector('#pcmEditWindow').options.length===2")
         page.locator('#pcmEditRelease').click()
+        page.wait_for_function("document.querySelector('#workerQueue').textContent.includes('transcribing locally')")
         page.wait_for_function(f'window.fake.transcribe>={before_pcm+2}',timeout=7000)
         page.wait_for_function("window.fake.pcmUploads.length>0",timeout=3000)
         pcm=page.evaluate('window.fake.pcmUploads.at(-1)')
@@ -471,6 +485,7 @@ with sync_playwright() as p:
         page.wait_for_function("document.querySelectorAll('.turn').length===2",timeout=3000)
         assert page.locator('#replayPCM').is_visible() and page.locator('#pcmReplayAudio').get_attribute('src').startswith('blob:'), 'Latest processed PCM audio should be replayable from its bounded in-memory clip'
         assert 'overlap 1 (1.2s)' in page.locator('#talkTimeStats').inner_text()
+        page.locator('#pauseIntakeBtn').click();assert page.locator('#pauseIntakeBtn').inner_text()=='Resume intake';page.locator('#pauseIntakeBtn').click()
         page.locator('#stopBtn').click();page.wait_for_function("document.querySelector('#statusText').textContent==='NOT LISTENING'")
         assert page.locator('#replayPCM').is_hidden() and page.locator('#pcmReplayAudio').get_attribute('src') is None,'Stop must release the replay clip URL'
         assert page.evaluate('window.fake.drains.length')==0

@@ -182,7 +182,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 4 | Grounded evidence drawer | Live HTML evidence drawer; `test_frontend.py` cosine and margin display | PASS | Evidence remains measurements, not calibrated probabilities |
 | 5 | Keyboard controls | Live HTML keyboard handlers; `test_frontend.py` M and numeric assignment | PASS | Full shortcut set not independently enumerated |
 | 6 | Layout modes with memory | Live HTML layout persistence; `test_frontend.py` mode switch and resize | PASS | None observed in current browser checks |
-| 7 | Skipped-window reasons and reprocess | Live HTML skipped queue and retry action | PARTIAL | Browser suite does not exercise every skip/reprocess transition |
+| 7 | Skipped-window reasons and reprocess | QA-venv `test_frontend.py` pauses intake, verifies the explicit reason and active-lease retry control, reprocesses the buffered clip and confirms a new passage at 1200px/375px | PASS | Browser capture is mocked; every worker failure reason and physical retry path is not separately exercised |
 | 8 | Flick-up mobile coaching sheet | Live HTML collapsed/expanded sheet, touch up/down gesture; `test_frontend.py` dispatches upward and downward swipes at 375px | PASS | Physical touchscreen gesture not tested |
 | 9 | Per-window Stop keep/drop dialog | Live Stop freeze/drain in `server.py`; exact-hash drain backend test; Packet A chooser browser test | PASS | Physical microphone Stop/drain with multiple pending windows not exercised |
 | 10 | Speaker chips, last-seen, boost | Live HTML speaker profile chips; `test_frontend.py` last-seen and boost | PASS | Natural identity accuracy remains unverified |
@@ -223,7 +223,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 45 | Fallback when speaker worker times out | Existing transcript fallback path; backend tests | PASS | No forced timeout run in this turn |
 | 46 | Live Ollama endpoint/model/timeout/temp | `server.py` localhost validation and options; tests plus local stack | PASS | User-facing live settings not all independently exercised |
 | 47 | Capture lease rotation and stale notice | `lens_stop_drain.py`, v3 capture protocol; backend/live-upgrade tests | PASS | Physical tab takeover not exercised this turn |
-| 48 | Queue dashboard and pause intake | Live outstanding/skip status and pause-intake control; on-demand recent worker-stage graph in local diagnostics | PARTIAL | Graph reports latest stage event by type, not a per-window live queue state; pressure/backoff transitions lack full UI coverage |
+| 48 | Queue dashboard and pause intake | Live per-window in-flight/queued/held/retry metadata list, bounded to four rows; pause-intake control label and state tested alongside PCM hold/release at 1200px and 375px | PASS | Stage timing graph remains uncorrelated by window ID; full saturation/backoff stress was not run |
 | 49 | Explicit disk speaker-profile save/load | Owner-triggered JSON download and file picker; schema v1, SHA-256 integrity, strict normalized-vector validation, replacement confirmation and active-capture refusal; backend and desktop/mobile browser checks | PASS | App never writes profiles automatically; exported biometric files are unencrypted and user-managed; no cross-version migration beyond v1 |
 | 50 | Rate limit and backpressure | Bounded queue/retry in app; Packet A 429 retention test | PASS | Main app saturation not stress-tested |
 | 51 | Finish/drop in-flight shutdown | Freeze, exact-hash drain lease, per-window Keep/Drop; backend tests | PASS | No physical multi-pending-window race test |
@@ -362,3 +362,13 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 
 - Added explicit profile export and import endpoints with schema version 1, canonical SHA-256 validation, strict name/vector/normalization/profile-count checks, atomic RAM replacement, active-capture refusal and audio-processing exclusion. Export is available only after a user confirmation, creates a local JSON download, and makes no app-managed disk copy. The UI warns that files contain biometric voice data; import also requires replacement confirmation.
 - `test_live_upgrade.py` covers round-trip helper integrity, authenticated HTTP export/import, active-capture refusal, corrupt checksum rejection and preservation of prior profiles. QA-venv `test_frontend.py` exercises file import and export download at 1200px and 375px. Requirement 49 is PASS for opt-in local files; files are intentionally not encrypted by the app.
+
+## Per-window queue dashboard — 2026-10-19
+
+- Added a metadata-only list of the current in-flight and queued windows, with explicit local-transcription, held-for-edit and retry states. It exposes no transcript or audio contents and is refreshed with the existing bounded queue/status updates. The existing pause-intake action remains available beside the window controls.
+- QA-venv `test_frontend.py` checks a held PCM entry, in-flight state after release and pause/resume label state at 1200px and 375px. Requirement 48 is PASS for per-window queue visibility and intake pause; stage timing is not correlated to window IDs and sustained saturation remains untested.
+
+## Skipped-window retry — 2026-10-19
+
+- Extended browser coverage for the existing bounded skipped-window path: pause intake, stop a buffered MediaRecorder window, verify the reason and retry action, reprocess while the active capture lease remains valid, and confirm the returned passage.
+- QA-venv `test_frontend.py` exercises this at 1200px and 375px. Requirement 7 is PASS for the paused-intake/retry path; worker-timeout and every skip reason remain outside this focused run.
