@@ -7,6 +7,7 @@ store recordings, or validate human speaker identity. Skips if required models a
 import importlib.util
 import json
 import pathlib
+import array
 import subprocess
 import sys
 import tempfile
@@ -14,6 +15,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+import wave
 from http.server import ThreadingHTTPServer
 
 ROOT = pathlib.Path(__file__).parent / "Conversation_Lens_Intelligent_Speaker_v6"
@@ -74,6 +76,50 @@ def main():
             assert speech.get("engine") == "whisper-cpp"
             print("REAL_ASR_PASS: %.2fs, %d chars, label=%s" %
                   (elapsed, len(speech["text"]), speech["speaker"]["label"]))
+
+            # Controlled two-voice overlap: verify the installed embedding worker and
+            # production Mixed veto on synthetic voices, without claiming human diarization.
+            pcm_parts = []
+            for index, (voice, phrase) in enumerate((
+                    ("Daniel", "I would like to discuss the project schedule, team responsibilities, and decisions before Friday."),
+                    ("Samantha", "I want to review product requirements, design details, and customer questions before the meeting."))):
+                aiff = tmp / ("overlap-%d.aiff" % index)
+                wav_part = tmp / ("overlap-%d.wav" % index)
+                subprocess.run(["/usr/bin/say", "-v", voice, "-r", "180", phrase, "-o", str(aiff)],
+                               check=True, timeout=20, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.run([str(s.FFMPEG_BIN), "-nostdin", "-loglevel", "error", "-y",
+                                "-i", str(aiff), "-ac", "1", "-ar", "16000", str(wav_part)],
+                               check=True, timeout=20)
+                with wave.open(str(wav_part), "rb") as source:
+                    assert source.getnchannels() == 1 and source.getframerate() == 16000 and source.getsampwidth() == 2
+                    pcm_parts.append(array.array("h", source.readframes(source.getnframes())))
+            offset = 56000  # 3.5 seconds; both halves contain a different voice and overlap.
+            mixed = array.array("h", [0]) * max(len(pcm_parts[0]), offset + len(pcm_parts[1]))
+            for i, sample in enumerate(pcm_parts[0]):
+                mixed[i] = sample
+            for i, sample in enumerate(pcm_parts[1]):
+                mixed[offset + i] = max(-32768, min(32767, mixed[offset + i] + sample))
+            overlap_wav = tmp / "two-voice-overlap.wav"
+            overlap_webm = tmp / "two-voice-overlap.webm"
+            with wave.open(str(overlap_wav), "wb") as target:
+                target.setnchannels(1); target.setsampwidth(2); target.setframerate(16000)
+                target.writeframes(mixed.tobytes())
+            subprocess.run([str(s.FFMPEG_BIN), "-nostdin", "-loglevel", "error", "-y",
+                            "-i", str(overlap_wav), "-c:a", "libopus", "-b:a", "32k", str(overlap_webm)],
+                           check=True, timeout=20)
+            profile_names_before = set(s.SPEAKERS)
+            _, overlap = call(base + "/api/transcribe", overlap_webm.read_bytes(),
+                              {**headers, "Content-Type": "audio/webm",
+                               "X-Lens-Capture-Session": lease,
+                               "X-Lens-Voice-Consent": "confirmed",
+                               "X-Lens-Auto-Names": "enabled",
+                               "X-Lens-Language": "en"})
+            evidence = overlap.get("speaker", {}).get("evidence", {})
+            assert overlap.get("speaker", {}).get("label") == "Mixed", overlap.get("speaker")
+            assert evidence.get("possibleOverlap") is True and evidence.get("halfCosine", 1) < .80, evidence
+            assert set(s.SPEAKERS) == profile_names_before, "Mixed audio must not create or reinforce a speaker profile"
+            print("REAL_SYNTHETIC_OVERLAP_PASS: %.2fs, half_cosine=%.4f, Mixed veto, no profile learning" %
+                  (len(mixed) / 16000, evidence["halfCosine"]))
             _, stopped = call(base + "/api/capture/close",
                                json.dumps({"capture": lease}).encode(),
                                {**headers, "Content-Type": "application/json"})
