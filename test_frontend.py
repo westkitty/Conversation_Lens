@@ -579,6 +579,10 @@ with sync_playwright() as p:
         assert pcm['contentType']=='audio/wav' and pcm['bytes']>50000 and pcm['forceMixed']=='true',pcm
         assert page.evaluate('window.fake.pcmUploads.length')==2,'Split windows must both be sent as canonical WAV'
         page.wait_for_function("document.querySelectorAll('.turn').length===2",timeout=3000)
+        page.wait_for_function("document.querySelector('#signals').textContent.includes('Possible acoustic overlap')",timeout=5000)
+        overlap_cue=page.locator('#signals .insight').filter(has_text='Possible acoustic overlap')
+        assert 'does not identify turn order or separate the words' in overlap_cue.inner_text()
+        assert overlap_cue.locator('button.evidence-link').count()==1,'Acoustic overlap cue must link back to its source passage'
         assert page.locator('#pcmReplaySelect option').count()==2 and page.locator('#replayPCM').is_visible() and page.locator('#pcmReplayAudio').get_attribute('src').startswith('blob:'), 'Recent processed audio should be replayable from its bounded in-memory list'
         page.locator('#pcmReplaySelect').select_option(index=0)
         assert page.locator('#pcmReplayAudio').get_attribute('src').startswith('blob:')
