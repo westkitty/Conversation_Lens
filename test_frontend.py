@@ -199,13 +199,18 @@ with sync_playwright() as p:
         assert page.locator('.who').last.inner_text()=='Dale ?'
         assert 'MediaRecorder audio' in page.locator('#pcmReplaySelect').inner_text(),'Default WebM recorder clips should also enter bounded replay history'
         assert page.evaluate('window.fake.transcribe')==1
+        page.locator('#pauseBtn').click()
+        assert page.locator('#pauseBtn').inner_text()=='Resume cues'
         # Second window closes on ~900ms of detected silence, after a minimum ~2.8s.
         page.evaluate("window.fake.transcriptQueue.push({text:'I want us to understand each other.',speaker:{label:'Dale',level:'probable',reason:'Tentative acoustic',evidence:{full:{best:'Dale',cosine:.9345,margin:.1456},first:{best:'Dale',cosine:.901,margin:.101},second:{best:'Dale',cosine:.909,margin:.112},halfCosine:.85,possibleOverlap:false,speechSeconds:2.5}},introduction:{name:'Dale',state:'strengthened',message:'Two matching windows'}})")
         page.wait_for_timeout(950)
         page.evaluate('window.fake.quiet=true')
         page.wait_for_function('window.fake.recorders.length>=3',timeout=9000)
         page.wait_for_function("document.querySelectorAll('.turn').length>=2")
+        assert page.evaluate('window.fake.transcribe')>=2,'Pausing coaching cues must not stop hot local transcription'
         assert page.locator('.who').last.inner_text()=='Dale'
+        page.locator('#pauseBtn').click()
+        assert page.locator('#pauseBtn').inner_text()=='Pause cues'
         assert 'Dale · 2.5s (100% of attributed spans)' in page.locator('#talkTimeStats').inner_text()
         assert page.locator('#levelText').inner_text().startswith('Quiet')
         assert page.locator('#levelRail').get_attribute('aria-valuenow')=='0'

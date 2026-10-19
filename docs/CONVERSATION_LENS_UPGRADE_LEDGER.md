@@ -200,7 +200,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 22 | Speaker lock N windows/unpin | Live HTML lock control; `test_frontend.py` one-window pin and expiry | PASS | None observed in current browser checks |
 | 23 | One-click Markdown/plain exports | `test_frontend.py` downloads and inspects both Markdown session and plain transcript outputs | PASS | None observed in current browser checks |
 | 24 | Bookmarks/highlights in export | `test_frontend.py` verifies `★ [highlight]` markers and transcript text in both exports | PASS | None observed in current browser checks |
-| 25 | Coaching pause, hot ASR | Live HTML pause and capture lifecycle | PARTIAL | Hot ASR action is not separately measured in this run |
+| 25 | Coaching pause, hot ASR | QA-venv `test_frontend.py` pauses coaching after a local transcript passage, confirms a subsequent capture window is still transcribed, then resumes cues at both 1200px and 375px | PASS | Physical microphone behavior while cues are paused was not separately measured |
 | 26 | Smart debounce/manual immediate cue | QA-venv `test_frontend.py` measures automatic request delay/coalescing, manual immediate request, serialized in-flight follow-up, and stale-result suppression at 1200px/375px | PASS | Timing uses a controlled mock endpoint; real Ollama latency and cancellation behavior under network failure remain unmeasured |
 | 27 | Coaching timeline and per-card regenerate | Per-card action regenerates only the selected history card through opted-in local Ollama; frontend asserts the selected card's result | PASS | Requires user-enabled Ollama; source uses the current transcript context |
 | 28 | Grounding badge/retry looser | Live HTML grounding state and retry control | PASS | Retry interaction not exercised in this turn |
@@ -420,3 +420,8 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 - Added exact post-roll assertions to the PCM core test: a 200 ms post-roll returns exactly the following 3,200 PCM frames, keeps the primary boundary unchanged, and marks contextual audio ineligible for voice-name learning. Existing pre-roll assertions already verify the corresponding preceding samples.
 - Extended the production frontend regression to set both sliders and assert that the live timeline render receives both values. The full QA-venv frontend suite passed again at 1200px and 375px; the 14-case Packet A PCM core suite passed.
 - Requirement #40 advances to PASS for exact sample crop behavior and production control wiring. Acoustic usefulness under natural speech remains unmeasured; no speech is persisted by these tests.
+
+### Follow-up execution checkpoint — October 19, 2026 (coaching pause and hot transcription)
+
+- Extended the local browser flow to pause coaching after the first transcript passage, allow a second audio window to complete, assert its transcription request and passage still arrive, and resume coaching. This distinguishes the cue pause from microphone/ASR capture.
+- QA-venv `test_frontend.py` passed at 1200px and 375px. Requirement #25 advances to PASS for the tested capture path; the mock verifies client behavior, not a physical microphone pause/resume run.
