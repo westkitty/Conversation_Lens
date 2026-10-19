@@ -193,7 +193,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 15 | Precise empty coaching ingredients | Live HTML missing-input status; `test_frontend.py` | PASS | None observed in current browser checks |
 | 16 | Sliding plus priority AI context | `server.py` `chosen_turns`; `test_live_upgrade.py` older-priority retention | PASS | No long-session capacity trial |
 | 17 | Exact/Fuzzy/Free grounding dial | `server.py` evidence validation; `test_live_upgrade.py` exact/fuzzy/free | PASS | None observed in current tests |
-| 18 | Offline interruption/repetition/topic-shift cards | Existing local language rules in live HTML | PARTIAL | Requested interruption and topic-shift classification is incomplete |
+| 18 | Offline interruption/repetition/topic-shift cards | Live HTML has repetition cues plus explicit “let me finish” and “different topic” phrase triggers; frontend exercises both | PARTIAL | No turn-level interruption or semantic topic-change classifier; trigger scope is intentionally literal |
 | 19 | In-place copyable next-step cards | Current next-line editor/copy control in live HTML | PARTIAL | Historical cards do not each have independent edit/copy controls |
 | 20 | Mid-session coaching presets | Live HTML current settings flow to Ollama; `test_frontend.py` request payload | PASS | No provider/model switching during active request test |
 | 21 | Full/half speaker confidence strip | Evidence drawer renders accessible native meters for full, first/second half, and half-window consistency; frontend asserts values and probability caveat | PASS | Measures raw cosine only, not a calibrated confidence probability |
@@ -232,7 +232,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 54 | Snapshot/restore | No session snapshot/restore implementation | PARTIAL | Versioned checksum/atomic restore flow is not built |
 | 55 | Multi-tab lease visibility/transfer | Explicit takeover and invalidation; browser/backend tests | PARTIAL | Owner/age visibility is absent; physical multi-tab test remains |
 | 56 | Custom local cue rules | Existing built-in local rules | PARTIAL | Owner-defined bounded rule editor/execution is absent |
-| 57 | Running action-item/decision extraction | Local phrase-based observations in live HTML | PARTIAL | Durable in-session action/decision ledger is absent |
+| 57 | Running action-item/decision extraction | New local source-linked candidate ledger; `test_frontend.py` asserts decision/action extraction and passage navigation | PASS | Phrase-based candidates only; no semantic deduplication or persistence |
 | 58 | Hotkey voice-note annotation | Separate private typed note exists | PARTIAL | Hotkey voice-note capture is absent |
 | 59 | Speaker comparison/talk-time stats | No eligible-span accounting | PARTIAL | No talk-time UI or denominator disclosure |
 | 60 | Continue last coaching thought | Existing coaching history only | PARTIAL | Thread-aware continuation call is absent |
@@ -257,3 +257,9 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 - Implemented the mobile coaching sheet's up/down touch gestures, visible raw cosine meters (full/halves and half-window consistency, with explicit non-probability labeling), immediate per-profile RAM removal, and a recent per-session duration histogram.
 - Focused QA-venv `test_frontend.py` passed at 1200px and 375px. It asserts swipe expansion/collapse, numeric meters and caveat, single-profile deletion without confirmation while preserving transcript assignment, and rendered histogram pixels.
 - Rows 8, 21, 34, and 38 move to PASS within that browser-test scope. Device touch hardware remains untested. The 60-item matrix remains substantially incomplete; rows marked PARTIAL/BLOCKED remain open.
+
+## Local coaching follow-up — 2026-10-18
+
+- Added phrase-grounded “Turn-taking” and explicit “Topic transition” observations with wording that discloses their limits. Existing repetition cues remain local.
+- Added a session-derived, source-linked candidate Decisions & Actions list. It is rebuilt from transcript turns, uses `textContent`, does not persist, and labels each match as possible rather than settled.
+- QA-venv `test_frontend.py` passed at 1200px and 375px, covering both cue triggers, both candidate categories, and navigation to the supporting passage. Requirement 57 is PASS for that scope; requirement 18 remains PARTIAL because this does not infer interruptions or semantic topic changes.

@@ -256,6 +256,20 @@ with sync_playwright() as p:
         page.wait_for_function("!document.querySelector('#speakerProfiles').textContent.includes('Dale')")
         assert page.evaluate('window.fake.confirmCount')==confirms_before,'Removing one session speaker should be immediate'
         assert page.locator('#passage-2 .who').inner_text()=='Me','Removing a voice profile must not rewrite transcript labels'
+        page.locator('#aiToggle').uncheck()
+        page.locator('#manualText').fill('We decided to review the outline Friday. I will send it Thursday.')
+        page.get_by_role('button',name='Add line').click()
+        page.wait_for_function("document.querySelectorAll('#actionLedger .action-item').length===2")
+        assert 'possible decision' in page.locator('#actionLedger').inner_text().lower()
+        assert 'possible action' in page.locator('#actionLedger').inner_text().lower()
+        page.get_by_role('button',name='Review passage 4').first.click()
+        assert page.evaluate('document.activeElement.id')=='passage-4'
+        page.locator('#manualText').fill('Please let me finish.')
+        page.get_by_role('button',name='Add line').click()
+        page.wait_for_function("document.querySelector('#signals').textContent.includes('Turn-taking')")
+        page.locator('#manualText').fill('On a different topic, I will send the updated file.')
+        page.get_by_role('button',name='Add line').click()
+        page.wait_for_function("document.querySelector('#signals').textContent.includes('Topic transition')")
         page.screenshot(path=str(root/('qa_v6_desktop.png' if width>800 else 'qa_v6_mobile.png')),full_page=True)
         page.locator('#stopBtn').click()
         page.wait_for_function("document.querySelector('#statusText').textContent==='NOT LISTENING'")
