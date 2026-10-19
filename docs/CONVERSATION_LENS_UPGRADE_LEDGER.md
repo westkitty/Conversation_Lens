@@ -207,7 +207,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 29 | Private note/goal for next AI call | `server.py` Ollama payload; `test_live_upgrade.py` private note assertion | PASS | None observed in current tests |
 | 30 | Live VAD tunables and preview | Live HTML VAD sliders/graph; `test_frontend.py` synthetic meter segmentation | PASS | Production PCM tuning has not been compared to physical speech |
 | 31 | Adaptive noise floor | Live HTML RMS noise estimate; browser meter regression | PARTIAL | No ambient-noise or changing-noise physical run |
-| 32 | Half-window overlap heat | `server.py` overlap/forced Mixed logic | PARTIAL | No heat visualization; natural overlap accuracy unverified |
+| 32 | Half-window overlap heat | Half-cosine divergence heat bar and possible Mixed/overlap veto are shown in evidence drawer; frontend checks a synthetic 0.0080 gap | PARTIAL | Divergence is explicitly diagnostic, not an overlap probability; natural overlap accuracy is unverified |
 | 33 | Enrollment quality meter | Existing enrollment checks and rejection | PARTIAL | Pre-activation quality gauge is absent |
 | 34 | Instant speaker drop | Per-profile Remove immediately clears only that RAM voice profile; `test_frontend.py` verifies no confirmation and transcript label preservation | PASS | Forget All still requires confirmation |
 | 35 | Longer follow-up enrollment sample | Existing sample guidance | PARTIAL | Guided longer follow-up flow is absent |
@@ -321,3 +321,8 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 ## Accessibility preference checks — 2026-10-19
 
 - QA-venv `test_frontend.py` toggled high contrast, mono font, and reduced motion at 1200px and 375px. It verified the high-contrast `--ink` and `--muted` tokens against `--bg` exceed 7:1 and the status pulse animation is disabled in reduced-motion mode. Requirement 14 is PASS for these theme and control paths; every hard-coded UI color/state was not audited.
+
+## Half-window evidence heat — 2026-10-19
+
+- Added a divergence bar from the measured first/second-half raw cosine values. When the worker flags possible overlap, the same panel keeps the explicit learning veto. Text and accessibility labels state the divergence is a diagnostic, not an overlap probability or identity score.
+- QA-venv `test_frontend.py` verifies the 0.0080 synthetic cosine gap and visible diagnostic bar at both widths. Requirement 32 remains PARTIAL because no natural overlap classification run is available.

@@ -181,6 +181,9 @@ with sync_playwright() as p:
         assert '0.1456' in page.locator('#evidenceScores').inner_text()
         assert page.locator('#evidenceScores meter').count()==4,'Full, half, and two half-window cosine strips should be visible'
         assert 'not an identity probability' in page.locator('#evidenceScores meter').first.get_attribute('aria-label')
+        assert 'cosine gap 0.0080' in page.locator('#evidenceScores').inner_text()
+        assert page.locator('.overlap-heat-fill').count()==1
+        assert 'not an overlap probability' in page.locator('.overlap-heat').inner_text()
         page.locator('#closeEvidence').click()
         # Manual speaker assignment never changes the recorded acoustic score.
         speaker_choice=page.locator('#passage-2 select[aria-label="Correct speaker for this passage"]')
