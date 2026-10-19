@@ -269,19 +269,28 @@ with sync_playwright() as p:
         assert page.locator('.turn').count()==2
         page.locator('#filterSpeaker').select_option('all')
         page.locator('#speakerLockName').select_option('Dale')
-        page.locator('#speakerLockCount').fill('1')
+        page.locator('#speakerLockCount').fill('2')
         page.locator('#speakerLockBtn').click()
-        assert 'Pinned Dale for 1 future audio window' in page.locator('#speakerLockStatus').inner_text()
-        page.evaluate("window.fake.transcriptQueue.push({text:'A later pinned conversation window.',speaker:{label:'Unknown',reason:'No match'}})")
+        assert 'Pinned Dale for 2 eligible future window' in page.locator('#speakerLockStatus').inner_text()
+        page.evaluate("window.fake.transcriptQueue.push({text:'First window under the speaker pin.',speaker:{label:'Unknown',reason:'No match'}},{text:'Overlapped window under the speaker pin.',speaker:{label:'Mixed',reason:'Acoustic overlap'}},{text:'Second eligible window under the speaker pin.',speaker:{label:'Unknown',reason:'No match'}})")
         page.evaluate('window.fake.quiet=false')
-        page.wait_for_timeout(2900)
-        page.evaluate('window.fake.quiet=true')
-        page.wait_for_function('window.fake.recorders.length>=4',timeout=5000)
-        page.wait_for_function("[...document.querySelectorAll('.turn-text')].some(e=>e.textContent==='A later pinned conversation window.')",timeout=6000)
+        page.wait_for_function("[...document.querySelectorAll('.turn-text')].some(e=>e.textContent==='First window under the speaker pin.')",timeout=10000)
         assert page.locator('.turn').last.locator('.who').inner_text()=='Dale'
         assert 'Owner-pinned speaker label' in page.locator('.turn').last.inner_text()
-        assert page.evaluate("window.fake.voiceEnabled.at(-1)")=='disabled','Manual speaker locks must bypass name learning'
-        assert page.locator('#speakerLockStatus').inner_text()=='No speaker label pinned.'
+        page.wait_for_function("[...document.querySelectorAll('.turn-text')].some(e=>e.textContent==='Overlapped window under the speaker pin.')",timeout=10000)
+        assert page.locator('.turn').last.locator('.who').inner_text().startswith('Mixed'), 'A speaker pin must not override the acoustic Mixed veto'
+        assert 'Pinned Dale for 1 eligible future window' in page.locator('#speakerLockStatus').inner_text(), 'Mixed results must not consume eligible pin windows'
+        page.wait_for_function("[...document.querySelectorAll('.turn-text')].some(e=>e.textContent==='Second eligible window under the speaker pin.')",timeout=10000)
+        assert page.locator('.turn').last.locator('.who').inner_text()=='Dale'
+        assert page.evaluate("window.fake.voiceEnabled.slice(-3)")==['disabled','disabled','disabled'],'Manual speaker locks must bypass name learning'
+        assert 'No speaker label pinned.' in page.locator('#speakerLockStatus').inner_text()
+        page.locator('#speakerLockName').select_option('Dale')
+        page.locator('#speakerLockCount').fill('5')
+        page.locator('#speakerLockBtn').click()
+        assert 'Pinned Dale for 5 eligible future window' in page.locator('#speakerLockStatus').inner_text()
+        page.locator('#speakerLockName').select_option('')
+        page.locator('#speakerLockBtn').click()
+        assert 'No speaker label pinned.' in page.locator('#speakerLockStatus').inner_text()
         page.get_by_role('button',name='Bookmark passage 2').click()
         assert page.locator('#passage-2').evaluate("(e)=>e.classList.contains('bookmarked')")
         page.get_by_role('button',name='Highlight passage 2').click()
