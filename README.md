@@ -23,7 +23,7 @@ From this repository root:
 - **Mobile-first reading order:** setup and listening precede cues; DOM order changes with viewport to preserve keyboard navigation.
 - **No browser speech fallback:** when local Whisper is unavailable, transcription falls back to manual text input, NOT a remote browser speech provider.
 - **Stop disposition and capture protocol:** protocol 3 freezes the server-side capture lease before Stop, revokes late results, and asks which already buffered audio windows to keep. Only exact SHA-256-authorized kept clips enter the bounded local drain lease; rejected or dropped clips are not submitted.
-- **Opt-in PCM capture:** the Listen panel now has an experimental AudioWorklet mode with a bounded 45-second in-memory ring, 16 kHz WAV windows, and adjustable context roll. MediaRecorder remains the default and fallback. The tested Packet A sample-accurate split/merge editor is not yet connected to the production UI; see the upgrade ledger for the 60-item status matrix.
+- **Opt-in PCM capture and editing:** the Listen panel has an experimental AudioWorklet mode with a bounded 45-second in-memory ring, 16 kHz WAV windows, adjustable context roll, and a hold/review editor for sample-boundary split, move, and merge. Edited audio remains Mixed and cannot train speaker profiles. MediaRecorder remains the default and fallback. Physical AudioWorklet editing and roll content still need device acceptance; see the upgrade ledger for the 60-item status matrix.
 - **Explicit session snapshot:** the transcript tools can download and restore a versioned, SHA-256-checked JSON session snapshot. It contains transcript text/labels, bookmarks/highlights, recent coaching cards and private context/note/goal. It excludes audio, speaker evidence and voice profiles; stop capture before restoring.
 - **Continue a coaching thought:** when optional local Ollama coaching is enabled, the pinned cue can continue its latest card against the current transcript. The older card remains in history.
 - **Lease visibility:** the local diagnostics view reports the active capture tab's opaque session label and lease age; takeover still requires an explicit owner action.
@@ -31,6 +31,7 @@ From this repository root:
 - **Private voice notes:** press `A` outside input fields (or use the transcript control) to record a short private note for the selected passage while conversation capture is stopped. Notes remain local in memory, are never transcribed or included in exports/snapshots, and clear on Erase or page exit.
 - **Speaker soft cap:** at six temporary profiles, the app may show up to three raw-cosine review pairs before the eight-profile hard cap. They are uncalibrated hints; the app never merges profiles automatically.
 - **Local stage timings:** the diagnostics panel shows recent decode, speech gate, Whisper, speaker, full audio-request and Ollama durations from a bounded metadata-only ring. Transcript words and embeddings are not logged.
+- **Offline topic-shift hint:** local cues compare the content words in two adjacent three-passage windows and link a possible vocabulary shift to its source passage. This is a lexical hint, not semantic classification or proof that the topic changed.
 
 ## Tests
 

@@ -368,6 +368,31 @@ with sync_playwright() as p:
         assert 'Review passage 4' in page.locator('#signals').text_content()
         page.get_by_role('button',name='Review passage 4').first.click()
         assert page.evaluate('document.activeElement.id')=='passage-4'
+        for line in [
+            'The orbital telescope measured distant galaxies with infrared sensors.',
+            'Researchers calibrated the observatory using reference stars.',
+            'Spectral measurements reveal ancient nebulae around massive stars.',
+            'The kitchen recipe needs toasted sesame ginger and scallions.',
+            'Roast vegetables with cumin before adding chickpeas.',
+            'Serve lentils beside warm flatbread and yogurt.',
+        ]:
+            page.locator('#manualText').fill(line);page.get_by_role('button',name='Add line').click()
+        page.wait_for_timeout(250)
+        assert 'Recent wording has shifted' in page.locator('#signals').text_content(), (page.locator('#signals').inner_text(),page.locator('.turn-text').all_inner_texts())
+        lexical_card=page.locator('#signals .insight').filter(has_text='Recent wording has shifted')
+        assert lexical_card.count()==1 and 'Recent wording has shifted' in lexical_card.inner_text(),page.locator('#signals').inner_text()
+        assert lexical_card.locator('button.evidence-link').count()==1
+        for line in [
+            'Lentils simmer with cumin, sesame, yogurt, and flatbread.',
+            'Serve lentils with cumin, sesame, yogurt, and flatbread.',
+            'Cook lentils with cumin, sesame, yogurt, and flatbread.',
+            'Lentils pair with cumin, sesame, yogurt, and flatbread.',
+            'Add cumin, sesame, yogurt, and flatbread beside lentils.',
+            'Warm lentils with cumin, sesame, yogurt, and flatbread.',
+        ]:
+            page.locator('#manualText').fill(line);page.get_by_role('button',name='Add line').click()
+        page.wait_for_timeout(250)
+        assert 'Recent wording has shifted' not in page.locator('#signals').inner_text(), 'A stable vocabulary window should not raise a topic-shift cue'
         page.evaluate('window.fake.quiet=false');page.wait_for_function("window.fake.recorders.at(-1)?.state==='recording'");page.wait_for_timeout(350)
         page.locator('#pauseIntakeBtn').click();page.evaluate('window.fake.recorders.at(-1).stop()')
         page.wait_for_function("document.querySelector('#skippedWindows').textContent.includes('Intake paused') && document.querySelector('#skippedWindows').textContent.includes('Reprocess buffered audio')")
