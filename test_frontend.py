@@ -45,6 +45,12 @@ window.fetch=async(path,opts={})=>{
   if(entry)entry.boostSeconds=body.seconds;
   return ok({speakers:{ready:true,profiles:window.fake.profiles,ramBytes:2048}});
  }
+ if(path==='/api/speakers/compact'){
+  const body=JSON.parse(opts.body),entry=window.fake.profiles.find(p=>p.name===body.name);
+  if(!entry||entry.samples<3)return new Response(JSON.stringify({error:'At least three samples are required to compact'}),{status:422,headers:{'Content-Type':'application/json'}});
+  const removed=entry.samples-2;entry.samples=2;
+  return ok({compacted:{name:body.name,before:removed+2,after:2,removed},speakers:{ready:true,profiles:window.fake.profiles,ramBytes:1024}});
+ }
  if(path==='/api/ollama/check')return ok({ready:true,model:'gemma3:4b',reason:'Model available'});
  if(path==='/api/health')return ok({ok:true,protocol:3,speakerRamBytes:2048,captureActive:!!window.fake.capture,captureOwner:window.fake.capture?'tab-a1b2c3d4':null,captureAgeSeconds:window.fake.capture?12:null});
  if(path==='/api/diagnostics')return ok({protocol:3,events:[{at:0,kind:'decode',state:'ok',elapsedMs:20},{at:1,kind:'vad',state:'speech',elapsedMs:8},{at:2,kind:'asr',state:'ok',elapsedMs:140},{at:3,kind:'embedding',state:'ok',elapsedMs:210},{at:4,kind:'speaker_match',state:'ok',elapsedMs:1},{at:5,kind:'audio',state:'ok',elapsedMs:380}]});
@@ -61,7 +67,7 @@ window.fetch=async(path,opts={})=>{
   await new Promise((resolve,reject)=>{const id=setTimeout(resolve,15);opts.signal?.addEventListener('abort',()=>{clearTimeout(id);reject(new DOMException('Cancelled','AbortError'))},{once:true})});
   if(item.introduction?.state==='candidate')window.fake.profiles.push({name:item.introduction.name,samples:1,active:false,source:'conversation'});
   if(item.introduction?.state==='strengthened'){
-    const p=window.fake.profiles.find(x=>x.name===item.introduction.name);if(p){p.samples=2;p.active=true;p.lastSeenSeconds=3}
+    const p=window.fake.profiles.find(x=>x.name===item.introduction.name);if(p){p.samples=3;p.active=true;p.lastSeenSeconds=3}
   }
   return ok(item);
  }
@@ -169,6 +175,11 @@ with sync_playwright() as p:
         assert 'last seen 3s ago' in page.locator('#speakerProfiles').inner_text()
         page.get_by_role('button',name='Disable boost for Dale').click()
         page.wait_for_function("document.querySelector('#speakerProfiles').textContent.includes('Boost 2m')")
+        compact=page.get_by_role('button',name='Compact Dale voice samples to two representative examples')
+        assert compact.count()==1 and compact.is_visible()
+        compact.click()
+        page.wait_for_function("document.querySelector('#speakerProfiles').textContent.includes('2 windows')")
+        assert 'discarded 1 from server RAM' in page.locator('#enrollMessage').inner_text()
         # The newest audio window's true meter samples and timing are visible, not a synthetic audio graphic.
         assert page.locator('#energyCanvas').count()==1
         assert page.locator('#durationHistogram').count()==1

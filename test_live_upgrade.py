@@ -28,6 +28,16 @@ assert any(item['left']=='Profile0' and item['right']=='Profile1' and item['cosi
 s.SPEAKERS=saved_profiles
 print('PASS speaker soft-cap similarity suggestions are bounded raw-vector hints')
 
+s.forget_speakers();s.SPEAKERS['Compact Me']=[unit(0),unit(0),unit(1),unit(2)]
+compacted=s.compact_speaker('Compact Me')
+assert compacted['before']==4 and compacted['after']==2 and compacted['removed']==2
+assert {tuple(v) for v in s.SPEAKERS['Compact Me']}=={tuple(unit(0)),tuple(unit(1))}
+assert s.speaker_status()['profiles'][0]['samples']==2
+try:s.compact_speaker('Missing')
+except ValueError:pass
+else:raise AssertionError('Compaction accepted a missing profile')
+print('PASS explicit speaker compaction retains two diverse RAM exemplars and reports sample loss')
+
 s.forget_speakers()
 s.SPEAKERS.update({'Dale':[unit(0),unit(0)],'Morgan':[unit(1),unit(1)]})
 matching=s.speaker_evidence(vectors(0,0))
@@ -157,12 +167,17 @@ with http.server.ThreadingHTTPServer(('127.0.0.1',0),s.Handler) as server:
     post('/api/capture/close',{'capture':drain['capture']})
     print('PASS Stop freeze, exact-hash Keep authorization, changed-clip rejection, Mixed veto, and one-use drain')
     s.SPEAKERS['Dale']=[unit(0),unit(0)]
-    post=json.dumps({'name':'Dale','seconds':120}).encode()
-    req=urllib.request.Request('http://127.0.0.1:%d/api/speakers/boost'%port,data=post,
+    boost_body=json.dumps({'name':'Dale','seconds':120}).encode()
+    req=urllib.request.Request('http://127.0.0.1:%d/api/speakers/boost'%port,data=boost_body,
         headers={'Origin':'http://127.0.0.1:%d'%port,'X-Lens-Token':s.APP_TOKEN,
                  'Content-Type':'application/json'},method='POST')
     with urllib.request.urlopen(req,timeout=4) as res: boosted=json.load(res)
     assert boosted['speakers']['profiles'][0]['boostSeconds']>0
+    s.SPEAKERS['Dale']=[unit(0),unit(0),unit(1)]
+    code,compacted=post('/api/speakers/compact',{'name':'Dale'})
+    assert code==200 and compacted['compacted']['removed']==1 and compacted['speakers']['profiles'][0]['samples']==2
+    code,_=post('/api/speakers/compact',{'name':'Dale'})
+    assert code==422,'Server must reject compacting a two-example profile'
     s.forget_speakers()
     s.event_record('audio','ok',0.1)
     with urllib.request.urlopen('http://127.0.0.1:%d/api/diagnostics'%port,timeout=4) as res:

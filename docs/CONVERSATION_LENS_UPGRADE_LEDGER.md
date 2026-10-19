@@ -217,7 +217,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 39 | Whisper model switcher | No production model switcher | BLOCKED | Must inventory installed models and verify reload/rollback before exposing switch |
 | 40 | Adjustable pre-roll/post-roll | Live HTML PCM controls; production PCM rendering uses `WindowTimeline.render` | PARTIAL | No production sample-boundary edit UI or physical roll-content proof |
 | 41 | Overlap Mixed + no name learning | `server.py` force-Mixed veto; backend regression and drain hash tests | PASS | Natural two-speaker overlap not tested |
-| 42 | Speaker embedding RAM/compact | Server RAM estimate is displayed | PARTIAL | Explicit compact action is absent |
+| 42 | Speaker embedding RAM/compact | Owner-invoked lossy compaction keeps the most cosine-separated pair and reports discarded count; backend unit/HTTP checks and frontend desktop/mobile path | PASS | Compaction changes in-memory match exemplars and cannot be undone; no profile is saved |
 | 43 | Structured performance and lease logs | Metadata-only bounded events for decode, VAD, ASR, embedding, speaker match, audio request and Ollama; relative stage graph; lease owner/age; backend and browser tests | PASS | Event log is a 120-entry RAM ring; per-window timestamps and exhaustive failure injection remain untested |
 | 44 | Health endpoint and UI status | `/api/health`, UI health indicator; `test_frontend.py` | PASS | None observed in current browser checks |
 | 45 | Fallback when speaker worker times out | Existing transcript fallback path; backend tests | PASS | No forced timeout run in this turn |
@@ -326,3 +326,8 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 
 - Added a divergence bar from the measured first/second-half raw cosine values. When the worker flags possible overlap, the same panel keeps the explicit learning veto. Text and accessibility labels state the divergence is a diagnostic, not an overlap probability or identity score.
 - QA-venv `test_frontend.py` verifies the 0.0080 synthetic cosine gap and visible diagnostic bar at both widths. Requirement 32 remains PARTIAL because no natural overlap classification run is available.
+
+## Speaker profile RAM compaction — 2026-10-19
+
+- Added an explicit per-profile action available at three or more samples. It retains the most cosine-separated pair, reports the number discarded, and states that this is lossy and irreversible. The profile remains RAM-only; compaction is refused when the audio-processing lock is busy.
+- `test_live_upgrade.py` checks representative retention, missing-profile and insufficient-sample errors, plus the authenticated loopback endpoint. `test_frontend.py` exercises confirmation, UI refresh and the reported sample count at 1200px and 375px. Requirement 42 is PASS for this owner-invoked compaction scope; recognition quality after compaction is not calibrated on natural voices.

@@ -687,6 +687,28 @@ def forget_speakers(name=None):
     return speaker_status()
 
 
+def compact_speaker(name):
+    """Reduce one RAM-only profile to its most separated exemplar pair.
+
+    This is an explicit, lossy owner action: retaining the farthest cosine pair
+    preserves more within-profile variation than replacing samples with a mean.
+    """
+    with SPEAKERS_LOCK:
+        samples = SPEAKERS.get(name)
+        if not samples:
+            raise ValueError('Speaker not enrolled')
+        if len(samples) < 3:
+            raise ValueError('At least three samples are required to compact')
+        left, right, distance = max(
+            ((i, j, 1.0 - similarity(samples[i], samples[j]))
+             for i in range(len(samples)) for j in range(i + 1, len(samples))),
+            key=lambda item: item[2])
+        before = len(samples)
+        SPEAKERS[name] = [samples[left], samples[right]]
+        return {'name': name, 'before': before, 'after': 2,
+                'removed': before - 2, 'speakerDistance': round(distance, 4)}
+
+
 def transcribe_audio(payload, media_type, lang, auto_names=False, capture_session=None,
                      admission=None, force_mixed=False):
     with CAPTURE_LOCK:
@@ -864,7 +886,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             pass
 
     def do_POST(self):
-        if not self.allowed() or self.path not in ('/api/analyze', '/api/transcribe', '/api/speakers/enroll', '/api/speakers/forget', '/api/capture/open', '/api/capture/close', '/api/capture/freeze', '/api/capture/drain', '/api/session/erase', '/api/ollama/check', '/api/speakers/boost'):
+        if not self.allowed() or self.path not in ('/api/analyze', '/api/transcribe', '/api/speakers/enroll', '/api/speakers/forget', '/api/capture/open', '/api/capture/close', '/api/capture/freeze', '/api/capture/drain', '/api/session/erase', '/api/ollama/check', '/api/speakers/boost', '/api/speakers/compact'):
             self.respond(403, {'error': 'Forbidden'})
             return
         host = self.headers.get('Host')
@@ -1013,6 +1035,29 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self.respond(200, {'speakers': speaker_status()})
             except (ValueError, TypeError, KeyError, json.JSONDecodeError):
                 self.respond(422, {'error':'Invalid speaker boost request'})
+            return
+        if self.path == '/api/speakers/compact':
+            try:
+                count = int(self.headers.get('Content-Length', '-1'))
+                if not 2 <= count <= 350:
+                    raise ValueError('Invalid compact request')
+                body = json.loads(self.rfile.read(count))
+                name = body.get('name') if isinstance(body, dict) else None
+                if not isinstance(name, str) or not SPEAKER_NAME_RE.fullmatch(name):
+                    raise ValueError('Invalid speaker name')
+            except (ValueError, TypeError, AttributeError, json.JSONDecodeError):
+                self.respond(400, {'error': 'Invalid speaker compaction request'})
+                return
+            if not STT_LOCK.acquire(blocking=False):
+                self.respond(429, {'error': 'Audio processing is running; try again after it finishes'})
+                return
+            try:
+                result = compact_speaker(name)
+                self.respond(200, {'compacted': result, 'speakers': speaker_status()})
+            except ValueError as err:
+                self.respond(422, {'error': str(err)})
+            finally:
+                STT_LOCK.release()
             return
         if self.path == '/api/speakers/forget':
             try:
