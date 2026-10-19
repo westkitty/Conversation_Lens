@@ -44,6 +44,12 @@ Run on the MacBook from this repository root using the following separate comman
     "$HOME/Library/Application Support/ConversationLensQA/venv/bin/python" test_e2e.py
     python3 test_real_local_stack.py
 
+For the opt-in physical microphone Stop → Keep acceptance check on a quiet
+Mac (plays one generated test phrase through the speakers; no fake input device
+is used; the script erases the session and stops its temporary server):
+
+    "$HOME/Library/Application Support/ConversationLensQA/venv/bin/python" qa_physical_keep.py --confirm-local-mic-test
+
 The two browser tests require **Playwright plus an installed Brave (macOS) or Chromium (Linux)**; the QA venv is optional and may be replaced by another Python environment with playwright installed. The real-stack test uses synthesized speech and installed local models, not a physical microphone or actual conversations. Unit and integration tests **do not** certify human multi-speaker voice accuracy. For exact evidence see Conversation_Lens_Intelligent_Speaker_v6/QA_REPORT.txt.
 
 For longer local acceptance runs, `python3 qa_local_resource_soak.py` defaults to 45 minutes of generated speech through the production local HTTP, Whisper, and speaker paths. It samples process-tree resident memory once per second, checks health and bounded queue/diagnostic state, and injects periodic concurrent requests to verify 429 retry. Its report contains metadata only and is written under the system temporary directory. This is a server/model soak, not a Brave heap or human-conversation test.
