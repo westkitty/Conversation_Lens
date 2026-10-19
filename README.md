@@ -27,6 +27,7 @@ From this repository root:
 - **Explicit session snapshot:** the transcript tools can download and restore a versioned, SHA-256-checked JSON session snapshot. It contains transcript text/labels, bookmarks/highlights, recent coaching cards and private context/note/goal. It excludes audio, speaker evidence and voice profiles; stop capture before restoring.
 - **Continue a coaching thought:** when optional local Ollama coaching is enabled, the pinned cue can continue its latest card against the current transcript. The older card remains in history.
 - **Lease visibility:** the local diagnostics view reports the active capture tab's opaque session label and lease age; takeover still requires an explicit owner action.
+- **Sticky context:** owner-entered context and the private note remain visible in a separate read-only bar while scrolling; the bar starts empty and clears with Erase.
 
 ## Tests
 

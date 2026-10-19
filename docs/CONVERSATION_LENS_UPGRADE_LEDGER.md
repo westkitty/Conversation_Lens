@@ -186,7 +186,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 8 | Flick-up mobile coaching sheet | Live HTML collapsed/expanded sheet, touch up/down gesture; `test_frontend.py` dispatches upward and downward swipes at 375px | PASS | Physical touchscreen gesture not tested |
 | 9 | Per-window Stop keep/drop dialog | Live Stop freeze/drain in `server.py`; exact-hash drain backend test; Packet A chooser browser test | PASS | Physical microphone Stop/drain with multiple pending windows not exercised |
 | 10 | Speaker chips, last-seen, boost | Live HTML speaker profile chips; `test_frontend.py` last-seen and boost | PASS | Natural identity accuracy remains unverified |
-| 11 | Sticky optional context | Live HTML optional context and AI prompt | PARTIAL | Context is not visually sticky during scrolling |
+| 11 | Sticky optional context | Read-only sticky context/private-note summary mirrors owner-entered fields; `test_frontend.py` checks visibility and scroll pin at 1200px/375px | PASS | Sticky summary truncates each displayed field at 500 characters |
 | 12 | Custom prompt fragment presets | Live HTML presets and custom field; `test_live_upgrade.py` request assertion | PASS | None observed in current tests |
 | 13 | Transcript filters | Live HTML speaker/keyword/coaching filters; `test_frontend.py` | PASS | None observed in current browser checks |
 | 14 | Reduced motion/contrast/mono | Live HTML preference controls and CSS | PARTIAL | Runtime accessibility contrast and motion audit not done |
@@ -293,3 +293,8 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 
 - Capture-open records a validated opaque per-tab label and monotonic elapsed age; local `/api/health` reports both while a capture or drain lease is active and clears them on final close or erase. The diagnostics health label displays the current owner and age.
 - `test_live_upgrade.py` opens a capture with a synthetic tab identity and verifies active owner/age fields. Requirement 55 remains PARTIAL until a physical multi-tab takeover is exercised in Brave.
+
+## Sticky context follow-up — 2026-10-19
+
+- Added a top-of-page sticky summary of optional context and the private owner note. The fields remain separate, summary text is inserted as text, each display truncates at 500 characters, and the summary stays hidden when both inputs are blank. It ignores pointer events so it cannot block controls beneath it.
+- QA-venv `test_frontend.py` passed at 1200px and 375px, checking the populated summary and sticky position after scrolling. Requirement 11 is PASS for the tested browser layouts.

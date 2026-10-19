@@ -124,6 +124,12 @@ with sync_playwright() as p:
         # Optional user context is allowed during a session, but Erase resets it.
         page.locator('#context').fill('Discuss project documentation')
         page.locator('#aim').select_option('resolve')
+        assert page.locator('#contextPin').is_visible()
+        assert 'Discuss project documentation' in page.locator('#contextPinText').inner_text()
+        assert page.locator('#contextPin').evaluate("e=>getComputedStyle(e).position")=='sticky'
+        page.evaluate('window.scrollTo(0,700)')
+        assert page.locator('#contextPin').evaluate('e=>e.getBoundingClientRect().top')<=12
+        page.evaluate('window.scrollTo(0,0)')
         page.locator('#enrollName').fill('Morgan')
         page.locator('#consent').check();page.locator('#autoNames').check()
         page.evaluate("window.fake.transcriptQueue.push({text:'Hi, this is Dale, and I would like to talk about how I feel.',speaker:{label:'Dale',level:'provisional',reason:'Spoken introduction'},introduction:{name:'Dale',state:'candidate',message:'Self introduced'}})")
