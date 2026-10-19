@@ -742,12 +742,28 @@ with sync_playwright() as p:
         assert not page.locator('#editDialog').evaluate('e=>e.open')
         page.locator('#densityMode').check()
         assert page.locator('html').get_attribute('data-density')=='quiet'
+        assert page.evaluate("getComputedStyle(document.querySelector('#transcript')).height")=='340px','Compact density mode must apply 340px transcript height'
         page.locator('#densityMode').uncheck()
-        # Observatory telemetry strip & turn ribbon interaction + workspaceNav tabindex/focus-layout regression
+        assert page.evaluate("getComputedStyle(document.querySelector('#transcript')).height") in ('260px','205px')
+        # Observatory telemetry strip, SVG stratigraphy map, lens switcher & turn ribbon interaction + workspaceNav regression
         assert page.locator('#observatoryStrip').is_visible()
         assert 'passages' in page.locator('#obsCadenceValue').inner_text()
         assert 'tentative' in page.locator('#obsCertaintyValue').inner_text()
         assert page.locator('#obsTurnRibbon .obs-node').count()>=1
+        assert page.locator('#obsTopologySvg .obs-svg-node').count()>=1
+        page.locator('#obsScaleMode [data-obs-lens="floor"]').click()
+        assert page.locator('#observatoryStrip').get_attribute('data-lens')=='floor'
+        assert 'VOICE FLOOR' in page.locator('#obsReadoutPrimary').inner_text()
+        page.locator('#obsScaleMode [data-obs-lens="drift"]').click()
+        assert page.locator('#observatoryStrip').get_attribute('data-lens')=='drift'
+        assert 'EPISTEMIC DRIFT' in page.locator('#obsReadoutPrimary').inner_text()
+        page.locator('#obsScaleMode [data-obs-lens="stratigraphy"]').click()
+        assert page.locator('#observatoryStrip').get_attribute('data-lens')=='stratigraphy'
+        page.locator('#obsTopologySvg .obs-svg-node').first.click()
+        assert page.locator('#evidenceDrawer').is_visible()
+        assert 'WORDS' in page.locator('#obsReadoutCoords').inner_text()
+        page.locator('#evidenceReturnScrollBtn').click()
+        assert page.locator('#evidenceDrawer').is_hidden()
         page.locator('#obsTurnRibbon .obs-node').first.click()
         assert page.locator('#evidenceDrawer').is_visible()
         page.locator('#evidenceReturnScrollBtn').click()
@@ -761,7 +777,7 @@ with sync_playwright() as p:
             page.locator('#workspaceNav [data-jump="speakerPanel"]').click()
             assert page.locator('#layoutMode').input_value()=='split' and page.locator('#speakerPanel').is_visible()
         # Verify direct click on #voiceNoteBtn starts and stops cleanly without duplicate listener race
-        vn_before=page.locator('#voiceNoteList .voice-note-item').count()
+        vn_before=page.locator('#voiceNoteBtn').evaluate("()=>document.querySelectorAll('#voiceNoteList .voice-note-item').length")
         page.locator('#voiceNoteBtn').click()
         page.wait_for_function("document.querySelector('#voiceNoteBtn').textContent.includes('Stop voice note')")
         page.wait_for_timeout(560)
@@ -785,7 +801,7 @@ with sync_playwright() as p:
         assert not errors,errors
         overflow=page.evaluate('document.documentElement.scrollWidth-innerWidth')
         assert overflow<=0,overflow
-        print('PASS Brave/Chromium',width,'simulated voice, capture lease, meter, PCM split/move/merge WAV editing, replay, transcript, Stop, Erase, lifecycle, UX 01-20 & A-F, observatory strip, no overflow')
+        print('PASS Brave/Chromium',width,'simulated voice, capture lease, meter, PCM split/move/merge WAV editing, replay, transcript, Stop, Erase, lifecycle, UX 01-20 & A-F, observatory SVG stratigraphy, no overflow')
         page.close()
     for extra_width in (1440,810):
         page=browser.new_page(viewport={'width':extra_width,'height':900})
@@ -793,10 +809,14 @@ with sync_playwright() as p:
         page.route('http://localhost/**',lambda route:route.fulfill(status=200,content_type='text/html',body=html))
         page.goto('http://localhost/')
         page.wait_for_function("document.querySelector('#capability').textContent.includes('LOCAL WHISPER READY')")
-        overflow=page.evaluate('document.documentElement.scrollWidth-innerWidth')
-        assert overflow<=0,f'Overflow at {extra_width}: {overflow}'
+        assert not page.evaluate("document.querySelector('.grid').classList.contains('mobile-layout')"),f'{extra_width}px must render in 2-column desktop/tablet layout'
+        assert page.locator('#obsTopologySvg line').count()>=3,'Standby SVG stratigraphy map must render calibrated datum rails'
+        for mode in ('transcript','coaching','focus','split'):
+            page.locator('#layoutMode').select_option(mode)
+            overflow=page.evaluate('document.documentElement.scrollWidth-innerWidth')
+            assert overflow<=0,f'Overflow at {extra_width} ({mode}): {overflow}'
         assert not errors,errors
         page.screenshot(path=str(root/f'qa_v6_{extra_width}.png'),full_page=True)
-        print('PASS Brave/Chromium',extra_width,'responsive layout and zero horizontal overflow')
+        print('PASS Brave/Chromium',extra_width,'responsive 2-column layout, all layout modes, and zero horizontal overflow')
         page.close()
     browser.close()
