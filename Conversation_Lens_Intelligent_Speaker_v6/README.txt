@@ -4,25 +4,31 @@ CONVERSATION LENS v6 — ADAPTIVE LISTENING + CONVERSATIONAL SPEAKER MEMORY
 STATUS: Usable experimental build. Browser UI and local backend regressions PASS.
 PHYSICAL MICROPHONE + ACCURACY WITH TWO REAL SPEAKERS: NOT YET VERIFIED.
 
+NEUTRAL DEFAULT (current repository revision)
+- Context starts empty on every fresh page load; no scenario or participant history is loaded from browser form restoration.
+- The default mode is Observe neutrally. Focused modes are explicit opt-ins.
+- The example uses a routine meeting, not a private relationship dispute.
+- The optional context field is passed to the AI only when the user enters it.
+- Names are learned only from consenting, actual recorded introductions or separate voluntary enrollment; context never creates a voiceprint.
+
 WHAT CHANGED FROM v5
 - Silence-guided local audio segmentation: end a window around 0.9s after measured silence following speech, never sooner than ~2.8s, with an 8.9s hard cap. This is acoustic-energy heuristics, not a trained turn boundary detector. If the input meter is unavailable, fixed-length clipping remains available.
 - Visible real-time mic input meter and no-signal warning. The meter tests microphone energy, not proof that words can be transcribed.
 - Real server capture lease: Start opens a random session through the localhost server. Stop explicitly revokes it. The server rejects stale uploads and discards late Whisper results rather than assigning identities or displaying old text.
-- Explicit "Erase all session data": stop capture, erase transcript text in the page and wipe all in-memory speaker profiles; race-safe against enrollment still finishing.
+- Explicit "Erase all session data": stop capture, erase transcript text and optional context in the page, reset to neutral observation, and wipe all in-memory speaker profiles; race-safe against enrollment still finishing.
 - Grounded Big Mac coaching: invented text quotations are rejected in favor of a no-match warning. The model can still make interpretive errors.
 - All v5 spoken self-introduction behavior, enrollment, voice correction, Unknown/Mixed safeguards and manual transcript entry are preserved.
 
 RUN ON THE MACBOOK AIR / BRAVE
-1. Unzip Conversation_Lens_Adaptive_Speaker_v6.zip into Downloads.
-2. Paste this FULL command into MacBook Terminal:
-   cd "$HOME/Downloads" && unzip -oq "Conversation_Lens_Adaptive_Speaker_v6.zip" && /bin/zsh "$HOME/Downloads/Conversation_Lens_Intelligent_Speaker_v6/Launch_Conversation_Lens.command"
-3. Leave Terminal running. Brave should open Conversation Lens over http://127.0.0.1 at a random port.
-4. Verify LOCAL WHISPER READY and LOCAL VOICE MODEL READY.
-5. Tell everyone present about transcription and voice recognition. Confirm transcription consent separately from the spoken-name learning opt-in.
-6. Press Start listening, allow Brave microphone access, say a complete sentence, and confirm the transcript appears.
-7. With consent to speaker learning enabled, have someone say something like: "Hi, this is Dale, and I want to explain something important to you."
+1. From the cloned repository in ~/Conversation_Lens, launch with:
+   cd "$HOME/Conversation_Lens" && /bin/zsh ./Conversation_Lens_Intelligent_Speaker_v6/Launch_Conversation_Lens.command
+2. Leave Terminal running. Brave should open Conversation Lens over http://127.0.0.1 at a random port.
+3. Verify LOCAL WHISPER READY and LOCAL VOICE MODEL READY.
+4. Tell everyone present about transcription and voice recognition. Confirm transcription consent separately from the spoken-name learning opt-in.
+5. Press Start listening, allow Brave microphone access, say a complete sentence, and confirm the transcript appears.
+6. With consent to speaker learning enabled, have someone say something like: "Hi, this is Dale, and I want to explain something important to you."
    The label Dale ? means provisional, NOT confirmed identity. Additional consistent speaking windows may strengthen it. Manually correct errors.
-8. Press Stop whenever needed. For additional privacy, press Erase all session data and confirm it. Close the Terminal server to permanently end that session.
+7. Press Stop whenever needed. For additional privacy, press Erase all session data and confirm it; this also clears custom context and names. Close the Terminal server to permanently end that session.
 
 DEPENDENCIES
 - MacBook Air / macOS; Brave; Homebrew whisper-cli and FFmpeg; existing DexDictate ggml-base model used read-only.

@@ -77,6 +77,17 @@ with sync_playwright() as p:
         page.wait_for_function("document.querySelector('#capability').textContent.includes('LOCAL WHISPER READY')")
         assert not page.locator('#startBtn').is_enabled()
         assert not page.locator('#autoNames').is_checked()
+        # Even a browser-restored old value must not preload a private scenario.
+        assert page.locator('#context').input_value()==''
+        assert page.locator('#aim').input_value()=='observe'
+        assert page.locator('#manualSpeaker').input_value()=='shared'
+        assert 'not assuming a topic' in page.locator('#northStar').inner_text().lower() or 'without assuming a topic' in page.locator('#northStar').inner_text().lower()
+        assert 'Waiting for conversation' in page.locator('#cueTitle').inner_text()
+        assert 'solidarity' not in page.content().lower()
+        # Optional user context is allowed during a session, but Erase resets it.
+        page.locator('#context').fill('Discuss project documentation')
+        page.locator('#aim').select_option('resolve')
+        page.locator('#enrollName').fill('Morgan')
         page.locator('#consent').check();page.locator('#autoNames').check()
         page.evaluate("window.fake.transcriptQueue.push({text:'Hi, this is Dale, and I would like to talk about how I feel.',speaker:{label:'Dale',level:'provisional',reason:'Spoken introduction'},introduction:{name:'Dale',state:'candidate',message:'Self introduced'}})")
         page.locator('#startBtn').click()
@@ -114,6 +125,11 @@ with sync_playwright() as p:
         assert page.evaluate('window.fake.capture') is None
         assert not page.locator('#autoNames').is_checked()
         assert not page.locator('#speakerProfiles').inner_text().startswith('Dale')
+        assert page.locator('#context').input_value()==''
+        assert page.locator('#aim').input_value()=='observe'
+        assert page.locator('#manualSpeaker').input_value()=='shared'
+        assert page.locator('#enrollName').input_value()==''
+        assert not page.locator('#consent').is_checked()
         assert not errors,errors
         overflow=page.evaluate('document.documentElement.scrollWidth-innerWidth')
         assert overflow<=0,overflow

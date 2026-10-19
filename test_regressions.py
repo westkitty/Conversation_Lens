@@ -30,8 +30,8 @@ result,event=s.recognize_or_learn('Here is why I am worried.',v(0),True,audio_id
 assert event['state']=='strengthened' and len(s.SPEAKERS['Dale'])==2
 result,event=s.recognize_or_learn('I disagree with that view.',v(2),True,audio_id='clip-c')
 assert result['label']=='Unknown'
-clear();s.SPEAKERS.update({'Andrew':[unit(0),unit(0)],'Will':[unit(1),unit(1)]})
-assert s.identify_speaker(v(0))['label']=='Andrew'
+clear();s.SPEAKERS.update({'Morgan':[unit(0),unit(0)],'Casey':[unit(1),unit(1)]})
+assert s.identify_speaker(v(0))['label']=='Morgan'
 assert s.identify_speaker(v(0,j=1))['label']=='Mixed'
 assert s.identify_speaker(v(2))['label']=='Unknown'
 clear()
@@ -49,6 +49,17 @@ try:
  s.urllib.request.urlopen=lambda request,timeout=0:Dummy({'observation':'A need was raised.','evidence':'I need a little time','next_step':'Could you say more?','caution':''})
  ans=s.call_ollama({'turns':[{'speaker':'Me','text':'I need a little time to explain what I meant.'}]})
  assert ans['evidence']=='I need a little time'
+# Confirm optional context is omitted entirely when no user context is provided.
+ captured = []
+ def intercept(request,timeout=0):
+  captured.append(json.loads(request.data.decode('utf-8')))
+  return Dummy({'observation':'A request was made.','evidence':'I need a little time','next_step':'Can you clarify the timeframe?','caution':''})
+ s.urllib.request.urlopen=intercept
+ s.call_ollama({'turns':[{'speaker':'Unassigned','text':'I need a little time to finish the task.'}]})
+ assert captured and 'user_supplied_context' not in captured[-1]['prompt'],captured[-1]
+ assert '"mode": "Observe neutrally"' in captured[-1]['prompt']
+ s.call_ollama({'context':'Technical discussion about build errors','turns':[{'speaker':'Unassigned','text':'I need a little time to finish the task.'}]})
+ assert '"user_supplied_context": "Technical discussion about build errors"' in captured[-1]['prompt']
 finally:
  s.urllib.request.urlopen=orig
 print('PASS previous v5 speaker safety, unknown/mixed voices, no consent, dedupe, model citation verification')

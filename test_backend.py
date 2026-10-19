@@ -25,7 +25,7 @@ def vec(i=0,sec=4.0):
   unit=[0.0]*256;unit[i]=1.0
   return {'full':unit,'first':unit,'second':unit,'speech_seconds':sec}
 
-for word,expected in [('This is Dale.','Dale'),('I am Andrew, and here is the issue.','Andrew'),('Hello, my name is Dale.','Dale'),('Someone said this is Dale',None),('This is what we mean.',None),("I'm sorry to hear that",None),('"This is Dale."',None),('Is this Dale?',None)]:
+for word,expected in [('This is Dale.','Dale'),('I am Morgan, and here is the issue.','Morgan'),('Hello, my name is Dale.','Dale'),('Someone said this is Dale',None),('This is what we mean.',None),("I'm sorry to hear that",None),('"This is Dale."',None),('Is this Dale?',None)]:
   assert backend.parse_self_introduction(word)==expected,(word,expected)
 print('PASS introduction parsing, no text-only speaker attribution')
 
