@@ -25,7 +25,7 @@ AUTOMATED REGRESSIONS
 - Python py_compile, JavaScript node --check, zsh -n launcher syntax and Git diff checks: PASS.
 
 VISUAL CHECK
-- Inspected desktop (1440px, 1200px), tablet (810px), and mobile (375px) screenshots. Mobile DOM order places Capture, Pinned Cue, and Transcript ahead of secondary panels while preserving desktop two-column sticky rail layout; zero horizontal overflow across all four viewports.
+- Inspected desktop (1440px, 1200px), tablet (810px), and mobile (375px) screenshots. Desktop two-column layout orders active conversation panels first (Left: 02 Listen -> 04 Live transcript -> 03 Identify speakers -> 01 Conversation setup; Right: Pinned Cue -> What I'm noticing -> Local AI -> Conversation anchor) while preserving Focus-mode and mobile DOM ordering (Capture -> Pinned Cue -> Transcript -> Local Cues -> AI -> Speakers -> Setup -> Anchor); zero horizontal overflow across all four viewports.
 
 UNVERIFIED / LIMITATIONS
 - Natural multi-speaker live conversation with consenting human participants, noisy rooms, overlapping or similar human voices.

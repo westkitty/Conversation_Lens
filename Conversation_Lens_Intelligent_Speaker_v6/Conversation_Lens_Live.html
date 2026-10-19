@@ -51,6 +51,14 @@
 /* Live working rail and precision controls */
 .toolbar-strip{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.toolbar-strip .field{width:auto;min-width:120px;padding:6px}
 .grid:not(.mobile-layout) .right-col{position:sticky;top:12px;max-height:calc(100dvh - 24px);overflow-y:auto;scrollbar-width:thin}
+.grid:not(.mobile-layout) #listenPanel{order:1}
+.grid:not(.mobile-layout) #transcriptPanel{order:2}
+.grid:not(.mobile-layout) #speakerPanel{order:3}
+.grid:not(.mobile-layout) #setupPanel{order:4}
+.grid:not(.mobile-layout) #heroCuePanel{order:1}
+.grid:not(.mobile-layout) #signalPanel{order:2}
+.grid:not(.mobile-layout) #aiPanel{order:3}
+.grid:not(.mobile-layout) #anchorPanel{order:4}
 .grid[data-layout="transcript"]{grid-template-columns:minmax(460px,1.65fr) minmax(285px,.72fr)}
 .grid[data-layout="coaching"]{grid-template-columns:minmax(290px,.7fr) minmax(480px,1.3fr)}
 .grid[data-layout="focus"]{grid-template-columns:minmax(300px,1fr) minmax(320px,.85fr)}
@@ -78,9 +86,9 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
 @media(max-width:810px){
  .grid[data-layout]{display:flex}
  .grid.mobile-layout .hero-cue{position:fixed;left:10px;right:10px;bottom:env(safe-area-inset-bottom,0px);z-index:30;max-height:65dvh;overflow:auto;box-shadow:0 0 24px #000c}
- .grid.mobile-layout .hero-cue[data-collapsed="true"]{padding:10px 12px;max-height:95px}
- .grid.mobile-layout .hero-cue[data-collapsed="true"] .caps,.grid.mobile-layout .hero-cue[data-collapsed="true"] #cueText,.grid.mobile-layout .hero-cue[data-collapsed="true"] .coach-controls{display:none}
- .grid.mobile-layout .hero-cue[data-collapsed="true"] #cueTitle{font-size:14px;margin:5px 0;padding-right:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .grid.mobile-layout .hero-cue[data-collapsed="true"]{padding:10px 12px;max-height:82px;overflow:hidden}
+ .grid.mobile-layout .hero-cue[data-collapsed="true"] .caps,.grid.mobile-layout .hero-cue[data-collapsed="true"] #cueText,.grid.mobile-layout .hero-cue[data-collapsed="true"] #cueEvidenceBar,.grid.mobile-layout .hero-cue[data-collapsed="true"] .coach-controls,.grid.mobile-layout .hero-cue[data-collapsed="true"] #coachingNeeds,.grid.mobile-layout .hero-cue[data-collapsed="true"] #continueThoughtStatus,.grid.mobile-layout .hero-cue[data-collapsed="true"] .control-kbd{display:none}
+ .grid.mobile-layout .hero-cue[data-collapsed="true"] #cueTitle{font-size:14px;margin:4px 0 0;padding-right:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  #sheetToggle{display:inline-block;position:absolute;right:12px;top:9px;z-index:2;min-height:30px}
  .shell{padding-bottom:120px}.grid.mobile-layout .right-col{overflow:visible}
 }

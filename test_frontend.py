@@ -186,6 +186,11 @@ with sync_playwright() as p:
             page.set_viewport_size({'width':width,'height':830})
             page.wait_for_function("document.querySelector('.grid').classList.contains('mobile-layout')")
             assert dom_order()==expected
+        else:
+            left_tops=page.evaluate("() => ['#listenPanel','#transcriptPanel','#speakerPanel','#setupPanel'].map(s => document.querySelector(s).getBoundingClientRect().top)")
+            assert left_tops==sorted(left_tops),f'Desktop left column must order Listen -> Transcript -> Speakers -> Setup, got {left_tops}'
+            right_tops=page.evaluate("() => ['#heroCuePanel','#signalPanel','#aiPanel','#anchorPanel'].map(s => document.querySelector(s).getBoundingClientRect().top)")
+            assert right_tops==sorted(right_tops),f'Desktop right column must order Hero Cue -> Local Signals -> AI -> Anchor, got {right_tops}'
         assert 'solidarity' not in page.content().lower()
         # Optional user context is allowed during a session, but Erase resets it.
         page.locator('#context').fill('Discuss project documentation')
