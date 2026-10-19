@@ -743,7 +743,7 @@ with sync_playwright() as p:
         page.locator('#densityMode').check()
         assert page.locator('html').get_attribute('data-density')=='quiet'
         page.locator('#densityMode').uncheck()
-        # Observatory telemetry strip & turn ribbon interaction + direct voiceNoteBtn click regression
+        # Observatory telemetry strip & turn ribbon interaction + workspaceNav tabindex/focus-layout regression
         assert page.locator('#observatoryStrip').is_visible()
         assert 'passages' in page.locator('#obsCadenceValue').inner_text()
         assert 'tentative' in page.locator('#obsCertaintyValue').inner_text()
@@ -752,6 +752,14 @@ with sync_playwright() as p:
         assert page.locator('#evidenceDrawer').is_visible()
         page.locator('#evidenceReturnScrollBtn').click()
         assert page.locator('#evidenceDrawer').is_hidden()
+        page.locator('#workspaceNav [data-jump="manualText"]').click()
+        assert page.evaluate("document.activeElement.id==='manualText'")
+        assert page.locator('#manualText').get_attribute('tabindex') is None,'Jumping to manualText must not set tabindex="-1"'
+        if width>=810:
+            page.locator('#layoutMode').select_option('focus')
+            assert page.locator('#anchorPanel').is_hidden() and page.locator('#speakerPanel').is_hidden()
+            page.locator('#workspaceNav [data-jump="speakerPanel"]').click()
+            assert page.locator('#layoutMode').input_value()=='split' and page.locator('#speakerPanel').is_visible()
         # Verify direct click on #voiceNoteBtn starts and stops cleanly without duplicate listener race
         vn_before=page.locator('#voiceNoteList .voice-note-item').count()
         page.locator('#voiceNoteBtn').click()

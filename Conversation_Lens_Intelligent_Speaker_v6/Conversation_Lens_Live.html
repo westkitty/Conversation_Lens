@@ -63,7 +63,7 @@
 .grid[data-layout="coaching"]{grid-template-columns:minmax(290px,.7fr) minmax(480px,1.3fr)}
 .grid[data-layout="focus"]{grid-template-columns:minmax(300px,1fr) minmax(320px,.85fr)}
 .grid[data-layout="focus"] #setupTitle,.grid[data-layout="focus"] #speakerTitle{opacity:.8}
-.grid[data-layout="focus"] .left-col>section:first-child,.grid[data-layout="focus"] .left-col>section:nth-child(3),.grid[data-layout="focus"] #anchorTitle{display:none}
+.grid[data-layout="focus"] #setupPanel,.grid[data-layout="focus"] #speakerPanel,.grid[data-layout="focus"] #anchorPanel{display:none}
 .coach-controls{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.coach-controls .field{flex:1 1 180px;width:100%;min-width:0}
 .control-kbd{font-size:11px;color:var(--muted);margin:7px 0}
 .quick-filters{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}.quick-filters .field{flex:1 1 115px;min-width:90px}
@@ -1861,10 +1861,16 @@ html[data-density="compact"] .transcript{height:340px}
       const targetId=btn.getAttribute('data-jump');
       const target=$(targetId);
       if(!target)return;
+      if(layoutGrid.dataset.layout==='focus'&&(targetId==='setupPanel'||targetId==='speakerPanel'||targetId==='anchorPanel')){
+        $('layoutMode').value='split';setLayout();
+      }
       const details=target.closest('details');
       if(details)details.open=true;
       target.scrollIntoView({behavior:document.documentElement.dataset.lowMotion==='on'?'auto':'smooth',block:'start'});
-      if(typeof target.focus==='function'){target.setAttribute('tabindex','-1');try{target.focus({preventScroll:true})}catch(e){}}
+      if(typeof target.focus==='function'){
+        if(!/^(INPUT|SELECT|TEXTAREA|BUTTON|A|SUMMARY)$/.test(target.tagName)&&!target.hasAttribute('tabindex'))target.setAttribute('tabindex','-1');
+        try{target.focus({preventScroll:true})}catch(e){}
+      }
     });
   });
   $('shortcutHelpBtn')?.addEventListener('click',()=>{const d=$('shortcutDialog');if(d&&!d.open)d.showModal()});
