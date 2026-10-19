@@ -397,6 +397,10 @@ with sync_playwright() as p:
             page.locator('#restoreSnapshotFile').set_input_files(str(bad_path))
             page.wait_for_function("document.querySelector('#snapshotStatus').textContent.includes('Checksum mismatch')")
             assert 'Temporary replacement text' in page.locator('#transcript').inner_text(),'bad snapshot must leave live data untouched'
+            old=dict(snapshot);old['payload']=dict(snapshot['payload']);old['payload']['version']=0;old_path=Path(td)/'old.json';old_path.write_text(json.dumps(old))
+            page.locator('#restoreSnapshotFile').set_input_files(str(old_path))
+            page.wait_for_function("document.querySelector('#snapshotStatus').textContent.includes('Unsupported or malformed snapshot')")
+            assert 'Temporary replacement text' in page.locator('#transcript').inner_text(),'older schema must leave live data untouched'
             page.locator('#restoreSnapshotFile').set_input_files(snapshot_path)
         page.wait_for_function("document.querySelector('#snapshotStatus').textContent.includes('Snapshot restored')")
         assert 'Temporary replacement text' not in page.locator('#transcript').inner_text()
