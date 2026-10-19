@@ -9,6 +9,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+import wave
 from http.server import ThreadingHTTPServer
 
 ROOT=pathlib.Path(__file__).parent/'Conversation_Lens_Intelligent_Speaker_v6'
@@ -50,6 +51,13 @@ pathlib.Path(args[args.index('-of')+1]+'.txt').write_text(pathlib.Path(os.enviro
   sample=tmp/'voice.webm'
   subprocess.run(['ffmpeg','-nostdin','-loglevel','error','-y','-f','lavfi','-i','sine=frequency=510:duration=3.2','-c:a','libopus',str(sample)],check=True)
   clip=sample.read_bytes()
+  pcm_sample=tmp/'voice.wav'
+  subprocess.run(['ffmpeg','-nostdin','-loglevel','error','-y','-i',str(sample),'-ac','1','-ar','16000','-c:a','pcm_s16le',str(pcm_sample)],check=True)
+  with tempfile.TemporaryDirectory(prefix='lens-wav-decode-') as decode_dir:
+    normalized=backend.decode_audio(pcm_sample.read_bytes(),'audio/wav',decode_dir)
+    with wave.open(str(normalized),'rb') as decoded:
+      assert decoded.getnchannels()==1 and decoded.getframerate()==16000 and decoded.getnframes()>40000
+  print('PASS production WAV decoder keeps uploaded PCM separate from normalized output')
   app=ThreadingHTTPServer(('127.0.0.1',0),backend.Handler)
   thread=threading.Thread(target=app.serve_forever,daemon=True);thread.start()
   base='http://127.0.0.1:'+str(app.server_address[1])
@@ -101,6 +109,19 @@ pathlib.Path(args[args.index('-of')+1]+'.txt').write_text(pathlib.Path(os.enviro
     code,takeover=req(base+'/api/capture/open',b'{"consent":true,"takeover":true}',h)
     assert code==200 and takeover['capture']!=new['capture'] and backend.CAPTURE_SESSION==takeover['capture']
     assert req(base+'/api/transcribe',clip,{**audio_h,'X-Lens-Capture-Session':new['capture']})[0]==409
+    import hashlib
+    kept_wav=pcm_sample.read_bytes()
+    code,frozen=req(base+'/api/capture/freeze',json.dumps({'capture':takeover['capture']}).encode(),h)
+    assert code==200 and frozen['frozen'] is True
+    code,drain=req(base+'/api/capture/drain',json.dumps({'capture':takeover['capture'],'windows':[
+      {'window_id':'kept_pcm_wav','sha256':hashlib.sha256(kept_wav).hexdigest(),'force_mixed':True}]}).encode(),h)
+    assert code==200
+    kept_headers={**audio_h,'Content-Type':'audio/wav','X-Lens-Capture-Session':drain['capture'],
+      'X-Lens-Window-ID':'kept_pcm_wav','X-Lens-Force-Mixed':'true'}
+    code,kept_result=req(base+'/api/transcribe',kept_wav,kept_headers)
+    assert code==200 and kept_result['text']=='Hello, this is Dale, and I want us to hear each other.'
+    assert kept_result['speaker']['label']=='Mixed', 'Edited/forced-Mixed kept PCM must retain the learning veto'
+    print('PASS Stop Keep drain transcribes an exact-hash PCM WAV through production FFmpeg/Whisper route')
     assert req(base+'/api/session/erase',b'{"confirm":false}',h)[0]==403
     code,wipe=req(base+'/api/session/erase',b'{"confirm":true}',h)
     assert code==200 and wipe['erased'] is True

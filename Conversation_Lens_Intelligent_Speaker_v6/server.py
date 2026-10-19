@@ -659,7 +659,9 @@ def decode_audio(payload, media_type, tmp):
     if not FFMPEG_BIN:
         raise RuntimeError('FFmpeg unavailable')
     ext = '.mp4' if media_type == 'audio/mp4' else '.wav' if media_type == 'audio/wav' else '.ogg' if media_type == 'audio/ogg' else '.webm'
-    inp = Path(tmp) / ('audio' + ext)
+    # Keep the upload distinct from the normalized decode target. PCM uploads
+    # are already WAV; using the same path makes FFmpeg fail on input/output.
+    inp = Path(tmp) / ('audio-input' + ext)
     wav = Path(tmp) / 'audio.wav'
     inp.write_bytes(payload)
     conversion = subprocess.run([
