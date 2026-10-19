@@ -481,3 +481,10 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 ### Repository publication checkpoint — October 19, 2026
 
 - The PCM WAV decoder fix and production Stop Keep regression were committed as `ac5b603f74c9e756ad2f7a0be029b2a4a2d49f93` on `codex/conversation-lens-integration` and pushed normally. `git ls-remote` matched that SHA. No merge to `main` was performed. This checkpoint supersedes the older branch-head values in the historical Phase 0 notes above.
+
+### Follow-up execution checkpoint — October 19, 2026 (speaker timeout and backpressure regressions)
+
+- Requirement #45 now has a forced speaker-worker timeout regression in `test_backend.py`. The test injects `subprocess.TimeoutExpired` only for the speaker worker while leaving the ASR path active, then verifies that transcript text is preserved, identity abstains as `Unknown`, the prior speaker profile is not trained, and an embedding error event is recorded. `python3 test_backend.py` passed.
+- Requirement #50 now has `qa_backpressure.py`, an HTTP integration check against the main app handler with a controlled slow transcriber. The first transcription occupies the single STT slot, a concurrent request receives 429, and the same window ID succeeds when retried after capacity frees. The check also asserts the browser queue cap of three and at most two retained retries at the queue head. `python3 qa_backpressure.py` passed.
+- These tests use controlled/synthetic transcription. They do not prove real Whisper saturation throughput, browser retry timing under physical capture, or adversarial Stop/drain races. Those acceptance gaps remain open.
+- The tested files are not yet published in this checkpoint; the exact Git commit and push state must be recorded after review and publication.

@@ -15,6 +15,7 @@ from http.server import ThreadingHTTPServer
 ROOT=pathlib.Path(__file__).parent/'Conversation_Lens_Intelligent_Speaker_v6'
 spec=importlib.util.spec_from_file_location('lens_v6',ROOT/'server.py')
 backend=importlib.util.module_from_spec(spec);spec.loader.exec_module(backend)
+production_speaker_vectors=backend.speaker_vectors
 
 def req(url,payload=None,headers=None,timeout=18):
   r=urllib.request.Request(url,data=payload,headers=headers or {},method='POST' if payload is not None else 'GET')
@@ -78,6 +79,29 @@ pathlib.Path(args[args.index('-of')+1]+'.txt').write_text(pathlib.Path(os.enviro
     code,body=req(base+'/api/transcribe',clip,{**audio_h,'X-Lens-Capture-Session':lease})
     assert code==200 and body['speaker']['label']=='Dale' and body['introduction']['state']=='candidate',body
     assert len(backend.SPEAKERS['Dale'])==1
+    # Force subprocess.run's timeout result only for the speaker process. The
+    # production speaker_vectors and transcribe_audio paths must retain ASR text
+    # and abstain from learning when voice identification times out.
+    original_run=backend.subprocess.run
+    mocked_speaker_vectors=backend.speaker_vectors
+    backend.speaker_vectors=production_speaker_vectors
+    def timeout_speaker_worker(args,*pargs,**kwargs):
+      if args and str(args[0])==str(backend.SPEAKER_PYTHON):
+        raise subprocess.TimeoutExpired(args,timeout=kwargs.get('timeout',16))
+      return original_run(args,*pargs,**kwargs)
+    backend.subprocess.run=timeout_speaker_worker
+    try:
+      before_timeout_samples=len(backend.SPEAKERS['Dale'])
+      timeout_result=backend.transcribe_audio(clip,'audio/webm','en',auto_names=True,capture_session=lease)
+    finally:
+      backend.subprocess.run=original_run
+      backend.speaker_vectors=mocked_speaker_vectors
+    assert timeout_result['text']=='Hello, this is Dale, and I want us to hear each other.'
+    assert timeout_result['speaker']['label']=='Unknown',timeout_result['speaker']
+    assert 'transcript preserved' in timeout_result['speaker']['reason']
+    assert len(backend.SPEAKERS['Dale'])==before_timeout_samples,'A timed-out worker must not learn a voice'
+    assert any(event['kind']=='embedding' and event['state']=='error' for event in backend.EVENTS)
+    print('PASS speaker worker timeout preserves transcript, abstains from identity, and does not learn')
     stage_kinds={event['kind'] for event in backend.EVENTS}
     assert {'decode','vad','asr','embedding','speaker_match','audio'}<=stage_kinds,stage_kinds
     assert req(base+'/api/capture/close',json.dumps({'capture':'wrong'}).encode(),h)[1]['closed'] is False
