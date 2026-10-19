@@ -208,7 +208,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 30 | Live VAD tunables and preview | Live HTML VAD sliders/graph; `test_frontend.py` synthetic meter segmentation | PASS | Production PCM tuning has not been compared to physical speech |
 | 31 | Adaptive noise floor | Live HTML RMS noise estimate; browser meter regression | PARTIAL | No ambient-noise or changing-noise physical run |
 | 32 | Half-window overlap heat | Half-cosine divergence heat bar and possible Mixed/overlap veto are shown in evidence drawer; frontend checks a synthetic 0.0080 gap | PARTIAL | Divergence is explicitly diagnostic, not an overlap probability; natural overlap accuracy is unverified |
-| 33 | Enrollment quality meter | Existing enrollment checks and rejection | PARTIAL | Pre-activation quality gauge is absent |
+| 33 | Enrollment quality meter | Explicit enrollment displays measured signal-present and clipping rates before updating the profile; mocked Brave test checks the live meter and cancel path | PARTIAL | Signal preview is not calibrated against speaker-model quality or natural voices; server enrollment checks remain authoritative |
 | 34 | Instant speaker drop | Per-profile Remove immediately clears only that RAM voice profile; `test_frontend.py` verifies no confirmation and transcript label preservation | PASS | Forget All still requires confirmation |
 | 35 | Longer follow-up enrollment sample | Existing sample guidance | PARTIAL | Guided longer follow-up flow is absent |
 | 36 | Raw cosine/margin available | `server.py` evidence and evidence drawer; `test_frontend.py` values | PASS | None observed in current checks |
@@ -331,3 +331,8 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 
 - Added an explicit per-profile action available at three or more samples. It retains the most cosine-separated pair, reports the number discarded, and states that this is lossy and irreversible. The profile remains RAM-only; compaction is refused when the audio-processing lock is busy.
 - `test_live_upgrade.py` checks representative retention, missing-profile and insufficient-sample errors, plus the authenticated loopback endpoint. `test_frontend.py` exercises confirmation, UI refresh and the reported sample count at 1200px and 375px. Requirement 42 is PASS for this owner-invoked compaction scope; recognition quality after compaction is not calibrated on natural voices.
+
+## Enrollment signal preview — 2026-10-19
+
+- During an explicit, consented seven-second enrollment recording, the UI samples microphone RMS and clipped-frame rate and updates a visible pre-activation meter. The label explicitly says this is a signal check, not identity or recognition quality. A near-silent capture is rejected locally without changing a voice profile; the local server's existing checks remain in force.
+- QA-venv `test_frontend.py` supplies deterministic synthetic microphone frames, verifies the meter reaches the expected value and that cancel stops the sample at 1200px and 375px. Requirement 33 remains PARTIAL until natural microphone quality is measured and tied to the actual speaker model's enrollment-quality behavior.

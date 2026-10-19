@@ -88,7 +88,7 @@ window.MediaRecorder=class{
 };
 window.AudioContext=class{
  createMediaStreamSource(){return {connect(){},disconnect(){}}}
- createAnalyser(){return {fftSize:1024,getByteTimeDomainData(a){window.fake.meterReads++;for(let i=0;i<a.length;i++)a[i]=window.fake.quiet?128:128+Math.round(17*Math.sin(i/7));}}}
+ createAnalyser(){return {fftSize:1024,getByteTimeDomainData(a){window.fake.meterReads++;for(let i=0;i<a.length;i++)a[i]=window.fake.quiet?128:128+Math.round(17*Math.sin(i/7));},getFloatTimeDomainData(a){for(let i=0;i<a.length;i++)a[i]=window.fake.quiet?0:.08*Math.sin(i/7)}}}
  resume(){return Promise.resolve()}
  close(){return Promise.resolve()}
 };
@@ -122,6 +122,14 @@ with sync_playwright() as p:
         page.locator('#contrastMode').uncheck()
         page.locator('#monoMode').check();assert 'monospace' in page.evaluate("getComputedStyle(document.body).fontFamily");page.locator('#monoMode').uncheck()
         page.locator('#motionMode').check();assert page.locator('html').get_attribute('data-low-motion')=='on';assert page.evaluate("getComputedStyle(document.querySelector('#status .led')).animationName")=='none';page.locator('#motionMode').uncheck()
+        page.locator('#enrollName').fill('Preview')
+        page.locator('#enrollConsent').check()
+        page.get_by_role('button',name='Record a voice sample (7s)').click()
+        page.wait_for_function("document.querySelector('#enrollQuality').getAttribute('aria-valuenow')==='100'")
+        assert 'not speaker identity' in page.locator('#enrollQualityText').inner_text()
+        page.get_by_role('button',name='Cancel voice sample').click()
+        page.wait_for_function("document.querySelector('#enrollMessage').textContent.includes('Sample canceled')")
+        page.locator('#enrollConsent').uncheck()
         if width<810:
             expected=['setupTitle','listenTitle','cueTitle','transcriptTitle','signalTitle','aiTitle','speakerTitle','anchorTitle']
             dom_order=lambda:page.evaluate("() => [...document.querySelectorAll('.grid > section')].map(e => e.querySelector('h2')?.id)")
