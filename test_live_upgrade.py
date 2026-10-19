@@ -131,6 +131,10 @@ with http.server.ThreadingHTTPServer(('127.0.0.1',0),s.Handler) as server:
     with urllib.request.urlopen('http://127.0.0.1:%d/api/health'%port,timeout=4) as res:
         health=json.load(res)
     assert health['ok'] is True and health['protocol']==3 and 'speakerRamBytes' in health
+    with urllib.request.urlopen('http://127.0.0.1:%d/api/whisper/models'%port,timeout=4) as res:
+        whisper_inventory=json.load(res)
+    assert whisper_inventory['models'] and whisper_inventory['active']==s.WHISPER_MODEL.name
+    assert all('path' not in model for model in whisper_inventory['models']),'Inventory must not expose local model paths'
     origin='http://127.0.0.1:%d'%port
     def post(path,body,extra=None):
         headers={'Origin':origin,'X-Lens-Token':s.APP_TOKEN,'Content-Type':'application/json','X-Lens-Protocol':'3'}
@@ -141,6 +145,11 @@ with http.server.ThreadingHTTPServer(('127.0.0.1',0),s.Handler) as server:
         except urllib.error.HTTPError as err:return err.code,json.load(err)
     code,opened=post('/api/capture/open',{'consent':True,'owner':'tab-a1b2c3d4'})
     assert code==200 and opened['capture']
+    alternative=next((model for model in whisper_inventory['models'] if not model['active']),None)
+    if alternative:
+        original_model=s.WHISPER_MODEL
+        code,_=post('/api/whisper/switch',{'model':alternative['id']})
+        assert code==409 and s.WHISPER_MODEL==original_model,'Model switch must fail while capture is active'
     with urllib.request.urlopen('http://127.0.0.1:%d/api/health'%port,timeout=4) as res:lease_health=json.load(res)
     assert lease_health['captureActive'] is True and lease_health['captureOwner']=='tab-a1b2c3d4' and lease_health['captureAgeSeconds']>=0
     frozen,freeze_result=post('/api/capture/freeze',{'capture':opened['capture']})
@@ -165,6 +174,17 @@ with http.server.ThreadingHTTPServer(('127.0.0.1',0),s.Handler) as server:
     assert code==422,'A completed selected window must be one use'
     s.transcribe_audio=original
     post('/api/capture/close',{'capture':drain['capture']})
+    if alternative:
+        original_model=s.WHISPER_MODEL;original_warm=s.warm_whisper_model;warmed=[]
+        s.warm_whisper_model=lambda path:warmed.append(path)
+        code,switched=post('/api/whisper/switch',{'model':alternative['id']})
+        assert code==200 and switched['active']==alternative['name'] and s.WHISPER_MODEL.name==alternative['name'] and warmed
+        selected_id=next(model['id'] for model in whisper_inventory['models'] if model['name']==original_model.name)
+        s.warm_whisper_model=lambda path:(_ for _ in ()).throw(RuntimeError('synthetic load failure'))
+        code,_=post('/api/whisper/switch',{'model':selected_id})
+        assert code==503 and s.WHISPER_MODEL.name==alternative['name'],'Failed warm-up must retain the active model'
+        s.WHISPER_MODEL=original_model;s.warm_whisper_model=original_warm
+        print('PASS installed Whisper inventory, active-capture refusal, successful switch, and rollback on failed warm-up')
     print('PASS Stop freeze, exact-hash Keep authorization, changed-clip rejection, Mixed veto, and one-use drain')
     s.SPEAKERS['Dale']=[unit(0),unit(0)]
     boost_body=json.dumps({'name':'Dale','seconds':120}).encode()

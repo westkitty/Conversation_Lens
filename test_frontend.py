@@ -14,11 +14,13 @@ for module in ('lens_pcm_core.js','lens_pcm_capture.js'):
     source=(root/'experiments'/'packet-a'/module).read_text()
     html=html.replace(f'<script src="/packet-a/{module}"></script>',f'<script>{source}</script>')
 stub='''<script>
-window.fake={recorders:[],stopped:0,quiet:false,meterReads:0,transcribe:0,confirmCount:0,pcmUploads:[],drains:[],token:'ready-token',capture:null,closed:[],frozen:[],profiles:[],mergeSuggestions:[],transcriptQueue:[],
+window.fake={recorders:[],stopped:0,quiet:false,meterReads:0,transcribe:0,confirmCount:0,pcmUploads:[],drains:[],token:'ready-token',capture:null,closed:[],frozen:[],profiles:[],mergeSuggestions:[],transcriptQueue:[],whisperActive:'base',
              dataSize:950,errors:[],voiceEnabled:[],captureLeaseSequence:0,aiRequests:0,aiBodies:[],busy:false,takeovers:0};
 window.fetch=async(path,opts={})=>{
  const ok=(v)=>new Response(JSON.stringify(v),{status:200,headers:{'Content-Type':'application/json'}});
  if(path==='/api/status')return ok({app:'conversation-lens',protocol:3,token:window.fake.token,ready:true,model:'mock-local',stt:{ready:true},speakers:{ready:true,profiles:window.fake.profiles,mergeSuggestions:window.fake.mergeSuggestions}});
+ if(path==='/api/whisper/models')return ok({active:window.fake.whisperActive+'.bin',switchAvailable:true,models:[{id:'aaaaaaaaaaaaaaaa',name:'base.bin',bytes:140000000,active:window.fake.whisperActive==='base'},{id:'bbbbbbbbbbbbbbbb',name:'small.bin',bytes:465000000,active:window.fake.whisperActive==='small'}]});
+ if(path==='/api/whisper/switch'){const body=JSON.parse(opts.body);window.fake.whisperActive=body.model==='bbbbbbbbbbbbbbbb'?'small':'base';return ok({active:window.fake.whisperActive+'.bin',previous:'base.bin',model:{id:body.model,active:true}})}
  if(path==='/api/capture/open'){
   const request=JSON.parse(opts.body);if(!request.consent)throw Error('consent missing');
   if(window.fake.busy&&!request.takeover)return new Response(JSON.stringify({error:'Capture already active in another tab. Stop it or explicitly approve takeover.'}),{status:409,headers:{'Content-Type':'application/json'}});
@@ -105,6 +107,11 @@ with sync_playwright() as p:
         page.route('http://localhost/**',lambda route:route.fulfill(status=200,content_type='text/html',body=html))
         page.goto('http://localhost/')
         page.wait_for_function("document.querySelector('#capability').textContent.includes('LOCAL WHISPER READY')")
+        page.wait_for_function("document.querySelector('#whisperModel').options.length===2")
+        page.locator('#whisperModel').select_option('bbbbbbbbbbbbbbbb')
+        page.locator('#switchWhisperModel').click()
+        page.wait_for_function("document.querySelector('#whisperModelStatus').textContent.includes('Active model: small.bin')")
+        assert page.locator('#capability').inner_text().endswith('small.bin')
         assert not page.locator('#startBtn').is_enabled()
         assert not page.locator('#aiToggle').is_checked(),'Big Mac AI must be opt-in even when available'
         assert page.locator('#aiToggle').is_enabled()

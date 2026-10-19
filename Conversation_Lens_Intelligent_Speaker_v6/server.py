@@ -327,6 +327,68 @@ def whisper_status():
     return {'ready': True, 'reason': 'Whisper.cpp / existing DexDictate base model', 'model': WHISPER_MODEL.name}
 
 
+def whisper_model_paths():
+    """Resolve installed, reasonably small local models without downloading."""
+    paths = {WHISPER_MODEL.resolve()}
+    roots = {WHISPER_MODEL.parent, Path.home() / 'Library/Application Support/DexDictate/Models'}
+    for root in roots:
+        try:
+            paths.update(path.resolve() for path in root.glob('ggml-*.bin'))
+        except OSError:
+            continue
+    models = []
+    for path in sorted(paths, key=lambda p: p.name.lower()):
+        try:
+            size = path.stat().st_size
+        except OSError:
+            continue
+        # Keep the picker appropriate for the app's 8 GB target; retain the
+        # configured current model even if it exceeds the picker cap.
+        if size < 1_000_000 or (size > 600_000_000 and path != WHISPER_MODEL.resolve()):
+            continue
+        models.append({'id': hashlib.sha256(str(path).encode()).hexdigest()[:16],
+                       'name': path.name, 'bytes': size, 'active': path == WHISPER_MODEL.resolve(),
+                       'path': path})
+    return models
+
+
+def whisper_model_inventory():
+    """List only installed local models; do not expose filesystem paths."""
+    return {'models': [{key: value for key, value in model.items() if key != 'path'}
+                       for model in whisper_model_paths()],
+            'active': WHISPER_MODEL.name, 'switchAvailable': bool(WHISPER_BIN)}
+
+
+def warm_whisper_model(path):
+    """Load a candidate using generated silence before changing active config."""
+    if not WHISPER_BIN or not Path(WHISPER_BIN).is_file():
+        raise RuntimeError('whisper-cli is unavailable')
+    with tempfile.NamedTemporaryFile(prefix='lens-model-check-', suffix='.wav') as handle:
+        with wave.open(handle.name, 'wb') as out:
+            out.setnchannels(1); out.setsampwidth(2); out.setframerate(16000)
+            out.writeframes(b'\0\0' * 16000)
+        result = subprocess.run([WHISPER_BIN, '-m', str(path), '-f', handle.name,
+                                 '-l', 'en', '-nt', '-np', '-t', '2'],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                timeout=25, check=False)
+    if result.returncode != 0:
+        raise RuntimeError('Whisper could not load the candidate model')
+
+
+def switch_whisper_model(model_id):
+    global WHISPER_MODEL
+    selected = next((item for item in whisper_model_paths() if item['id'] == model_id), None)
+    if selected is None:
+        raise ValueError('Model is not in the installed local inventory')
+    candidate = selected['path']
+    previous = WHISPER_MODEL
+    if candidate.resolve() != previous.resolve():
+        warm_whisper_model(candidate)
+        WHISPER_MODEL = candidate
+    return {'previous': previous.name, 'active': WHISPER_MODEL.name,
+            'model': next(item for item in whisper_model_inventory()['models'] if item['active'])}
+
+
 def speaker_status():
     ready = SPEAKER_PYTHON.is_file() and SPEAKER_MODEL.is_file() and SPEAKER_WORKER.is_file() and SPEAKER_MODEL.stat().st_size > 5_000_000
     with SPEAKERS_LOCK:
@@ -856,6 +918,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 events = list(EVENTS)
             self.respond(200, {'protocol': PROTOCOL_VERSION, 'events': events})
             return
+        if path == '/api/whisper/models':
+            self.respond(200, whisper_model_inventory())
+            return
         if path == '/api/status':
             self.respond(200, dict({'app': 'conversation-lens', 'protocol': PROTOCOL_VERSION, 'captureControl': True, 'token': APP_TOKEN, 'ollamaDefaults': {'url': OLLAMA, 'model': MODEL, 'timeout': UPSTREAM_TIMEOUT, 'temperature': .25}, 'stt': whisper_status(), 'speakers': speaker_status()}, **ollama_status()))
             return
@@ -886,7 +951,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             pass
 
     def do_POST(self):
-        if not self.allowed() or self.path not in ('/api/analyze', '/api/transcribe', '/api/speakers/enroll', '/api/speakers/forget', '/api/capture/open', '/api/capture/close', '/api/capture/freeze', '/api/capture/drain', '/api/session/erase', '/api/ollama/check', '/api/speakers/boost', '/api/speakers/compact'):
+        if not self.allowed() or self.path not in ('/api/analyze', '/api/transcribe', '/api/speakers/enroll', '/api/speakers/forget', '/api/capture/open', '/api/capture/close', '/api/capture/freeze', '/api/capture/drain', '/api/session/erase', '/api/ollama/check', '/api/speakers/boost', '/api/speakers/compact', '/api/whisper/switch'):
             self.respond(403, {'error': 'Forbidden'})
             return
         host = self.headers.get('Host')
@@ -1056,6 +1121,35 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self.respond(200, {'compacted': result, 'speakers': speaker_status()})
             except ValueError as err:
                 self.respond(422, {'error': str(err)})
+            finally:
+                STT_LOCK.release()
+            return
+        if self.path == '/api/whisper/switch':
+            try:
+                count = int(self.headers.get('Content-Length', '-1'))
+                if not 2 <= count <= 350:
+                    raise ValueError('Invalid model switch request')
+                body = json.loads(self.rfile.read(count))
+                model_id = body.get('model') if isinstance(body, dict) else None
+                if not isinstance(model_id, str) or not re.fullmatch(r'[a-f0-9]{16}', model_id):
+                    raise ValueError('Invalid model identifier')
+            except (ValueError, TypeError, AttributeError, json.JSONDecodeError):
+                self.respond(400, {'error': 'Invalid Whisper model switch request'})
+                return
+            if not STT_LOCK.acquire(blocking=False):
+                self.respond(429, {'error': 'Transcription is running; wait before switching models'})
+                return
+            try:
+                with CAPTURE_LOCK:
+                    if CAPTURE_SESSION is not None:
+                        self.respond(409, {'error': 'Stop microphone capture before switching Whisper models'})
+                        return
+                try:
+                    self.respond(200, switch_whisper_model(model_id))
+                except (RuntimeError, OSError, subprocess.TimeoutExpired) as err:
+                    self.respond(503, {'error': str(err) or 'Whisper model validation failed; previous model remains active'})
+                except ValueError as err:
+                    self.respond(422, {'error': str(err)})
             finally:
                 STT_LOCK.release()
             return
