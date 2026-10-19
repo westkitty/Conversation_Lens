@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Conversation Lens / Connected Audio Workbench</title>
+<style>
+:root{--bg:#080c11;--paper:#121923;--line:#35404e;--text:#edf2f6;--soft:#a5b4bf;--cyan:#8ad6e3;--rose:#ff8481;--amber:#eed0a0}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,sans-serif}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}
+.shell{max-width:1160px;margin:auto;padding:20px clamp(12px,3vw,30px) 50px}.mast{display:flex;align-items:baseline;justify-content:space-between;gap:14px;flex-wrap:wrap;padding-bottom:20px;border-bottom:1px solid var(--line)}h1{font-size:clamp(22px,4vw,35px);letter-spacing:-.045em;line-height:1.1;margin:0}.overline{font-size:10px;letter-spacing:.17em;text-transform:uppercase;color:var(--cyan);font-weight:800}.sub{color:var(--soft);margin:9px 0 0;max-width:72ch}.chip{padding:6px 10px;background:#1c2733;border:1px solid var(--line);border-radius:100px;color:var(--amber);font-size:11px}.layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(260px,.85fr);gap:16px;margin-top:18px}.panel{min-width:0;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:17px;margin-bottom:14px}.panel h2{font-size:17px;margin:0 0 5px}.panel p{color:var(--soft);margin:0 0 12px}.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}.btn{border:1px solid var(--line);background:#25313c;color:var(--text);border-radius:9px;padding:9px 11px;min-height:39px}.btn.primary{background:#a3494f;border-color:#c46b6d;color:#fff}.btn:hover:not(:disabled){border-color:#88cbd5}.btn:focus-visible,select:focus-visible,input:focus-visible,canvas:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}.code{font:12px ui-monospace,Consolas,monospace;color:#acc4ce;font-variant-numeric:tabular-nums}.row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.select{width:100%;max-width:440px;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:#09131b;color:var(--text)}.muted{color:var(--soft)}canvas{display:block;width:100%;height:146px;background:#07121a;border:1px solid #3b5365;border-radius:10px;touch-action:none}.overview{height:100px;margin-top:10px}.caption{font-size:11px;color:var(--soft);margin:9px 0!important}.control{display:flex;gap:8px;flex-direction:column;font-size:12px;color:var(--soft)}.control input{accent-color:#db8a87}.numeric{color:var(--cyan);font-variant-numeric:tabular-nums;font-size:12px}.clip-list{display:grid;gap:8px}.clip{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0b1620;border:1px solid var(--line);border-radius:9px;padding:10px}.clip[aria-current="true"]{border-color:var(--cyan);box-shadow:inset 3px 0 var(--cyan)}.clip small{color:var(--soft)}.clip .btn{min-height:32px;padding:5px 9px}.statline{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #273440}.statline:last-child{border-bottom:none}.live{font-size:12px;border:1px solid #7e7162;color:var(--amber);padding:12px;border-radius:9px;background:#262127;margin-top:12px;overflow-wrap:anywhere;min-height:44px}dialog{color:var(--text);background:#121b25;border:1px solid #608396;border-radius:14px;width:min(92vw,560px);padding:20px;max-height:85vh;overflow-y:auto}dialog::backdrop{background:#020406d9}.keep{display:flex;gap:9px;align-items:flex-start;padding:10px;border:1px solid var(--line);border-radius:8px;margin:7px 0}.keep input{accent-color:#98d8de;width:18px;height:18px}.keep span{flex:1}.note{font-size:12px;color:var(--soft)}audio{width:100%;height:45px;margin-top:12px}.status{margin-top:7px;color:var(--amber);font-size:12px}footer{color:var(--soft);font-size:11px;margin-top:15px;border-top:1px solid var(--line);padding-top:14px}
+@media(max-width:790px){.layout{grid-template-columns:1fr}.panel{padding:14px}.tools>.btn{flex:1 1 auto}}@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+
+#transportLog{white-space:pre-wrap;max-height:175px;overflow:auto;font:12px/1.45 ui-monospace,monospace;color:var(--soft);padding:10px;background:#0a131d;border:1px solid var(--line);border-radius:9px}
+.result{border-left:3px solid var(--cyan);padding:8px 12px;margin:8px 0;background:#091b25;border-radius:5px}.result.failed{border-color:var(--rose)}.result .text{color:var(--text);white-space:pre-wrap}.fine{font-size:11px;color:var(--amber)}
+</style>
+</head>
+<body>
+<div class="shell">
+<header class="mast"><div><div class="overline">Conversation Lens / Engineering slice A</div><h1>Connected Audio Workbench<span style="color:var(--rose)">.</span></h1><p class="sub">Edit actual 16 kHz PCM samples, then send only chosen WAV windows through an authorized localhost drain lease. Server responses are shown verbatim. This lab does not replace the current Conversation Lens UI.</p></div><span class="chip" id="modePill">CHECKING LOCAL SERVER</span></header>
+<main class="layout">
+<div>
+<section class="panel" aria-labelledby="audioTitle"><h2 id="audioTitle">01 / Capture source</h2><p>Load a deterministic eight-second sample or capture local microphone PCM. Capture remains local until you explicitly Keep specific windows at Stop; unselected windows are discarded.</p>
+<div class="tools"><button class="btn primary" id="fixtureBtn">Create 8s synthetic sample</button><button class="btn" id="micBtn">Start local microphone</button><button class="btn" id="stopBtn">Stop / choose windows</button><button class="btn" id="resetBtn">Erase test session</button></div><div class="live" id="status" role="status">Checking local Packet A server. The synthetic fixture is available even without a server.</div></section>
+<section class="panel" aria-labelledby="editTitle"><h2 id="editTitle">02 / Sample-accurate edits</h2><p>Select a window, then click or drag the cyan marker to choose an exact split point. Drag a boundary in the overview to adjust two neighboring windows together.</p>
+<label for="windowChoice" class="overline">Selected buffered window</label><div class="row" style="margin:8px 0"><select id="windowChoice" class="select" aria-label="Select recording window"></select><span id="cursorValue" class="numeric">No cursor</span></div>
+<canvas id="waveCanvas" width="900" height="146" role="img" tabindex="0" aria-label="Selected audio waveform, drag split marker"></canvas><p class="caption">Cyan line = split cursor. Waveform is from buffered PCM16 samples, not a decorative animation.</p><div class="tools"><button id="splitBtn" class="btn primary">Split at marker</button><button id="mergeBtn" class="btn">Merge with next</button><button id="previewBtn" class="btn">Preview WAV</button><button id="downloadBtn" class="btn">Save selected WAV</button></div>
+<canvas id="timelineCanvas" class="overview" width="900" height="100" role="img" tabindex="0" aria-label="Recording timeline, drag shared boundary between two clips"></canvas><p class="caption" id="timelineGuide">Drag a shared boundary between adjacent windows to move it without deleting or duplicating a single sample.</p>
+</section>
+<section class="panel"><h2>03 / Context and clip limits</h2><p>Pre/post-roll adds samples from the surrounding ring without changing the primary window. Any padded or edited window forbids automatic speaker learning.</p><div class="row"><label class="control">Pre-roll <output class="numeric" id="preValue">0 ms</output><input id="preRoll" type="range" min="0" max="500" step="50" value="0"></label><label class="control">Post-roll <output class="numeric" id="postValue">0 ms</output><input id="postRoll" type="range" min="0" max="500" step="50" value="0"></label></div><audio id="preview" controls preload="none" hidden></audio><div id="renderDetails" class="status">16 kHz mono · WAV / PCM16 · 10-second server cap</div></section>
+</div>
+<aside>
+<section class="panel" aria-label="Recording windows"><h2>Buffered windows</h2><p>Every clip remains a half-open, exact sample span. Edited or merged clips are marked so the speaker worker can abstain from automatic name learning.</p><div class="clip-list" id="clips" aria-live="polite"><div class="muted">None captured</div></div></section>
+<section class="panel" aria-label="Buffer telemetry"><h2>Buffer accounting</h2><div class="statline"><span class="muted">Sample rate</span><strong class="code">16000 Hz</strong></div><div class="statline"><span class="muted">Ring RAM</span><strong class="code" id="ramValue">0 KiB</strong></div><div class="statline"><span class="muted">Available samples</span><strong class="code" id="rangeValue">0–0</strong></div><div class="statline"><span class="muted">Buffered windows</span><strong class="code" id="countValue">0</strong></div><div class="statline"><span class="muted">Server-admissible clip</span><strong class="code">≤ 10.000 s</strong></div><p class="caption" id="checksums">Checksum appears when preview is prepared.</p></section>
+<section class="panel"><h2>Server confirmation</h2><p id="serverState">Connecting to localhost...</p><div id="transportLog" aria-label="Recent transport events"></div><div id="serverResults" aria-live="polite"></div></section>
+<section class="panel"><h2>Packet A completion boundary</h2><p>This connected harness proves split/merge editing and an explicitly selected drain to its isolated Python host. It does NOT overwrite Conversation Lens v6 or enroll speaker identities.</p><p class="status">No background uploads or model calls. Keep explicitly authorizes only the WAV clips checked at Stop.</p></section>
+</aside>
+</main>
+<footer>Prototype-only, localhost transport. Actual Whisper transcription requires an explicitly selected installed local model. MacBook v6 integration remains gated on recovering the uncommitted worktree.</footer>
+</div>
+<dialog id="stopDialog" aria-labelledby="stopTitle"><h2 id="stopTitle">Choose the fate of each window</h2><p class="note">Capture has been frozen on the server. Select up to four windows to keep. Only checked WAVs will be authorized and sent once over localhost; unchecked audio will be dropped. A validation-only host cannot produce transcript text.</p><div id="keepList"></div><div class="tools"><button id="keepBtn" class="btn primary" type="button">Finish selected windows</button><button id="dropAllBtn" class="btn" type="button">Drop all buffered windows</button><button id="cancelStopBtn" class="btn" type="button">Decide later (stay frozen)</button></div></dialog>
+<script src="./lens_pcm_core.js"></script>
+<script src="./lens_pcm_capture.js"></script>
+<script src="./lens_stop_client.js"></script>
+<script src="./lens_packet_a_transport.js"></script>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+let ring=null,timeline=null,selected=null,splitAt=null,capture=null,openStart=0,previewURL=null;
+let stopIsFrozen=false,stopDecided=false,stopInProgress=false,drag=null,windowCount=0;
+const keepChoices=new Map();
+let sessionCounter=0;
+const transport = new LensPacketATransport.PacketATransport({
+  onState({phase,details,engine}){
+    $('serverState').textContent=phase.toUpperCase()+' · '+details;
+    const log=$('transportLog');const line=document.createElement('div');
+    line.textContent=phase+' · '+details;
+    log.prepend(line);while(log.childElementCount>18)log.lastChild.remove();
+    if(phase==='live')$('modePill').textContent='SERVER CAPTURE · LIVE';
+    if(phase==='freezing')$('modePill').textContent='STOP · FREEZING';
+    if(phase==='frozen')$('modePill').textContent='SERVER FROZEN';
+    if(phase==='draining')$('modePill').textContent='DRAIN · PROCESSING';
+    if(phase==='closing')$('modePill').textContent='DRAIN · CLOSING LEASE';
+    if(phase==='ready')$('modePill').textContent='READY · LOCAL SERVER';
+    if(phase==='offline')$('modePill').textContent='OFFLINE · NO SERVER';
+    if(phase==='failed')$('modePill').textContent='SERVER LEASE UNVERIFIED';
+  },
+  onWindow(event){
+    const box=document.createElement('div');box.className='result'+(event.ok?'':' failed');
+    const name=document.createElement('strong');name.textContent=event.id+' · '+(event.ok?'SERVER ACCEPTED':'SERVER REJECTED');box.append(name);
+    const content=document.createElement('p');content.className='text';
+    content.textContent=event.ok ?
+      (event.text==null?'Audio validated: '+event.frames+' frames. No Whisper model configured; no transcript generated.':
+        'Whisper: '+(event.text||'(no transcribed speech)')):
+      (event.reason||'Unknown server rejection');
+    box.append(content);$('serverResults').append(box);
+    try{timeline.setStatus(event.id,'processing');timeline.setStatus(event.id,event.ok?'done':'dropped')}catch(err){note('Server result received, but local window status could not be updated: '+err.message)}
+    refresh();
+  }
+});
+async function prepareSession(){
+  if(['live','frozen','draining','failed','closing'].includes(transport.phase)){
+    const closed=await transport.close();
+    if(closed.closed!==true)throw Error('Previous capture closure was not verified; cannot start another session');
+  }
+  if(transport.phase!=='ready')await transport.connect();
+  await transport.open();
+}
+
+const rate=LensPCM.SAMPLE_RATE;
+const ms=frames=>Math.round(frames*1000/rate);
+function note(message){$('status').textContent=message}
+function init(){stopDecided=false;stopInProgress=false;keepChoices.clear();if(previewURL){URL.revokeObjectURL(previewURL);previewURL=null};$('preview').pause();$('preview').src='';$('preview').hidden=true;
+ ring=new LensPCM.PCM16Ring({maxSeconds:45});timeline=new LensPCM.WindowTimeline(ring);timeline.setCaptureID('bench-'+(++windowCount));selected=null;splitAt=null;drag=null;openStart=0;stopIsFrozen=false;refresh()}
+async function fixture(){
+ if(capture){note('Stop microphone capture before loading a new fixture.');return}
+ const generation=++sessionCounter;
+ try {await prepareSession()}catch(error){note('Cannot open a local capture lease: '+error.message+'. Offline file exports remain available.');}
+ if(generation!==sessionCounter)return;
+ init();
+ const total=8*rate,pcm=new Int16Array(total);
+ for(let i=0;i<total;i++){const t=i/rate,carrier=t<2.5?220:t<5.5?340:460;
+  pcm[i]=Math.round((Math.sin(2*Math.PI*carrier*t)*.24+Math.sin(2*Math.PI*(carrier*2)*t)*.04)*32767)}
+ ring.append(pcm);
+ const a=timeline.register(0,40000,{reason:'synthetic source A',speaker:'Speaker A'});
+ timeline.register(40000,88000,{reason:'synthetic source B',speaker:'Speaker B'});
+ timeline.register(88000,128000,{reason:'synthetic source C',speaker:'Speaker B'});
+ select(a.id);
+ note(transport.phase==='live'?'Synthetic PCM loaded; capture lease active. Stop freezes server. No upload until Keep.':
+   'Synthetic PCM loaded offline. No server authorization is available; WAV export still works.');
+ $('modePill').textContent=transport.phase==='live'?'FIXTURE · SERVER READY':'FIXTURE · OFFLINE';
+}
+function select(id){if(!id)return;selected=id;const s=timeline.get(id);splitAt=Math.floor((s.start+s.end)/2);refresh();}
+function current(){return selected?timeline.get(selected):null}
+function refresh(){const available=timeline?timeline.buffered():[];const old=$('windowChoice').value;
+ $('windowChoice').replaceChildren();for(const s of available){const opt=document.createElement('option');opt.value=s.id;opt.textContent=s.id+' · '+(ms(s.end-s.start)/1000).toFixed(3)+' s';$('windowChoice').append(opt)}
+ if(!available.some(s=>s.id===selected)){selected=available[0]?.id||null;splitAt=selected?Math.floor((timeline.get(selected).start+timeline.get(selected).end)/2):null}
+ $('windowChoice').value=selected||'';$('clips').replaceChildren();for(const s of timeline?.segments||[]){
+  const row=document.createElement('div');row.className='clip';row.setAttribute('aria-current',String(s.id===selected));
+  const info=document.createElement('div'),title=document.createElement('strong');title.textContent=s.id+' · '+(ms(s.end-s.start)/1000).toFixed(3)+'s';
+  const meta=document.createElement('small');meta.textContent=s.reason+' · '+(s.learningBlocked?'Mixed / learning blocked':'no voice learning in lab')+' · '+s.status;
+  info.append(title,document.createElement('br'),meta);row.append(info);
+  const button=document.createElement('button');button.className='btn';button.textContent='Inspect';button.type='button';button.disabled=s.status!=='buffered';button.addEventListener('click',()=>select(s.id));row.append(button);$('clips').append(row)}
+ if(!timeline?.segments.length)$('clips').textContent='No audio windows';
+ $('ramValue').textContent=ring?(ring.bytes/1024).toFixed(0)+' KiB':'0 KiB';
+ $('rangeValue').textContent=ring?ring.start.toLocaleString()+'–'+ring.end.toLocaleString():'0–0';
+ $('countValue').textContent=String(available.length);
+ $('cursorValue').textContent=selected&&splitAt!=null?((splitAt-timeline.get(selected).start)/rate).toFixed(3)+'s in '+selected:'No cursor';
+ for(const id of ['splitBtn','mergeBtn','previewBtn','downloadBtn'])$(id).disabled=!selected;
+ drawWave();drawTimeline();}
+function drawWave(){const c=$('waveCanvas'),ctx=c.getContext('2d'),w=c.width,h=c.height;
+ ctx.fillStyle='#08151e';ctx.fillRect(0,0,w,h);const s=current();if(!s||!ring.contains(s.start,s.end))return;
+ const total=s.end-s.start,baseline=h/2;ctx.strokeStyle='#294553';ctx.beginPath();ctx.moveTo(0,baseline);ctx.lineTo(w,baseline);ctx.stroke();
+ ctx.strokeStyle='#9bd9e4';ctx.beginPath();for(let x=0;x<w;x++){
+  const begin=s.start+Math.floor(x*total/w),end=Math.min(s.end,s.start+Math.ceil((x+1)*total/w));let max=0;
+  for(let i=begin;i<end;i++){const v=Math.abs(ring.data[i%ring.capacity]);if(v>max)max=v}
+  const dy=max/32768*(h/2-13);ctx.moveTo(x,baseline-dy);ctx.lineTo(x,baseline+dy);
+ }ctx.stroke();
+ if(splitAt!=null){const x=(splitAt-s.start)/total*w;ctx.strokeStyle='#ff8987';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();ctx.lineWidth=1}
+ ctx.fillStyle='#b1c6d1';ctx.font='12px monospace';ctx.fillText('start '+s.start,w>100?10:0,15);ctx.fillText('end '+s.end,Math.max(10,w-150),15);
+}
+function drawTimeline(){const c=$('timelineCanvas'),ctx=c.getContext('2d'),w=c.width,h=c.height;
+ ctx.fillStyle='#08151e';ctx.fillRect(0,0,w,h);if(!timeline||!timeline.segments.length)return;
+ const segs=timeline.segments,origin=segs[0].start,span=segs.at(-1).end-origin;
+ for(const [i,s] of segs.entries()){
+  const x=(s.start-origin)/span*w,ex=(s.end-origin)/span*w;
+  ctx.fillStyle=s.id===selected?'#274958':i%2?'#24323e':'#192733';ctx.fillRect(x,24,Math.max(1,ex-x),47);
+  ctx.strokeStyle='#89cfdb';ctx.strokeRect(x,24,Math.max(1,ex-x),47);
+  ctx.fillStyle='#d8eef1';ctx.font='13px monospace';ctx.fillText(s.id,x+6,52);
+  if(i){ctx.strokeStyle='#ff8987';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,16);ctx.lineTo(x,80);ctx.stroke();ctx.lineWidth=1}
+ }ctx.fillStyle='#c5d6dc';ctx.fillText('0.0 s',8,13);ctx.fillText((span/rate).toFixed(3)+' s',w-73,13);
+ if(drag){const x=(drag.at-origin)/span*w;ctx.strokeStyle='#fdd396';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,12);ctx.lineTo(x,85);ctx.stroke();ctx.lineWidth=1}
+}
+function pointerFrame(e,canvas,start,end){const r=canvas.getBoundingClientRect(),ratio=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));return start+Math.round((end-start)*ratio)}
+$('waveCanvas').addEventListener('pointerdown',e=>{const s=current();if(!s)return;splitAt=pointerFrame(e,$('waveCanvas'),s.start,s.end);$('waveCanvas').setPointerCapture(e.pointerId);refresh()});
+$('waveCanvas').addEventListener('pointermove',e=>{if(e.buttons!==1)return;const s=current();if(!s)return;splitAt=pointerFrame(e,$('waveCanvas'),s.start,s.end);refresh()});
+$('timelineCanvas').addEventListener('pointerdown',e=>{if(!timeline?.segments.length)return;const segs=timeline.segments,base=segs[0].start,end=segs.at(-1).end,at=pointerFrame(e,$('timelineCanvas'),base,end);
+ let best=null;for(let i=1;i<segs.length;i++){const diff=Math.abs(at-segs[i].start);if(!best||diff<best.diff)best={left:segs[i-1].id,right:segs[i].id,at:segs[i].start,diff}}
+ if(!best||best.diff>(end-base)*.02){note('Touch a red shared boundary to drag it.');return}
+ drag=best;$('timelineCanvas').setPointerCapture(e.pointerId);drawTimeline();});
+$('timelineCanvas').addEventListener('pointermove',e=>{if(!drag)return;const segs=timeline.segments,base=segs[0].start,end=segs.at(-1).end;drag.at=pointerFrame(e,$('timelineCanvas'),base,end);drawTimeline()});
+$('timelineCanvas').addEventListener('pointerup',()=>{if(!drag)return;const d=drag;drag=null;try{timeline.moveBoundary(d.left,d.right,d.at);note('Boundary moved to absolute sample '+d.at+'. Adjacent clips remain contiguous.')}catch(e){note(e.message)}refresh()});
+$('splitBtn').addEventListener('click',()=>{if(!selected)return;try{const pair=timeline.split(selected,splitAt);select(pair[0].id);note('Split at absolute sample '+splitAt+'. Frame conservation retained.')}catch(e){note(e.message)}});
+$('mergeBtn').addEventListener('click',()=>{if(!selected)return;try{const i=timeline.segments.findIndex(x=>x.id===selected);if(i<0||!timeline.segments[i+1])throw Error('No next segment available');const merged=timeline.merge(selected,timeline.segments[i+1].id);select(merged.id);note('Merged contiguous segments into '+merged.id+' without re-encoding or duplicated frames.')}catch(e){note(e.message)}});
+$('windowChoice').addEventListener('change',()=>select($('windowChoice').value));
+for(const [id,out] of [['preRoll','preValue'],['postRoll','postValue']])$(id).addEventListener('input',()=>{$(out).textContent=$(id).value+' ms'});
+function makeSelectedWav(){if(!selected)throw Error('No selected window');return timeline.render(selected,{preRollMs:Number($('preRoll').value),postRollMs:Number($('postRoll').value)})}
+function fileFor(blob,name){const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download=name;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}
+function reportClip(out){$('renderDetails').textContent=out.id+': '+out.pcm.length+' exact samples / '+(out.pcm.length/rate).toFixed(3)+'s / '+out.wav.byteLength+' WAV bytes'+(out.forceMixed?' / speaker learning blocked':'');}
+$('previewBtn').addEventListener('click',()=>{try{const out=makeSelectedWav();if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(new Blob([out.wav],{type:'audio/wav'}));$('preview').src=previewURL;$('preview').hidden=false;reportClip(out);$('preview').play().catch(()=>{});}catch(e){note(e.message)}});
+$('downloadBtn').addEventListener('click',()=>{try{const out=makeSelectedWav();fileFor(new Blob([out.wav],{type:'audio/wav'}),out.id+'.wav');reportClip(out)}catch(e){note(e.message)}});
+async function startMic(){
+ if(capture){note('Already recording.');return}
+ const generation=++sessionCounter;
+ try{await prepareSession()}
+ catch(error){note('Cannot open capture lease: '+error.message+'. No microphone opened.');return}
+ if(generation!==sessionCounter)return;
+ init();
+ let stream=null;
+ try{
+  stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
+  if(generation!==sessionCounter){stream.getTracks().forEach(x=>x.stop());await transport.close();return}
+  capture=new LensPCMCapture.MicCapture({stream,onPCM(samples){
+   if(stopIsFrozen)return;ring.append(samples);
+   while(ring.end-openStart>=48000){
+     timeline.pruneEvicted();timeline.register(openStart,openStart+48000,{reason:'3s PCM window'});
+     openStart+=48000;if(!selected)selected=timeline.segments[0].id;refresh();
+   }
+  }});
+  await capture.start();$('modePill').textContent='MIC ACTIVE · LEASED';
+  note('PCM microphone capture active. Stop will revoke the live lease; only selected buffered WAVs can be sent.');
+ }catch(error){
+  if(stream)stream.getTracks().forEach(x=>x.stop());capture=null;
+  await transport.close();note('Microphone capture failed: '+error.message);$('modePill').textContent='MIC UNAVAILABLE';
+ }
+}
+async function stopInput(){
+ if(stopInProgress || stopDecided)return;
+ if(stopIsFrozen){showStop();return}
+ stopInProgress=true;
+ const active=capture;capture=null;
+ const micStop=active?active.stop():Promise.resolve(null);
+ // Stop tracks synchronously (inside MicCapture.stop) and issue the server freeze
+ // without waiting for AudioWorklet's final PCM flush.
+ const freeze=transport.phase==='live'?transport.freeze():Promise.reject(Error('No active localhost capture lease'));
+ const both=await Promise.allSettled([micStop,freeze]);
+ if(both[0].status==='fulfilled'&&active){
+   const remainder=ring.end-openStart;
+   if(remainder>=4000&&remainder<=160000){try{timeline.register(openStart,ring.end,{reason:'final buffered partial window'})}catch(error){note(error.message)}}
+ }
+ timeline.pruneEvicted();
+ stopIsFrozen=true;stopInProgress=false;
+ if(both[1].status==='rejected'){
+   note('Stop revoked locally, but server freeze is NOT confirmed: '+both[1].reason.message+'. Only Drop or WAV export is available.');
+   $('modePill').textContent='SERVER FREEZE UNVERIFIED';
+ }else{
+   const samples=both[0].status==='fulfilled'&&both[0].value?both[0].value.outputFrames:ring.end;
+   note('Stop acknowledged by server. '+(samples/rate).toFixed(3)+'s captured; review the exact windows to Keep or Drop.');
+   $('modePill').textContent='FROZEN · SERVER VERIFIED';
+ }
+ showStop();
+}
+function showStop(){
+ const box=$('keepList');box.replaceChildren();const windows=timeline?.stoppable()||[];
+ const keepDefault=new Set(windows.slice(-4).map(x=>x.id));
+ for(const win of windows){
+  const label=document.createElement('label');label.className='keep';
+  const input=document.createElement('input');input.type='checkbox';input.checked=keepChoices.has(win.id)?keepChoices.get(win.id):keepDefault.has(win.id);
+  input.dataset.id=win.id;input.disabled=transport.phase!=='frozen';
+  input.addEventListener('change',()=>{
+   const count=[...box.querySelectorAll('input[data-id]')].filter(x=>x.checked).length;
+   if(count>4){input.checked=false;note('Select at most four WAV windows per Stop drain.');return}
+   keepChoices.set(win.id,input.checked);
+   note(count+' windows selected for exact one-use server drain.');
+  });
+  const text=document.createElement('span');text.textContent=win.id+' / '+(ms(win.end-win.start)/1000).toFixed(3)+' s'+
+    (win.learningBlocked?' / Mixed training veto':'')+' / '+win.reason;
+  label.append(input,text);box.append(label);
+ }
+ if(!windows.length)box.textContent='No buffered clips available.';
+ $('keepBtn').disabled=transport.phase!=='frozen'||!windows.length;
+ $('dropAllBtn').disabled=stopDecided;
+ $('stopDialog').showModal();
+}
+async function commitKeep(allDrop){
+ if(stopDecided||stopInProgress)return;
+ const windows=timeline?.stoppable()||[];
+ if(!allDrop&&transport.phase!=='frozen'){note('Server freeze unavailable. Cannot claim to Keep or process audio.');return}
+ const selectedIDs=allDrop?[]:[...$('keepList').querySelectorAll('input[data-id]')].filter(x=>x.checked).map(x=>x.dataset.id);
+ if(selectedIDs.length>4){note('At most four exact WAV clips per Stop drain.');return}
+ let packets;
+ try{packets=selectedIDs.map(id=>{
+  const clip=timeline.renderForDrain(id,{preRollMs:Number($('preRoll').value),postRollMs:Number($('postRoll').value)});
+  return {id,wav:clip.wav,forceMixed:clip.forceMixed,sourceStart:clip.start,sourceEnd:clip.end};
+ })}catch(error){note('Cannot prepare Keep selection: '+error.message);return}
+ stopInProgress=true;$('keepBtn').disabled=true;$('dropAllBtn').disabled=true;
+ try{
+  if(allDrop||!packets.length){
+    const closed=await transport.close();
+    if(!closed.closed)throw Error('Server did not confirm lease revocation');
+  }
+  else{
+   const result=await transport.submitSelection(packets);
+   note('Server drain results: '+result.done+' accepted, '+result.failed+' rejected. '+
+       (result.leaseClosed?'Drain lease closed. ':'Warning: drain lease closure not verified. ')+
+       (transport.engine==='whisper-cpp'?'Local Whisper responses recorded.':'Validation-only: no transcript was generated.'));
+  }
+  for(const win of windows)if(!selectedIDs.includes(win.id)&&timeline.get(win.id).status==='buffered')timeline.setStatus(win.id,'dropped');
+  if(allDrop)note('All '+windows.length+' buffered windows dropped. No WAV audio sent to transcription.');
+  stopDecided=true;$('stopDialog').close();$('stopBtn').disabled=true;refresh();
+ }catch(error){
+  // Preserve frozen selection on failed manifest authorization so it may be corrected.
+  note('Server drain did not complete: '+error.message+'. No unconfirmed window is marked done.');
+  $('keepBtn').disabled=transport.phase!=='frozen';$('dropAllBtn').disabled=false;
+ }finally{stopInProgress=false}
+}
+
+$('stopBtn').addEventListener('click',()=>stopInput().catch(e=>note(e.message)));
+$('fixtureBtn').addEventListener('click',()=>fixture().catch(e=>note(e.message)));$('micBtn').addEventListener('click',()=>startMic());$('resetBtn').addEventListener('click',async()=>{
+ sessionCounter++;if(capture){await capture.stop();capture=null}
+ const result=await transport.close();init();$('serverResults').replaceChildren();
+ note(result.closed?'Test PCM ring erased; server confirmed capture lease closure.':
+   'Local PCM erased, but SERVER LEASE CLOSURE WAS NOT VERIFIED. Retry Erase before starting again.');
+ $('modePill').textContent=result.closed?'READY · LOCAL SERVER':'CLOSE UNVERIFIED';
+});
+$('keepBtn').addEventListener('click',()=>commitKeep(false));$('dropAllBtn').addEventListener('click',()=>commitKeep(true));$('cancelStopBtn').addEventListener('click',()=>{$('stopDialog').close();note('Server remains frozen. Use Stop to reopen the Keep/Drop choices, or Erase to revoke the lease.')});
+window.LensBench={fixture,select,selected:()=>selected,ring:()=>ring,timeline:()=>timeline,render:()=>makeSelectedWav(),stopInput,init,transport,commitKeep,status:()=>$('status').textContent};
+init();transport.connect().catch(error=>note('Local server unavailable: '+error.message+'. Synthetic WAV editing still works offline.'));
+})();
+</script>
+</body>
+</html>
