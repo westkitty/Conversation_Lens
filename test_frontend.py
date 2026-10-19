@@ -315,12 +315,21 @@ with sync_playwright() as p:
         assert page.evaluate('window.fake.capture') is None
         assert page.evaluate('window.fake.stopped')>=1
         assert page.locator('#levelFill').get_attribute('style')=='width: 0%;'
+        transcript_before_note=page.locator('#transcript').inner_text()
+        page.evaluate('document.activeElement.blur()')
+        page.keyboard.press('a')
+        page.wait_for_function("document.querySelector('#voiceNoteStatus').textContent.includes('Recording a private note')")
+        page.keyboard.press('a')
+        page.wait_for_function("document.querySelector('#voiceNoteStatus').textContent.includes('saved in memory')")
+        assert page.locator('#voiceNoteList audio').count()==1
+        assert page.locator('#transcript').inner_text()==transcript_before_note,'voice note must remain outside the transcript'
         page.locator('#privateNote').fill('Private snapshot note')
         with page.expect_download() as snapshot_event:
             page.locator('#snapshotBtn').click()
         snapshot_path=snapshot_event.value.path()
         snapshot=json.loads(Path(snapshot_path).read_text())
         assert snapshot['payload']['schema']=='conversation-lens-session' and snapshot['payload']['version']==1
+        assert snapshot['payload']['omittedVoiceNoteCount']==1
         assert 'evidence' not in snapshot['payload']['turns'][0] and 'audio' not in snapshot['payload']
         page.locator('#manualText').fill('Temporary replacement text')
         page.get_by_role('button',name='Add line').click()
@@ -333,6 +342,8 @@ with sync_playwright() as p:
         page.wait_for_function("document.querySelector('#snapshotStatus').textContent.includes('Snapshot restored')")
         assert 'Temporary replacement text' not in page.locator('#transcript').inner_text()
         assert 'Private snapshot note'==page.locator('#privateNote').input_value()
+        assert '1 private voice note(s) were not imported' in page.locator('#snapshotStatus').inner_text()
+        assert page.locator('#voiceNoteList audio').count()==0
         assert page.locator('#customRuleList').inner_text().find('outline')>=0,'owner cue rules intentionally remain session local'
         # A second tab cannot silently steal capture: user must approve the explicit takeover.
         page.evaluate('window.fake.busy=true')
@@ -341,6 +352,7 @@ with sync_playwright() as p:
         assert page.evaluate('window.fake.takeovers')==1
         page.locator('#eraseAllBtn').click()
         page.wait_for_function("document.querySelectorAll('.turn').length===0")
+        assert page.locator('#voiceNoteList audio').count()==0,'Erase all must discard private voice-note audio'
         assert page.evaluate('window.fake.capture') is None
         assert not page.locator('#autoNames').is_checked()
         assert not page.locator('#speakerProfiles').inner_text().startswith('Dale')

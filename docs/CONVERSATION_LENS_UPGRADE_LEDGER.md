@@ -229,11 +229,11 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 51 | Finish/drop in-flight shutdown | Freeze, exact-hash drain lease, per-window Keep/Drop; backend tests | PASS | No physical multi-pending-window race test |
 | 52 | Versioned server-client messages | Protocol v3 required on protected requests; 426 mismatch regression | PASS | No older client compatibility matrix |
 | 53 | Recent-window replay/debug | Skipped live clips can be reprocessed while lease remains active | PARTIAL | Processed-window debug replay is absent |
-| 54 | Snapshot/restore | Explicit version-1 JSON snapshot with SHA-256 validation, bounded validation, atomic transcript/coaching/private-field restore; frontend checksum and rollback test | PASS | Audio, voice evidence, and speaker profiles are deliberately excluded; no long-session size trial |
+| 54 | Snapshot/restore | Version-1 JSON snapshot with SHA-256 validation, bounded validation, atomic transcript/coaching/private-field restore; frontend checksum and rollback test | PARTIAL | Snapshot records how many private audio notes were omitted, but does not restore note annotations or speaker profiles; no long-session size trial |
 | 55 | Multi-tab lease visibility/transfer | Explicit takeover/invalidation; `/api/health` exposes opaque tab owner and lease age; `test_live_upgrade.py` verifies both | PARTIAL | Physical two-tab takeover and live UI owner/age presentation remain unverified |
 | 56 | Custom local cue rules | New session-only rule editor with max 8 literal phrase matches, bounded observation/question text, priority and source link; `test_frontend.py` asserts a live match and cleanup on Erase | PASS | Rules are literal substrings, not semantic conditions; no persistence |
 | 57 | Running action-item/decision extraction | New local source-linked candidate ledger; `test_frontend.py` asserts decision/action extraction and passage navigation | PASS | Phrase-based candidates only; no semantic deduplication or persistence |
-| 58 | Hotkey voice-note annotation | Separate private typed note exists | PARTIAL | Hotkey voice-note capture is absent |
+| 58 | Hotkey voice-note annotation | `A` toggles a private local MediaRecorder note attached to selected/latest passage; RAM-only bounded playback list is outside transcript; browser test checks audio node and transcript isolation | PASS | Mocked browser capture tested; physical note recording and snapshot export are not tested, audio is deliberately excluded from snapshots |
 | 59 | Speaker comparison/talk-time stats | UI reports only measured `speechSeconds` from enrolled, non-overlap acoustic matches; Mixed/overlap/unknown/pinned/unmeasured windows are separately excluded; `test_frontend.py` verifies denominator and overlap accounting | PASS | Depends on the worker returning eligible speech-span measurements; manual labels never add speaker time |
 | 60 | Continue last coaching thought | `continueThoughtBtn` sends the latest selected prior card plus current transcript through the explicit local AI request; backend bounds and instructs continuation | PASS | Local Ollama remains opt-in and must be reachable; only mocked UI and prompt composition tested |
 
@@ -282,7 +282,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 ## Session snapshot follow-up — 2026-10-19
 
 - Added owner-triggered JSON snapshot download with schema/version and SHA-256 checksum. It includes transcript text/labels/times, bookmarks/highlights, recent coaching cards, and private context/note/aim. It excludes audio, evidence metrics, and speaker profiles. Restore validates file size, schema, counts, field limits, source references, and checksum before replacing live data; capture must be stopped first.
-- QA-venv `test_frontend.py` passed at 1200px and 375px. It downloads/parses a snapshot, corrupts the checksum and confirms current transcript remains unchanged, then restores a valid snapshot and confirms the private note and transcript are restored. Requirement 54 is PASS for this tested path; large-session storage limits and non-Chromium engines were not tested.
+- QA-venv `test_frontend.py` passed at 1200px and 375px. It downloads/parses a snapshot, corrupts the checksum and confirms current transcript remains unchanged, then restores a valid snapshot and confirms the private note and transcript are restored. The snapshot reports omitted voice-note count but does not restore audio notes or speaker profiles, so requirement 54 remains PARTIAL; large-session storage limits and non-Chromium engines were not tested.
 
 ## Continue Thought follow-up — 2026-10-19
 
@@ -298,3 +298,8 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 
 - Added a top-of-page sticky summary of optional context and the private owner note. The fields remain separate, summary text is inserted as text, each display truncates at 500 characters, and the summary stays hidden when both inputs are blank. It ignores pointer events so it cannot block controls beneath it.
 - QA-venv `test_frontend.py` passed at 1200px and 375px, checking the populated summary and sticky position after scrolling. Requirement 11 is PASS for the tested browser layouts.
+
+## Private voice-note follow-up — 2026-10-19
+
+- Added `A` hotkey and button for a private voice note attached to the selected/latest passage. Notes require conversation capture to be stopped, use local MediaRecorder only, cap each note at 15 seconds/2 MB, cap the session at eight notes/8 MB, and provide playback/delete controls. Notes remain separate from transcript and exports, stay in memory only, and are cleared on Erase/page exit. Session snapshots disclose and exclude note audio.
+- QA-venv `test_frontend.py` passed at 1200px and 375px; synthetic capture verifies the audio playback element appears without transcript mutation. Physical audio-note recording and cross-browser playback remain unverified. Requirement 58 is PASS for the exercised mocked path.
