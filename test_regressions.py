@@ -63,3 +63,7 @@ try:
 finally:
  s.urllib.request.urlopen=orig
 print('PASS previous v5 speaker safety, unknown/mixed voices, no consent, dedupe, model citation verification')
+
+# Live audio has no implicit cloud/browser speech route; only local Whisper or manual text.
+html=(root/'Conversation_Lens_Live.html').read_text(encoding='utf-8')
+assert 'webkitSpeechRecognition' not in html and 'new SR()' not in html

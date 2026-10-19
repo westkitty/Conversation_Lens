@@ -1,40 +1,38 @@
-Conversation Lens v6 — QA report — 2026-10-18
-Verdict: PASS WITH DECLARED LIMITATIONS (experimental real-person speaker attribution)
+Conversation Lens v6 — Privacy and Evidence Uplift QA
+Date: 2026-10-18 local on MacBook Air
+Verdict: PASS WITH DECLARED LIMITATIONS (experimental, consenting-speaker tool)
 
-CODE CHECKS
-- Python server.py compilation: PASS
-- Browser JavaScript syntax parse: PASS
-- Shell launcher static validation: PASS
+TARGET / SOURCE
+- MacBook Air M1 macOS; private westkitty/Conversation_Lens; branch main; revision verified separately after Git push.
+- Local Python HTTP server, FFmpeg, Whisper.cpp using DexDictate base model, sherpa-onnx speaker embeddings, Big Mac Ollama.
+- Protected: fresh sessions with empty context and Observe neutrally, opt-in spoken introductions, Unknown/Mixed safeguards, manual entry.
 
-CHROMIUM UI TESTS (simulated getUserMedia, MediaRecorder, WebAudio, HTTP)
-- Desktop 1200 x 830: PASS, no JavaScript exceptions or horizontal overflow.
-- Mobile 375 x 830: PASS, no JavaScript exceptions or horizontal overflow.
-- Microphone consent gate; session open; visibly updated input level meter: PASS.
-- Silence-guided auto-segment after vocal signal + >900ms silence, 8.9s fallback timer: PASS in simulation.
-- Auto spoken-name opt-in OFF by default; phrase creates Dale? label; distinct audio strengthens candidate: PASS using mocked transcription and embedding.
-- Stop microphone, release tracks, reset meter, revoke capture session: PASS.
-- Restart obtains a new session; Erase all session data clears transcript, revokes capture and clears speaker UI profiles: PASS.
+SYNTHETIC + ACTUAL INSTALLED MODELS
+- test_real_local_stack.py on the target MacBook: PASS.
+- macOS say generated a synthetic voice file; FFmpeg converted to WebM; actual Whisper transcribed 144 characters; actual speaker embedding worker produced tentative Dale labeling: 2.75 seconds for speech/speaker processing in this run.
+- Actual Big Mac Ollama gemma3:4b returned a grounded observation: 7.27 seconds for this run.
+- Capture revoked; test-only in-memory voice profiles erased.
+- These are observed single-workload timings, NOT before/after gains or a general latency guarantee.
 
-BACKEND HTTP + FFMPEG TESTS
-- Actual WebM decoded by real installed FFmpeg: PASS. Whisper transcript and vectors are mocked.
-- Spoken introduction parsing and false-positive exclusions: PASS.
-- v5 voice safety regressions: Unknown/Mixed, ambiguous introductions, opt-out, exact-audio replay dedupe: PASS.
-- Big Mac AI response evidence exact-substring validation and fabricated-quote rejection: PASS using a fake Ollama response.
-- Host/Origin/X-Lens-Token authorization, explicit capture consent, independent speaker consent: PASS.
-- Missing session ID or stale ID rejected: PASS.
-- Stop closes the active capture lease while Whisper is still running: PASS (<0.7s in test).
-- Whisper result arriving after revocation discarded, with no additional voiceprints: PASS.
-- Closing stale session ID cannot close newer session: PASS.
-- Session-wide erase (explicit confirm) clears all profiles; in-progress enrollment cannot repopulate wiped profiles: PASS.
+AUTOMATED REGRESSIONS
+- test_backend.py: consent, host/token/origin; FFmpeg WebM; synthetic Whisper; capture lease conflict; deliberate takeover; stale session and STOP race; erased profiles and enrollment races; exact duplicate enrollment audio rejected, including across two names.
+- test_regressions.py: Unknown/Mixed speaker abstention, self-introduction safety, audio replay detection, AI exact quotation checks, neutral default, no browser speech fallback.
+- test_frontend.py: real headless Brave at 1200/375 viewports, simulated mic and HTTP; consent, Start/Stop/Erase; AI opt-in; correcting words; grounded cue and AI quote navigation; queue meter; explicit takeover; mobile DOM/tab order and resize recovery; no page exceptions or overflow.
+- test_e2e.py: real headless Brave and local HTTP with FFmpeg WebM conversion; fake Whisper/speaker vectors; both viewports; introduction learning, VAD segmentation, capture lease revocation, erase.
+- Python syntax, JavaScript node --check, launcher syntax and Git diff checks: run before finalization.
 
-UNVERIFIED/NOT TESTED
-- Real Brave microphone from the user MacBook and a live two-person conversation: REQUIRED physical check.
-- Real-world accuracy/precision/recall of speaker matching and phrase attribution: NOT established.
-- True fine-grained diarization inside overlapped voices: NOT implemented.
-- Actual Big Mac coaching in this v6 browser test: mocked offline; model connectivity proven in the earlier v2 workflow, not re-proven here.
-- The container Chromium build prohibits browsing its own localhost HTTP service (ERR_BLOCKED_BY_ADMINISTRATOR); HTTP backend tests and browser interaction tests were run separately. Do not call it full end-to-end proof.
+VISUAL CHECK
+- Inspected desktop and mobile screenshots. Found mobile guidance preceded microphone setup. Physically reordered DOM for setup and listening first; reran viewport and resize assertions; no horizontal overflow detected.
 
-STATUS
-Functionality: Experimental runnable browser+Python build.
-Confidence: Code paths and regressions tested; no unsupported biometric accuracy claim.
-Privacy: Localhost default, two opt-in controls, ephemeral files, RAM-only voiceprints, revocable capture and explicit erase.
+UNVERIFIED / LIMITATIONS
+- Live physical microphone from Brave; long-duration natural conversation.
+- Voice-ID precision/recall with at least two real consenting people, noisy rooms, overlapping or similar voices.
+- Word-level speaker diarization, biometric authentication or forensic proof.
+- Matched before/after performance improvement (not measured); primary verified deltas are functional/UX.
+- Automated CI or external deployment (not part of a local Git push).
+
+PRIVACY
+- Big Mac transcript analysis requires explicit user opt-in; mere connectivity check sends no transcript.
+- Legacy browser SpeechRecognition path removed: local Whisper or manual entry only.
+- Voiceprints and enrollment duplicate-clip hashes are memory-only; capture/erase enforce revocation.
+- Private Git history can still include earlier confidential scenario in older commits. Do not make public without authorized history review.

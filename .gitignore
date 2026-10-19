@@ -35,3 +35,6 @@ profiles/
 .pytest_cache/
 playwright-report/
 test-results/
+
+# Generated only by local browser QA, not production assets.
+qa_v6_*.png

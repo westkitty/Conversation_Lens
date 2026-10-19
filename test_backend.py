@@ -64,6 +64,8 @@ pathlib.Path(args[args.index('-of')+1]+'.txt').write_text(pathlib.Path(os.enviro
     code,data=req(base+'/api/capture/open',b'{"consent":true}',h)
     assert code==200 and isinstance(data['capture'],str)
     lease=data['capture'];assert lease==backend.CAPTURE_SESSION
+    assert req(base+'/api/capture/open',b'{"consent":true}',h)[0]==409, 'A second tab must not silently steal capture'
+    assert backend.CAPTURE_SESSION==lease
     code,body=req(base+'/api/transcribe',clip,{**audio_h,'X-Lens-Capture-Session':lease})
     assert code==200 and body['speaker']['label']=='Dale' and body['introduction']['state']=='candidate',body
     assert len(backend.SPEAKERS['Dale'])==1
@@ -93,11 +95,32 @@ pathlib.Path(args[args.index('-of')+1]+'.txt').write_text(pathlib.Path(os.enviro
     assert new['capture']!=lease
     assert req(base+'/api/capture/close',json.dumps({'capture':lease}).encode(),h)[1]['closed'] is False
     assert backend.CAPTURE_SESSION==new['capture']
+    code,takeover=req(base+'/api/capture/open',b'{"consent":true,"takeover":true}',h)
+    assert code==200 and takeover['capture']!=new['capture'] and backend.CAPTURE_SESSION==takeover['capture']
+    assert req(base+'/api/transcribe',clip,{**audio_h,'X-Lens-Capture-Session':new['capture']})[0]==422
     assert req(base+'/api/session/erase',b'{"confirm":false}',h)[0]==403
     code,wipe=req(base+'/api/session/erase',b'{"confirm":true}',h)
     assert code==200 and wipe['erased'] is True
     assert not backend.SPEAKERS and not backend.SPEAKER_META and backend.CAPTURE_SESSION is None
-    # Even an explicitly consented enrollment finishing after the wipe may not resurrect profiles.
+    # Replaying one exact enrollment clip must never count as two independent voice samples.
+    backend.speaker_vectors=lambda wav:vec(0)
+    one=backend.enroll_speaker('Morgan',clip,'audio/webm')
+    assert one['samples']==1
+    try:
+      backend.enroll_speaker('Morgan',clip,'audio/webm')
+      assert False,'Duplicate enrollment unexpectedly accepted'
+    except ValueError as exc:
+      assert 'already used' in str(exc)
+    assert len(backend.SPEAKERS['Morgan'])==1
+    try:
+      backend.enroll_speaker('Casey',clip,'audio/webm')
+      assert False,'Same audio under a different name unexpectedly accepted'
+    except ValueError as exc:
+      assert 'another speaker name' in str(exc)
+    assert 'Casey' not in backend.SPEAKERS
+    backend.forget_speakers()
+    assert not backend.ENROLLMENT_AUDIO_IDS and not backend.SPEAKERS
+    # Even an explicitly consented enrollment finishing after a wipe may not resurrect profiles.
     (tmp/'sleep-marker').unlink()
     epoch=backend.PROFILE_EPOCH
     entry=threading.Event();proceed=threading.Event();failure=[]

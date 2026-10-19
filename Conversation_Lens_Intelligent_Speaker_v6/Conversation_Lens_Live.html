@@ -15,6 +15,11 @@
 .tabrow{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.tab{background:transparent;border:1px solid var(--edge);border-radius:8px;color:var(--muted);padding:6px 11px;font-size:12px;font-weight:700}.tab[aria-pressed="true"]{border-color:#c47a76;background:#42292c;color:#ffddda}.manual-row{display:grid;grid-template-columns:125px 1fr auto;gap:8px;margin-top:10px}.manual-row input{min-width:0}.manual-row .field{height:41px}.manual-row select{padding:8px}.transcript{height:260px;overflow:auto;background:#0c1017;border:1px solid #27303a;border-radius:10px;padding:6px 12px;scrollbar-width:thin}.turn{padding:12px 0;border-bottom:1px solid #242d39}.turn:last-child{border-bottom:0}.turn-meta{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:11px;color:var(--muted);margin-bottom:4px}.who{font-weight:800;color:var(--cyan);letter-spacing:.03em}.who.other{color:#dfbd9b}.who.shared{color:#a4abc0}.turn-text{margin:0;overflow-wrap:anywhere;font-size:13px;color:#e6e8ee}.empty{display:grid;align-content:center;justify-items:center;text-align:center;color:var(--muted);height:100%;min-height:110px;padding:20px;font-size:13px}.empty b{display:block;color:#d4dbe6;font-size:14px;margin-bottom:5px}.transcript-tools{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
 .hero-cue{background:linear-gradient(145deg,#2a1d24,#1b202b 76%);border:1px solid #855757;border-radius:14px;padding:19px 20px;position:relative;overflow:hidden}.hero-cue:before{content:"";position:absolute;width:230px;height:230px;right:-100px;top:-180px;background:radial-gradient(circle,#e56f6344,transparent 70%);pointer-events:none}.hero-cue .caps{color:#ffc1b8}.hero-cue h2{font-size:clamp(21px,2.9vw,26px);line-height:1.25;margin:9px 0;letter-spacing:-.03em}.hero-cue p{color:#e7cfd1;font-size:13px;max-width:65ch}.insight{border:1px solid #303a47;background:#151c25;border-radius:13px;padding:14px 15px}.insight+.insight{margin-top:10px}.insight .tag{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--cyan);font-weight:800}.insight h3{font-size:15px;margin:5px 0;color:#edf1f7}.insight p{font-size:13px;color:#aeb8c6}.insight blockquote{margin:10px 0 0;padding:9px 11px;border-left:2px solid #748fa0;background:#101821;border-radius:0 7px 7px 0;font-size:12px;color:#ccd7e1}.insight .source{display:inline-block;color:#8595a8;font-size:11px;margin-top:9px}.quiet{border:1px dashed #3d4857;border-radius:12px;padding:16px;color:#aeb8c6;font-size:13px}.ai-review{background:linear-gradient(140deg,#14262b,#151b27);border:1px solid #3d6770;border-radius:11px;padding:12px 14px;margin-top:10px}.ai-review[hidden]{display:none}.ai-review strong{display:block;font-size:14px;margin-bottom:8px}.ai-review .ai-line{margin:7px 0;font-size:13px}.ai-review .ai-label{color:#9ccad6;font-size:10px;text-transform:uppercase;letter-spacing:.1em;font-weight:750}.ai-review .ai-text{color:#e7edf4;font-size:13px;overflow-wrap:anywhere}.ai-review .ai-quote{color:#bdc6d4;font-size:12px;font-style:italic}.ai-note{color:#a2b6c1;font-size:12px;line-height:1.5}.ai-badge{font-size:11px;color:#a2d1c6;border:1px solid #39655d;border-radius:20px;padding:3px 8px}.ai-pending{color:#e8c9a0}.lens-meta{color:#9ea7b7;font-size:12px;margin-top:9px}.north{color:var(--cyan);font-size:13px;background:#13212a;border:1px solid #31515b;border-radius:10px;padding:11px 12px;margin-bottom:13px}.foot{margin-top:18px;border-top:1px solid var(--edge);padding-top:15px;display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;font-size:11px;color:var(--muted)}.note{font-size:12px;line-height:1.6;color:#adb6c5;margin-top:11px}.warning{color:#e5c3a3}.kbd{border:1px solid #3c4856;background:#131923;border-radius:5px;padding:0px 5px;font-size:10px}
 @media(max-width:810px){.grid{grid-template-columns:1fr}.shell{padding:17px 13px 38px}.panel{padding:15px}.top{align-items:flex-start}.intro{margin-top:19px}.manual-row{grid-template-columns:110px 1fr}.manual-row button{grid-column:1/-1}.transcript{height:205px}.right-col{grid-row:1}.two{grid-template-columns:1fr 1fr}}
+@media(max-width:810px){
+  .grid.mobile-layout{display:flex;flex-direction:column;gap:14px}
+  .grid.mobile-layout>.left-col,.grid.mobile-layout>.right-col{display:none}
+  .grid.mobile-layout>section{width:100%;min-width:0}
+}
 @media(max-width:400px){.two{grid-template-columns:1fr}.action-row>.btn{flex:1 1 100%}.status{font-size:11px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
  .intro-banner{background:linear-gradient(135deg,#19323b,#211e2a);border:1px solid #4d8794;border-radius:12px;padding:14px;margin-bottom:12px}
@@ -28,6 +33,16 @@
  .level-rail{height:11px;border:1px solid #465064;border-radius:9px;background:#0c1119;min-width:100px;flex:1 1 150px;overflow:hidden}
  .level-fill{height:100%;width:0%;background:linear-gradient(90deg,#6b9eaf,#aadbd0,#e6b78a);border-radius:9px;transition:width .12s ease-out}
  #levelText{min-width:90px;color:#c0d3da}#windowText{font-variant-numeric:tabular-nums}
+.turn-meta{flex-wrap:wrap;align-items:center}.turn-meta .btn{min-height:27px;padding:3px 8px;font-size:11px}
+.turn:focus{outline:2px solid var(--cyan);outline-offset:-2px;border-radius:6px}
+.heard-source{margin-top:10px;padding:10px;border:1px solid #3d5260;border-radius:8px;background:#0e1720;color:#d3dce4;font-size:12px;overflow-wrap:anywhere}
+.evidence-link{margin-top:7px;min-height:29px!important}
+.edit-dialog{background:#131b25;border:1px solid #678394;color:var(--ink);border-radius:16px;padding:22px;width:min(92vw,540px);box-shadow:0 15px 65px #000a}
+.edit-dialog::backdrop{background:#03070bcf}
+.edit-dialog .field{min-height:116px;margin:14px 0 8px}
+.edit-dialog .action-row{justify-content:flex-end}
+#queueText{color:#badbd3;font-size:11px}
+#queueText[data-loss="true"]{color:#ffd3b5;font-weight:750}
 </style>
 </head>
 <body>
@@ -57,7 +72,7 @@
     <label class="check"><input id="consent" type="checkbox"><span>Everyone being transcribed knows and agrees. Microphone permission is requested only after I press Start.</span></label>
     <div class="action-row"><button class="btn primary" id="startBtn" disabled>Start listening</button><button class="btn stop" id="stopBtn" disabled>Stop</button><button class="btn ghost" id="pauseBtn" disabled>Pause cues</button></div>
     <div class="audio-state"><span id="micMessage" role="status" aria-live="polite">The transcript stays in this page until you clear or close it.</span><em id="counter">0 passages</em></div>
-    <div class="level-row"><div class="level-rail" role="meter" aria-label="Microphone input level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="levelRail"><div id="levelFill" class="level-fill"></div></div><span id="levelText">Input meter idle</span><span id="windowText">Silence-guided segments</span></div>
+    <div class="level-row"><div class="level-rail" role="meter" aria-label="Microphone input level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="levelRail"><div id="levelFill" class="level-fill"></div></div><span id="levelText">Input meter idle</span><span id="windowText">Silence-guided segments</span><span id="queueText" role="status" aria-live="polite" data-loss="false">Queue idle</span></div>
     <div class="interim" id="interim" data-empty="true" aria-live="off">Recognized speech appears here as you talk.</div>
     <p class="note">Whisper transcribes silence-guided recording windows on the MacBook; audio clips are temporary. Session voiceprints stay in server RAM and disappear on exit. With spoken-name learning OFF, normal speaker matching still works for explicitly enrolled voices. AI coaching runs through Big Mac.</p>
   </section>
@@ -86,8 +101,8 @@
   <section class="hero-cue" aria-live="polite" aria-atomic="true"><div class="caps">Grounded observation</div><h2 id="cueTitle">Waiting for conversation</h2><p id="cueText">Start listening or add a passage. Observations will be based on the words actually captured.</p></section>
   <section class="panel" aria-labelledby="aiTitle">
  <div class="panel-head"><h2 id="aiTitle">Local AI / Big Mac</h2><small id="aiHealth" role="status">Checking connection...</small></div>
- <label class="check"><input id="aiToggle" type="checkbox" disabled><span>Automatically generate short, contextual AI observations as passages arrive.</span></label>
- <div id="aiReview" class="ai-review" hidden aria-live="polite"><div class="ai-label">AI observation</div><strong id="aiObservation"></strong><div class="ai-line"><span class="ai-label">Evidence</span><p class="ai-quote" id="aiEvidence"></p></div><div class="ai-line"><span class="ai-label">Possible next words</span><p class="ai-text" id="aiNext"></p></div><p class="ai-note" id="aiCaution"></p></div>
+ <label class="check"><input id="aiToggle" type="checkbox" disabled><span><strong>Enable Big Mac AI analysis (off by default).</strong> Send captured transcript text and any context you enter through the private local tunnel for additional suggestions. No microphone audio or voiceprints are sent.</span></label>
+ <div id="aiReview" class="ai-review" hidden aria-live="polite"><div class="ai-label">AI observation</div><strong id="aiObservation"></strong><div class="ai-line"><span class="ai-label">Evidence</span><p class="ai-quote" id="aiEvidence"></p><button id="aiEvidenceJump" class="btn small ghost evidence-link" type="button" hidden>Review quoted passage</button></div><div class="ai-line"><span class="ai-label">Possible next words</span><p class="ai-text" id="aiNext"></p></div><p class="ai-note" id="aiCaution"></p></div>
  <p class="ai-note" id="aiMessage">While the Big Mac model is unavailable, instant local language cues remain active.</p>
  <div class="row" style="margin-top:10px"><button id="aiReconnect" class="btn small ghost" type="button">Check connection</button></div>
  <p class="note">AI requests go through the MacBook-to-Big Mac tunnel. Microphone audio and speaker embeddings remain on the MacBook. If Whisper is unavailable, manual transcript entry still works.</p>
@@ -96,15 +111,41 @@
   <section class="panel" aria-labelledby="anchorTitle"><div class="panel-head"><h2 id="anchorTitle">Conversation anchor</h2><small>Optional question, not a required response</small></div><p id="anchor" style="font-size:14px;color:#d9e0ea">“Which point would be useful to clarify next?”</p><p class="note">You can ignore every suggestion. The people in the room remain the authority on what they mean.</p></section>
 </div>
 </main>
+<dialog id="editDialog" class="edit-dialog" aria-labelledby="editTitle">
+  <form id="editForm"><h2 id="editTitle">Correct transcript words</h2>
+    <p class="note">Whisper can mishear names, dates, and meaning. Corrections update the cues but do not train or verify a voiceprint.</p>
+    <label class="input-label" for="editText" style="margin-top:12px">Passage text</label>
+    <textarea id="editText" class="field" required maxlength="2000" rows="4"></textarea>
+    <p id="editError" class="micro" role="status" aria-live="polite"></p>
+    <div class="action-row"><button type="button" class="btn" id="cancelEditBtn">Cancel</button><button type="submit" class="btn primary">Save correction</button></div>
+  </form>
+</dialog>
 <footer class="foot"><span>Localhost only · No analytics · No automatic saved history</span><span>Keep Brave open and the app in the foreground. Silence-guided audio segments (9s maximum); slower transcription and AI coaching may follow.</span></footer>
 </div>
 <script>
 (()=>{'use strict';
  const $=id=>document.getElementById(id);
+ // Move the ACTUAL panels, not just their CSS order, so touch and keyboard journeys agree.
+ const layoutGrid=document.querySelector('.grid');
+ const leftWrap=layoutGrid.querySelector('.left-col'),rightWrap=layoutGrid.querySelector('.right-col');
+ const leftPanels=[...leftWrap.children],rightPanels=[...rightWrap.children];
+ const mobileQuery=window.matchMedia('(max-width:810px)');
+ function arrangePanels(){
+   if(mobileQuery.matches){
+     if(layoutGrid.classList.contains('mobile-layout'))return;
+     layoutGrid.classList.add('mobile-layout');
+     for(const panel of [leftPanels[0],leftPanels[1],rightPanels[0],leftPanels[3],rightPanels[2],rightPanels[1],leftPanels[2],rightPanels[3]])layoutGrid.append(panel);
+   }else{
+     if(!layoutGrid.classList.contains('mobile-layout'))return;
+     for(const panel of leftPanels)leftWrap.append(panel);
+     for(const panel of rightPanels)rightWrap.append(panel);
+     layoutGrid.classList.remove('mobile-layout');
+   }
+ }
+ mobileQuery.addEventListener('change',arrangePanels);arrangePanels();
  // A new page session starts without inherited scenario text or browser-restored context.
  $('context').value='';
- const state={turns:[],recognition:null,wantsListen:false,isListening:false,paused:false,restarts:0,restartTimer:null,shouldScroll:true,lastNoteKey:'',lastFinalAt:0};
- const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ const state={turns:[],turnSerial:0,wantsListen:false,paused:false,lastFinalAt:0};
  const stt={ready:false,reason:'Checking local Whisper engine',stream:null,recorder:null,chunkTimer:null,
     queue:[],sending:false,controller:null,generation:0,readyToken:false,dropped:0,capture:'',
     context:null,source:null,meter:null,meterData:null,meterTimer:null,noiseFloor:.004,
@@ -112,7 +153,7 @@
     levelMax:0,meterStarted:0};
  const LOCAL_WINDOW_MS=8900,MIN_WINDOW_MS=2800,END_SILENCE_MS=900;
  const ai={ready:false,enabled:false,token:'',model:'',timer:null,inFlight:false,pending:false,revision:0,session:0,lastStarted:0,lastResult:null,lastResultTurns:0,controller:null};
- let micProofTimer=null;let aiUserDisabled=false;
+ let micProofTimer=null,editingId=null;
  const goals={observe:['notice what was actually said without assuming a topic or objective.','“Which point would be useful to clarify next?”'],understand:['clarify terms, questions, or differing interpretations.','“What does that mean in this conversation?”'],resolve:['identify decisions, owners, and practical next steps.','“What decision or next step, if any, was agreed?”'],repair:['check for misunderstandings and possible repair openings.','“What would help clarify what was meant?”'],boundary:['make requests, requirements, and preferences explicit.','“Is this a requirement, a preference, or a proposal?”']};
  const where={me:'Me',other:'Other',shared:'Unassigned'};
  const speakerLabel=k=>typeof k==='string'&&k.startsWith('name:')?k.slice(5):where[k]||'Unassigned';
@@ -120,17 +161,22 @@
  let updateTimer=null;
  const now=()=>new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
  const clean=t=>String(t||'').replace(/\s+/g,' ').trim().slice(0,2000);
- const has=(s,re)=>re.test(s);
+ // Use the SAME pattern that raised a local cue to find its literal supporting passage.
+ // Concatenated-text matches with no single source remain unattributed.
+ let signalEvidence=null;
+ const has=(s,re)=>{const found=re.test(s);signalEvidence=found?state.turns.slice(-12).reverse().find(t=>re.test(t.text))||null:null;return found};
  function setStatus(name,msg){$('status').className='status'+(name==='live'?' live':name==='paused'?' paused':'');$('statusText').textContent=msg}
  function setMsg(msg){$('micMessage').textContent=msg}
  function syncButtons(){ $('enrollBtn').disabled=!speaker.enrolling&&(state.wantsListen||!speaker.ready||!$('enrollConsent').checked||!/^([A-Za-z][A-Za-z0-9 '-]{0,29})$/.test($('enrollName').value.trim())); $('enrollBtn').textContent=speaker.enrolling?'Cancel voice sample':'Record a voice sample (7s)'; $('startBtn').disabled=!$('consent').checked||state.wantsListen||!stt.ready; $('stopBtn').disabled=!state.wantsListen; $('pauseBtn').disabled=state.turns.length===0 && !state.wantsListen; $('pauseBtn').textContent=state.paused?'Resume cues':'Pause cues';$('counter').textContent=state.turns.length+' passage'+(state.turns.length===1?'':'s') }
- function addTurn(text,speakerId='shared',origin='typed',voiceNote=''){ const t=clean(text);if(!t)return; let safe=where[speakerId]?speakerId:'shared';if(typeof speakerId==='string'&&speakerId.startsWith('name:')&&((origin==='speech'&&/introduction|acoustic match|voice candidate/i.test(voiceNote))||speaker.profiles.some(x=>x.name===speakerId.slice(5)&&x.samples>0)))safe=speakerId;state.turns.push({text:t,speaker:safe,time:now(),origin,voiceNote:clean(voiceNote).slice(0,170)});if(state.turns.length>300)state.turns.splice(0,state.turns.length-300);renderTranscript();scheduleAnalysis();scheduleAI();syncButtons() }
- function renderTranscript(){const area=$('transcript');area.replaceChildren();if(state.turns.length===0){const e=document.createElement('div');e.className='empty';const inner=document.createElement('div');const b=document.createElement('b');b.textContent='No conversation captured yet.';inner.append(b,document.createTextNode('Start listening or add a line manually.'));e.append(inner);area.append(e);return}const frag=document.createDocumentFragment();for(const t of state.turns){const row=document.createElement('div');row.className='turn';const meta=document.createElement('div');meta.className='turn-meta';const who=document.createElement('span');who.className='who '+(t.speaker==='other'?'other':t.speaker==='shared'?'shared':t.speaker.startsWith('name:')?'named':'');who.textContent=speakerLabel(t.speaker)+(t.speaker.startsWith('name:')&&/provisional|heard-only|not verified/i.test(t.voiceNote)?' ?':'');const time=document.createElement('span');time.textContent=t.time+(t.origin==='speech'?' · mic':'');meta.append(who,time);
-  if(t.origin==='speech'){const correction=document.createElement('select');correction.className='field';correction.style.cssText='width:auto;max-width:140px;padding:3px 6px;font-size:11px';correction.setAttribute('aria-label','Correct speaker for this passage');for(const [value,label] of [['shared','Unassigned'],['me','Me (manual)'],['other','Other (manual)'],...speaker.profiles.filter(p=>p.samples>0).map(p=>['name:'+p.name,p.name+' (manual)'])]){const option=document.createElement('option');option.value=value;option.textContent=label;option.selected=t.speaker===value;correction.append(option)}correction.addEventListener('change',()=>{t.speaker=correction.value;t.voiceNote='Manually corrected by user; not a verified acoustic attribution';renderTranscript();scheduleAnalysis();invalidateAI(true);scheduleAI()});meta.append(correction)}const body=document.createElement('p');body.className='turn-text';body.textContent=t.text;row.append(meta,body);if(t.voiceNote){const note=document.createElement('small');note.className='voice-note';note.textContent=t.voiceNote;row.append(note)}frag.append(row)}area.append(frag);area.scrollTop=area.scrollHeight}
+ function addTurn(text,speakerId='shared',origin='typed',voiceNote=''){ const t=clean(text);if(!t)return; let safe=where[speakerId]?speakerId:'shared';if(typeof speakerId==='string'&&speakerId.startsWith('name:')&&((origin==='speech'&&/introduction|acoustic match|voice candidate/i.test(voiceNote))||speaker.profiles.some(x=>x.name===speakerId.slice(5)&&x.samples>0)))safe=speakerId;state.turns.push({id:++state.turnSerial,text:t,speaker:safe,time:now(),origin,edited:false,voiceNote:clean(voiceNote).slice(0,170)});if(state.turns.length>300)state.turns.splice(0,state.turns.length-300);renderTranscript();scheduleAnalysis();scheduleAI();syncButtons() }
+ function renderTranscript(){const area=$('transcript');area.replaceChildren();if(state.turns.length===0){const e=document.createElement('div');e.className='empty';const inner=document.createElement('div');const b=document.createElement('b');b.textContent='No conversation captured yet.';inner.append(b,document.createTextNode('Start listening or add a line manually.'));e.append(inner);area.append(e);return}const frag=document.createDocumentFragment();for(const t of state.turns){const row=document.createElement('div');row.className='turn';row.id='passage-'+t.id;row.tabIndex=-1;const meta=document.createElement('div');meta.className='turn-meta';const who=document.createElement('span');who.className='who '+(t.speaker==='other'?'other':t.speaker==='shared'?'shared':t.speaker.startsWith('name:')?'named':'');who.textContent=speakerLabel(t.speaker)+(t.speaker.startsWith('name:')&&/provisional|heard-only|not verified/i.test(t.voiceNote)?' ?':'');const time=document.createElement('span');time.textContent=t.time+(t.origin==='speech'?' · mic':'')+(t.edited?' · words corrected':'');meta.append(who,time);
+  if(t.origin==='speech'){const correction=document.createElement('select');correction.className='field';correction.style.cssText='width:auto;max-width:140px;padding:3px 6px;font-size:11px';correction.setAttribute('aria-label','Correct speaker for this passage');for(const [value,label] of [['shared','Unassigned'],['me','Me (manual)'],['other','Other (manual)'],...speaker.profiles.filter(p=>p.samples>0).map(p=>['name:'+p.name,p.name+' (manual)'])]){const option=document.createElement('option');option.value=value;option.textContent=label;option.selected=t.speaker===value;correction.append(option)}correction.addEventListener('change',()=>{t.speaker=correction.value;t.voiceNote='Manually corrected by user; not a verified acoustic attribution';renderTranscript();scheduleAnalysis();invalidateAI(true);scheduleAI()});meta.append(correction)}const editButton=document.createElement('button');editButton.type='button';editButton.className='btn small ghost';editButton.textContent='Correct words';editButton.setAttribute('aria-label','Correct words in passage '+t.id);editButton.addEventListener('click',()=>editTurn(t.id));meta.append(editButton);const body=document.createElement('p');body.className='turn-text';body.textContent=t.text;row.append(meta,body);if(t.voiceNote){const note=document.createElement('small');note.className='voice-note';note.textContent=t.voiceNote;row.append(note)}frag.append(row)}area.append(frag);area.scrollTop=area.scrollHeight}
+ function editTurn(id){const turn=state.turns.find(t=>t.id===id);if(!turn)return;editingId=id;$('editText').value=turn.text;$('editError').textContent='';$('editDialog').showModal();$('editText').focus()}
+ function jumpToTurn(id){const row=document.getElementById('passage-'+id);if(!row)return;const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;row.scrollIntoView({block:'nearest',behavior:reduced?'auto':'smooth'});row.focus({preventScroll:true})}
  function scheduleAnalysis(){clearTimeout(updateTimer);updateTimer=setTimeout(analyze,120)}
  function setAIStatus(msg){$('aiHealth').textContent=msg}
  function setAIMessage(msg){$('aiMessage').textContent=msg}
- function invalidateAI(erase){ai.session++;ai.pending=false;clearTimeout(ai.timer);if(ai.controller){ai.controller.abort();ai.controller=null}if(erase){ai.lastResult=null;ai.lastResultTurns=0;$('aiReview').hidden=true}}
+ function invalidateAI(erase){ai.session++;ai.pending=false;clearTimeout(ai.timer);if(ai.controller){ai.controller.abort();ai.controller=null}if(erase){ai.lastResult=null;ai.lastResultTurns=0;$('aiReview').hidden=true;$('aiEvidenceJump').hidden=true;$('aiEvidenceJump').onclick=null}}
  async function checkAI(){
   setAIStatus('Checking...');
   try {
@@ -142,24 +188,25 @@
    ai.token=val.token;ai.ready=!!val.ready;ai.model=val.model||'';
    stt.ready=!!(val.stt&&val.stt.ready);
    stt.reason=val.stt&&val.stt.reason || 'Local speech unavailable';speaker.ready=!!(val.speakers&&val.speakers.ready);speaker.profiles=val.speakers&&Array.isArray(val.speakers.profiles)?val.speakers.profiles:[];renderSpeakers();
-   $('capability').textContent=stt.ready?'LOCAL WHISPER READY':'Whisper unavailable';
-   if(!state.wantsListen)setMsg(stt.ready?'Local speech ready. Confirm consent and press Start.':stt.reason+'; browser fallback may fail in Brave.');
+   $('capability').textContent=stt.ready?'LOCAL WHISPER READY':'Local Whisper unavailable';
+   if(!state.wantsListen)setMsg(stt.ready?'Local speech ready. Confirm consent and press Start.':stt.reason+'; use manual entry until the local engine is ready.');
    if(ai.ready){setAIStatus('READY · '+ai.model);$('aiToggle').disabled=false;
-    if(!ai.enabled&&!aiUserDisabled&&$('aiReview').hidden){ai.enabled=true;$('aiToggle').checked=true}
-    setAIMessage('AI connected. New passages will be analyzed automatically.');scheduleAI();
+    $('aiToggle').checked=ai.enabled;
+    setAIMessage(ai.enabled?'Big Mac analysis enabled at your request.':'Big Mac available, but analysis is OFF until you explicitly opt in. Local cues remain active.');
+    if(ai.enabled)scheduleAI();
    }else{setAIStatus('OFFLINE');setAIMessage(val.reason||'Model unavailable. Local cues still work.');
     $('aiToggle').checked=false;$('aiToggle').disabled=true;ai.enabled=false}
   }catch(e){ai.ready=false;ai.enabled=false;stt.ready=false;ai.token='';speaker.ready=false;speaker.profiles=[];renderSpeakers();
    setAIStatus('OFFLINE');setAIMessage(e.message||'Local AI unavailable; local cues still work.');
    $('aiToggle').checked=false;$('aiToggle').disabled=true;
-   $('capability').textContent=SR?'Browser fallback only':'Speech unavailable';
+   $('capability').textContent='Local Whisper unavailable';
   }
   syncButtons();
  }
  function scheduleAI(){ai.revision++;if(!ai.ready||!ai.enabled||state.paused||!state.turns.length)return;ai.pending=true;if(ai.inFlight)return;clearTimeout(ai.timer);const wait=Math.max(1000,9000-(Date.now()-ai.lastStarted));ai.timer=setTimeout(runAI,wait)}
- async function runAI(){if(!ai.pending||ai.inFlight||!ai.ready||!ai.enabled||state.paused||!state.turns.length)return;ai.pending=false;ai.inFlight=true;ai.lastStarted=Date.now();const gen=ai.session;const currentCount=state.turns.length;const controller=new AbortController();ai.controller=controller;setAIStatus('THINKING · '+ai.model);setAIMessage('Analyzing through passage '+currentCount+'; you can keep talking.');const turns=state.turns.slice(-12).map(t=>({speaker:(t.speaker.startsWith('name:')&&/provisional|heard-only|unverified|not verified/i.test(t.voiceNote))?'Unassigned':speakerLabel(t.speaker),text:t.text}));try{const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json','X-Lens-Token':ai.token},body:JSON.stringify({goal:$('aim').selectedOptions[0].text,context:$('context').value,turns}),signal:controller.signal});if(!res.ok){const error=await res.json().catch(()=>({}));throw new Error(error.error||'AI request failed ('+res.status+')')}const data=await res.json();if(gen!==ai.session||!ai.enabled||state.paused)return;const i=data.insight;if(!i||typeof i.observation!=='string'||typeof i.next_step!=='string')throw new Error('Invalid AI response');ai.lastResult=i;ai.lastResultTurns=currentCount;$('aiObservation').textContent=i.observation;$('aiEvidence').textContent=i.evidence||'No exact quotation supplied';$('aiNext').textContent=i.next_step;$('aiCaution').textContent=i.caution||'';$('aiReview').hidden=false;setAIStatus('LIVE · '+ai.model);setAIMessage('Model observation covers passage '+currentCount+(state.turns.length>currentCount?' ('+(state.turns.length-currentCount)+' newer)':'' )+'. It is a suggestion, not a verdict.');if(state.turns.length<=currentCount+1){$('cueTitle').textContent=i.next_step;$('cueText').textContent=i.observation}}catch(e){if(e.name!=='AbortError'&&gen===ai.session){setAIStatus('AI ERROR');setAIMessage((e.message||'AI request failed')+'. Local cues still work.');}}finally{ai.inFlight=false;if(ai.controller===controller)ai.controller=null;if(ai.pending&&ai.ready&&ai.enabled&&!state.paused) scheduleAI();}}
+ async function runAI(){if(!ai.pending||ai.inFlight||!ai.ready||!ai.enabled||state.paused||!state.turns.length)return;ai.pending=false;ai.inFlight=true;ai.lastStarted=Date.now();const gen=ai.session;const reqVersion=ai.revision;const currentCount=state.turns.length;const controller=new AbortController();ai.controller=controller;setAIStatus('THINKING · '+ai.model);setAIMessage('Analyzing through passage '+currentCount+'; you can keep talking.');const turns=state.turns.slice(-12).map(t=>({speaker:(t.speaker.startsWith('name:')&&/provisional|heard-only|unverified|not verified/i.test(t.voiceNote))?'Unassigned':speakerLabel(t.speaker),text:t.text}));try{const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json','X-Lens-Token':ai.token},body:JSON.stringify({goal:$('aim').selectedOptions[0].text,context:$('context').value,turns}),signal:controller.signal});if(!res.ok){const error=await res.json().catch(()=>({}));throw new Error(error.error||'AI request failed ('+res.status+')')}const data=await res.json();if(gen!==ai.session||reqVersion!==ai.revision||!ai.enabled||state.paused)return;const i=data.insight;if(!i||typeof i.observation!=='string'||typeof i.next_step!=='string')throw new Error('Invalid AI response');ai.lastResult=i;ai.lastResultTurns=currentCount;$('aiObservation').textContent=i.observation;$('aiEvidence').textContent=i.evidence||'No exact quotation supplied';const norm=s=>String(s||'').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();const quote=norm(i.evidence);const source=quote.length>=6?state.turns.slice(-12).find(t=>norm(t.text).includes(quote)):null;const jump=$('aiEvidenceJump');jump.hidden=!source;if(source){jump.textContent='Review passage '+source.id;jump.onclick=()=>jumpToTurn(source.id)}else jump.onclick=null;$('aiNext').textContent=i.next_step;$('aiCaution').textContent=i.caution||'';$('aiReview').hidden=false;setAIStatus('LIVE · '+ai.model);setAIMessage('Model observation covers passage '+currentCount+(state.turns.length>currentCount?' ('+(state.turns.length-currentCount)+' newer)':'' )+'. It is a suggestion, not a verdict.');if(state.turns.length<=currentCount+1){$('cueTitle').textContent=i.next_step;$('cueText').textContent=i.observation}}catch(e){if(e.name!=='AbortError'&&gen===ai.session){setAIStatus('AI ERROR');setAIMessage((e.message||'AI request failed')+'. Local cues still work.');}}finally{ai.inFlight=false;if(ai.controller===controller)ai.controller=null;if(ai.pending&&ai.ready&&ai.enabled&&!state.paused) scheduleAI();}}
 
- function make(kind,title,why,tryLine,evidence,score=1){return {kind,title,why,tryLine,evidence,score}}
+ function make(kind,title,why,tryLine,evidence,score=1){const matched=signalEvidence;signalEvidence=null;return {kind,title,why,tryLine,evidence,score,sourceId:matched?matched.id:null,sourceText:matched?matched.text:''}}
  function analyze(){if(state.paused){$('analysisAge').textContent='Cues paused';return}const turns=state.turns;const full=turns.map(t=>t.text).join(' ');const recent=turns.slice(-12).map(t=>t.text).join(' ');const low=recent.toLowerCase();const rules=[];const goal=$('aim').value;const g=goals[goal]||goals.observe;$('northStar').textContent='North star: '+g[0];$('anchor').textContent=g[1];if(!recent){$('cueTitle').textContent='Waiting for conversation';$('cueText').textContent='Start listening or add a passage. Observations will be based on the words actually captured.';$('analysisAge').textContent='Ready for conversation';$('signals').replaceChildren();const q=document.createElement('div');q.className='quiet';q.textContent='I will look for questions, important claims, decisions, action items, clarification requests, and changing priorities. I won’t invent context or assign an unidentified speaker.';$('signals').append(q);return}
  // Evidence-backed, explicitly tentative micro-observations; no probabilistic diagnosis.
  // General-purpose cues come before specialized repair cues. Never assume a domain.
@@ -177,8 +224,8 @@
  const latest=turns.slice(-8); if(latest.length>=5){const questions=latest.filter(t=>/[?¿]/.test(t.text)).length;if(questions===0)rules.push(make('Curiosity','Few explicit questions in the recent exchange','The last several captured passages contained no question marks; transcription may omit punctuation. Consider checking your interpretation.','“Is there a question worth asking before moving on?”','Few transcribed questions recently',3))}
  if(turns.length>=5){let pairs=0;const norm=s=>new Set(s.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(w=>w.length>3));const windowTurn=turns.slice(-5);for(let i=0;i<windowTurn.length;i++)for(let j=i+1;j<windowTurn.length;j++){let a=norm(windowTurn[i].text),b=norm(windowTurn[j].text);if(a.size>3&&b.size>3){let inCommon=[...a].filter(x=>b.has(x)).length;if(inCommon/Math.min(a.size,b.size)>.7)pairs++}}if(pairs>0)rules.push(make('Possible loop','Similar phrases are recurring','Several recent passages share many of the same words. That does not prove a stalemate, but it may justify naming the stuck point.','“Could we summarize what is known and what remains open?”','Repeated word overlap in recent passages',5))}
  if(!rules.length)rules.push(make('Listening','The shape of the discussion is still emerging','There is not enough grounded evidence yet for a stronger observation. Avoid forcing an interpretation.','“Which point would be useful to clarify next?”','Conversation is still developing',1));
- rules.sort((a,b)=>b.score-a.score);const shown=rules.slice(0,3);const chosen=shown[0];$('cueTitle').textContent=chosen.tryLine;$('cueText').textContent=chosen.why;$('analysisAge').textContent='Updated from '+turns.length+' passage'+(turns.length===1?'':'s');if(ai.lastResult&&!state.paused&&ai.enabled&&state.turns.length<=ai.lastResultTurns+1){$('cueTitle').textContent=ai.lastResult.next_step;$('cueText').textContent=ai.lastResult.observation}const root=$('signals');root.replaceChildren();for(const i of shown){const card=document.createElement('article');card.className='insight';const tag=document.createElement('div');tag.className='tag';tag.textContent=i.kind;const title=document.createElement('h3');title.textContent=i.title;const p=document.createElement('p');p.textContent=i.why;const quote=document.createElement('blockquote');quote.textContent=i.tryLine;const source=document.createElement('span');source.className='source';source.textContent='Why shown: '+i.evidence;card.append(tag,title,p,quote,source);root.append(card)} }
- function clearRestart(){clearTimeout(state.restartTimer);state.restartTimer=null;clearTimeout(micProofTimer);micProofTimer=null}
+ rules.sort((a,b)=>b.score-a.score);const shown=rules.slice(0,3);const chosen=shown[0];$('cueTitle').textContent=chosen.tryLine;$('cueText').textContent=chosen.why;$('analysisAge').textContent='Updated from '+turns.length+' passage'+(turns.length===1?'':'s');if(ai.lastResult&&!state.paused&&ai.enabled&&state.turns.length<=ai.lastResultTurns+1){$('cueTitle').textContent=ai.lastResult.next_step;$('cueText').textContent=ai.lastResult.observation}const root=$('signals');root.replaceChildren();for(const i of shown){const card=document.createElement('article');card.className='insight';const tag=document.createElement('div');tag.className='tag';tag.textContent=i.kind;const title=document.createElement('h3');title.textContent=i.title;const p=document.createElement('p');p.textContent=i.why;const quote=document.createElement('blockquote');quote.textContent=i.tryLine;const source=document.createElement('span');source.className='source';source.textContent='Trigger: '+i.evidence;card.append(tag,title,p,quote,source);if(i.sourceId){const heard=document.createElement('div');heard.className='heard-source';heard.textContent='Captured passage '+i.sourceId+': “'+i.sourceText.slice(0,190)+(i.sourceText.length>190?'…':'')+'”';const jump=document.createElement('button');jump.className='btn small ghost evidence-link';jump.type='button';jump.textContent='Review passage '+i.sourceId;jump.addEventListener('click',()=>jumpToTurn(i.sourceId));heard.append(document.createElement('br'),jump);card.append(heard)}else{const note=document.createElement('small');note.className='source';note.textContent='Aggregate pattern or early observation; no exact single-passage quotation.';card.append(note)}root.append(card)} }
+ function clearRestart(){clearTimeout(micProofTimer);micProofTimer=null}
  function postCapture(path,body,{keepalive=false}={}){
    if(!ai.token)return Promise.reject(Error('Local server is unavailable'));
    return fetch(path,{method:'POST',headers:{'Content-Type':'application/json','X-Lens-Token':ai.token},
@@ -199,11 +246,12 @@
    $('levelFill').style.width='0%';$('levelRail').setAttribute('aria-valuenow','0');
    $('levelText').textContent='Input meter idle';$('windowText').textContent='Silence-guided segments';
  }
+ function updateQueueStatus(){const indicator=$('queueText');const pending=stt.queue.length+(stt.sending?1:0);const dropped=stt.dropped;indicator.dataset.loss=String(dropped>0);indicator.textContent=!state.wantsListen?(dropped?dropped+' recording window(s) skipped · stopped':'Queue idle'):(pending?'Processing '+pending+' window(s)'+(dropped?' · '+dropped+' skipped':''):(dropped?dropped+' window(s) skipped':'Up to date'))}
  function stopLocal(){
    stt.generation++;clearTimeout(stt.chunkTimer);stt.chunkTimer=null;
    const capture=stt.capture;stt.capture='';closeCapture(capture,true);
    if(stt.controller){stt.controller.abort();stt.controller=null}
-   stt.queue.length=0;
+   stt.queue.length=0;updateQueueStatus();
    const rec=stt.recorder;stt.recorder=null;
    if(rec&&rec.state!=='inactive'){try{rec.stop()}catch(e){}}
    stopMeter();
@@ -275,7 +323,7 @@
    if(clip.size<600)return;
    if(stt.queue.length>=3){stt.dropped++;stt.queue.shift();setMsg('Local speech is slower than the conversation: one old audio window was skipped ('+stt.dropped+' total).')}
    stt.queue.push({clip,speaker:$('micSpeaker').value,language:$('language').value.slice(0,2),autoNames:$('autoNames').checked&&$('consent').checked,generation});
-   sendLocalQueue();
+   updateQueueStatus();sendLocalQueue();
   };
   try{recorder.start()}catch(e){state.wantsListen=false;stopLocal();setStatus('off','MIC START FAILED');setMsg('Recording could not begin: '+e.message);syncButtons();return}
   clearTimeout(stt.chunkTimer);
@@ -283,10 +331,10 @@
  }
  async function sendLocalQueue(){
   if(stt.sending||!stt.queue.length)return;
-  stt.sending=true;
+  stt.sending=true;updateQueueStatus();
   try{
    while(stt.queue.length&&state.wantsListen){
-    const item=stt.queue.shift();
+    const item=stt.queue.shift();updateQueueStatus();
     if(item.generation!==stt.generation)continue;
     const controller=new AbortController();stt.controller=controller;
     try{
@@ -312,8 +360,8 @@
        try{const profiles=await fetch('/api/speakers',{cache:'no-store'}).then(x=>x.json());if(item.generation!==stt.generation||!state.wantsListen)break;if(profiles&&profiles.speakers&&Array.isArray(profiles.speakers.profiles)){speaker.profiles=profiles.speakers.profiles;renderSpeakers()}}catch(e){/* transcript remains usable if profile refresh fails */}}
      if(isNamed){if(!provisional){speaker.detected.delete(voice.label+'?');speaker.detected.add(voice.label)}else if(!speaker.detected.has(voice.label)){speaker.detected.add(voice.label+'?')}}
      $('speakerPresence').textContent='Possible voices this session: '+([...speaker.detected].join(' · ')||'none yet');
-     if(text){state.lastFinalAt=Date.now();setStatus('live','TRANSCRIPTION VERIFIED · LOCAL');
-      setMsg('Local transcript verified; '+(isNamed?'suggested speaker: '+voice.label+(provisional?' (provisional)':''):'voice: '+voice.label)+'.');addTurn(text,id,'speech',note)}
+     if(text){state.lastFinalAt=Date.now();setStatus('live','LOCAL TRANSCRIPT · REVIEW WORDS');
+      setMsg('Local transcription received; verify words and speaker labels. '+(isNamed?'suggested speaker: '+voice.label+(provisional?' (provisional)':''):'voice: '+voice.label)+'.');addTurn(text,id,'speech',note)}
      else if(!state.lastFinalAt){setMsg('Local speech active. Quiet segment ignored. Say a complete test sentence.')}
     }catch(e){
      if(e.name==='AbortError'||item.generation!==stt.generation)break;
@@ -321,7 +369,7 @@
      setMsg((e.message||'Local speech error')+'. Select Check connection and retry.');syncButtons();break;
     }finally{if(stt.controller===controller)stt.controller=null}
    }
-  }finally{stt.sending=false;if(stt.queue.length&&state.wantsListen)queueMicrotask(sendLocalQueue)}
+  }finally{stt.sending=false;updateQueueStatus();if(stt.queue.length&&state.wantsListen)queueMicrotask(sendLocalQueue)}
  }
  async function startLocal(){
   if(!stt.ready||!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder!=='function'){
@@ -331,7 +379,7 @@
   if(!ai.token){setMsg('Local server token unavailable. Check connection first.');return}
   if(!$('consent').checked){setMsg('Confirm everyone knows and agrees first.');return}
   if(state.wantsListen)return;
-  state.wantsListen=true;state.lastFinalAt=0;stt.dropped=0;const generation=++stt.generation;
+  state.wantsListen=true;state.lastFinalAt=0;stt.dropped=0;updateQueueStatus();const generation=++stt.generation;
   setStatus('paused','REQUESTING MIC');setMsg('Brave will request microphone permission for LOCAL Whisper.');syncButtons();
   try{
    const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:true,autoGainControl:true}});
@@ -339,7 +387,13 @@
    stt.stream=stream;
    stream.getAudioTracks().forEach(t=>t.addEventListener('ended',()=>{if(generation!==stt.generation)return;state.wantsListen=false;stopLocal();setStatus('off','MIC DISCONNECTED');setMsg('Microphone disconnected or permission revoked.');syncButtons()},{once:true}));
    setMsg('Establishing private capture session…');
-   const lease=await postCapture('/api/capture/open',{consent:true});
+   let lease;
+   try{lease=await postCapture('/api/capture/open',{consent:true})}
+   catch(error){
+     if(!/capture already active in another tab/i.test(error.message||'')||
+        !window.confirm('Another Conversation Lens tab has the microphone session. Stop it there, or take over here and invalidate its next audio upload?'))throw error;
+     lease=await postCapture('/api/capture/open',{consent:true,takeover:true});
+   }
    if(generation!==stt.generation||!state.wantsListen){closeCapture(lease.capture,true);return}
    if(typeof lease.capture!=='string'||lease.capture.length<12)throw Error('Invalid server capture session');
    stt.capture=lease.capture;
@@ -354,15 +408,12 @@
    setMsg(hadStream?'Private capture setup failed: '+(e.message||'server error')+'. Check the local server and retry.':'Brave microphone permission failed: '+(e.name||'error')+'. Allow microphone for this local page in Brave.');syncButtons();
   }
  }
- function stop(){state.wantsListen=false;stopLocal();clearRestart();invalidateAI(false);const old=state.recognition;state.recognition=null;if(old){try{old.stop()}catch(e){}}state.isListening=false;$('interim').textContent='Listening stopped. You can still type passages.';$('interim').dataset.empty='true';setStatus('off','NOT LISTENING');setMsg('Stopped. Local audio capture halted; temporary clips are deleted by the server.');syncButtons()}
- function start(){if(stt.ready){startLocal();return}if(!SR){setMsg('Speech recognition is unavailable here. Use manual entry or open the standalone page in a supporting browser.');return}if(!$('consent').checked){setMsg('Confirm that everyone knows and agrees first.');return}if(state.wantsListen)return;state.wantsListen=true;state.restarts=0;state.lastFinalAt=0;state.recognition=new SR();const rec=state.recognition;rec.lang=$('language').value;rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=1;rec.onstart=()=>{if(!state.wantsListen||state.recognition!==rec)return;state.isListening=true;setStatus('live',state.lastFinalAt?'MIC ACTIVE / VERIFIED':'MIC ACTIVE / TRANSCRIPTION UNVERIFIED');setMsg(state.lastFinalAt?'Listening again. Transcription was verified earlier.':'Speech service started. Say a test phrase to verify transcription.');clearTimeout(micProofTimer);micProofTimer=setTimeout(()=>{if(state.wantsListen&&state.recognition===rec&&state.lastFinalAt===0)setMsg('No words verified yet. Say a full test phrase; check Chrome microphone and speech service if nothing appears.')},13000);syncButtons()};rec.onresult=e=>{if(!state.wantsListen||state.recognition!==rec)return;let interim=[];for(let i=e.resultIndex;i<e.results.length;i++){const x=e.results[i];if(!x||!x[0])continue;const transcript=clean(x[0].transcript);if(!transcript)continue;if(x.isFinal){state.lastFinalAt=Date.now();clearTimeout(micProofTimer);setStatus('live','TRANSCRIPTION VERIFIED');setMsg('Microphone test PASSED: actual words were transcribed.');state.restarts=0;addTurn(transcript,$('micSpeaker').value,'speech')}else interim.push(transcript)}$('interim').textContent=interim.length?interim.join(' '):'Listening for the next passage…';$('interim').dataset.empty=interim.length?'false':'true'};
- rec.onerror=e=>{if(state.recognition!==rec)return;const code=e&&e.error||'unknown';state.isListening=false;if(['not-allowed','service-not-allowed','audio-capture','language-not-supported'].includes(code)){state.wantsListen=false;setStatus('off','MIC BLOCKED');setMsg('Microphone unavailable ('+code+'). Use manual entry or open the standalone file in a supported browser.')}else if(code==='network'){state.wantsListen=false;setStatus('off','SPEECH SERVICE ERROR');setMsg('Brave built-in speech failed (network). Install whisper-cpp, press Check connection, then use local Whisper.');}else if(code!=='no-speech'&&code!=='aborted'){setMsg('Recognition issue: '+code+'. Retrying if the browser allows it.')}syncButtons()};
- rec.onend=()=>{if(state.recognition!==rec)return;state.isListening=false;if(!state.wantsListen){syncButtons();return}if(document.hidden){setStatus('paused','TAB INACTIVE');setMsg('Listening ended while this tab was inactive. Return to this page to resume.');syncButtons();return}state.restarts++;if(state.restarts>5){state.wantsListen=false;setStatus('off','RESTARTS EXHAUSTED');setMsg('The speech recognizer repeatedly stopped. Try starting again or type passages.');syncButtons();return}setStatus('paused','RECONNECTING');clearRestart();state.restartTimer=setTimeout(()=>{if(state.wantsListen&&!document.hidden){try{rec.start()}catch(err){state.wantsListen=false;setStatus('off','START FAILED');setMsg('Could not restart microphone: '+String(err.message||err));syncButtons()}}},Math.min(3500,450*state.restarts))};
- try{rec.start();setStatus('paused','REQUESTING MIC');setMsg('Waiting for browser microphone permission…');syncButtons()}catch(err){state.wantsListen=false;setStatus('off','START FAILED');setMsg('Microphone could not start: '+String(err.message||err));syncButtons()}}
+ function stop(){state.wantsListen=false;stopLocal();clearRestart();invalidateAI(false);$('interim').textContent='Listening stopped. You can still type passages.';$('interim').dataset.empty='true';setStatus('off','NOT LISTENING');setMsg('Stopped. Local audio capture halted; temporary clips are deleted by the server.');syncButtons()}
+ function start(){if(stt.ready){startLocal();return}setMsg('Local Whisper is unavailable; manual transcript entry remains available. Browser speech services are disabled to avoid unrequested external audio processing.')}
  function transcriptText(){return state.turns.map(t=>'['+t.time+'] '+speakerLabel(t.speaker)+(t.voiceNote?' ('+t.voiceNote+')':'')+': '+t.text).join('\n')}
  function promptText(){const extra=$('context').value.trim();return 'Act as a neutral live-conversation observer. Infer no background, topic, participants, or purpose beyond the actual transcript and any context I explicitly add. Provide up to three grounded observations, quote exact matching phrases, distinguish fact from hypothesis, and optionally suggest a short clarifying question. Do not mind-read, diagnose, take sides, or assign uncertain speakers.\n\nMODE: '+$('aim').selectedOptions[0].text+(extra?'\nUSER-SUPPLIED CONTEXT:\n'+extra:'')+'\n\nTRANSCRIPT:\n'+(transcriptText()||'(none)')}
  async function copy(text,button){try{if(!navigator.clipboard||!window.isSecureContext)throw new Error('Clipboard unavailable');await navigator.clipboard.writeText(text);button.textContent='Copied';setTimeout(()=>{button.textContent=button.id==='copyBtn'?'Copy transcript':'Copy GPT review prompt'},1700)}catch(e){const el=document.createElement('textarea');el.value=text;el.style.cssText='position:fixed;left:12px;bottom:12px;width:60%;height:100px;z-index:9999';document.body.append(el);el.focus();el.select();setMsg('Clipboard permission was blocked. The text is selected; copy it manually, then close this field.');el.addEventListener('blur',()=>el.remove(),{once:true})}}
- function reset(){stop();invalidateAI(true);clearTimeout(updateTimer);state.turns=[];speaker.detected.clear();$('speakerPresence').textContent='Possible voices this session: none yet';state.paused=false;renderTranscript();analyze();syncButtons();setMsg('Transcript cleared. Context and goal were retained; use Forget voice profiles to clear voiceprints as well.')}
+ function reset(){stop();if($('editDialog').open)$('editDialog').close();editingId=null;invalidateAI(true);clearTimeout(updateTimer);state.turns=[];speaker.detected.clear();$('speakerPresence').textContent='Possible voices this session: none yet';state.paused=false;renderTranscript();analyze();syncButtons();setMsg('Transcript cleared. Context and goal were retained; use Forget voice profiles to clear voiceprints as well.')}
  function renderSpeakers(){
   $('speakerHealth').textContent=speaker.ready?'LOCAL VOICE MODEL READY':'VOICE MODEL UNAVAILABLE';
   const target=$('speakerProfiles');target.replaceChildren();
@@ -402,9 +453,12 @@
  async function forgetSpeakers(name){if(speaker.enrolling)return;if(!ai.token)return;if(!window.confirm(name?'Forget the session voiceprint for '+name+'?':'Forget every enrolled voiceprint?'))return;
   try{const res=await fetch('/api/speakers/forget',{method:'POST',headers:{'X-Lens-Token':ai.token,'Content-Type':'application/json'},body:JSON.stringify(name?{name}:{all:true})});const obj=await res.json();if(!res.ok)throw Error(obj.error||'Forget failed');speaker.profiles=obj.speakers.profiles;speaker.detected.clear();$('speakerPresence').textContent='Possible voices this session: none yet';renderSpeakers();$('enrollMessage').textContent='Voiceprints discarded from server RAM. Existing transcript text is not changed.'}catch(e){$('enrollMessage').textContent=e.message||'Could not clear profiles'}
  }
+ $('editForm').addEventListener('submit',event=>{event.preventDefault();const turn=state.turns.find(t=>t.id===editingId);const value=clean($('editText').value);if(!turn||!value){$('editError').textContent='Enter the corrected words before saving.';return}if(value!==turn.text){turn.text=value;turn.edited=true;invalidateAI(true);renderTranscript();analyze();scheduleAI()}$('editDialog').close();editingId=null;syncButtons()});
+ $('cancelEditBtn').addEventListener('click',()=>$('editDialog').close());
+ $('editDialog').addEventListener('close',()=>{editingId=null});
  $('autoNames').addEventListener('change',()=>{if(state.wantsListen&&!$('autoNames').checked){stop();setMsg('Speaker-name learning revoked; capture stopped to discard pending audio. Press Start to continue without it.')}const box=$('introductionStatus');if($('autoNames').checked){box.dataset.state='idle';box.textContent='Natural introductions enabled for this session, with everyone’s consent. Speak a name and continue with a sentence.'}else{box.dataset.state='idle';box.textContent='Spoken-name learning OFF. Voiceprints already enrolled for this session remain until you choose Forget profiles or close the server.'}});
  $('enrollName').addEventListener('input',syncButtons);$('enrollConsent').addEventListener('change',syncButtons);$('enrollBtn').addEventListener('click',beginEnroll);$('forgetBtn').addEventListener('click',()=>forgetSpeakers());
- $('manualForm').addEventListener('submit',e=>{e.preventDefault();addTurn($('manualText').value,$('manualSpeaker').value,'typed');$('manualText').value='';$('manualText').focus()});$('startBtn').addEventListener('click',start);$('stopBtn').addEventListener('click',stop);$('pauseBtn').addEventListener('click',()=>{state.paused=!state.paused;if(!state.paused){analyze();scheduleAI()}else{invalidateAI(false);$('analysisAge').textContent='Cues paused'}syncButtons()});$('consent').addEventListener('change',()=>{if(!$('consent').checked && state.wantsListen)stop();syncButtons()});$('context').addEventListener('input',()=>{invalidateAI(true);scheduleAnalysis();scheduleAI()});$('aim').addEventListener('change',()=>{invalidateAI(true);analyze();scheduleAI()});$('aiReconnect').addEventListener('click',checkAI);$('aiToggle').addEventListener('change',()=>{ai.enabled=ai.ready&&$('aiToggle').checked;aiUserDisabled=!ai.enabled;if(ai.enabled){scheduleAI()}else{invalidateAI(true);setAIStatus(ai.ready?'PAUSED':'OFFLINE');setAIMessage('AI coaching is off; instant local cues still work.');analyze()}});$('eraseAllBtn').addEventListener('click',async()=>{
+ $('manualForm').addEventListener('submit',e=>{e.preventDefault();addTurn($('manualText').value,$('manualSpeaker').value,'typed');$('manualText').value='';$('manualText').focus()});$('startBtn').addEventListener('click',start);$('stopBtn').addEventListener('click',stop);$('pauseBtn').addEventListener('click',()=>{state.paused=!state.paused;if(!state.paused){analyze();scheduleAI()}else{invalidateAI(false);$('analysisAge').textContent='Cues paused'}syncButtons()});$('consent').addEventListener('change',()=>{if(!$('consent').checked && state.wantsListen)stop();syncButtons()});$('context').addEventListener('input',()=>{invalidateAI(true);scheduleAnalysis();scheduleAI()});$('aim').addEventListener('change',()=>{invalidateAI(true);analyze();scheduleAI()});$('aiReconnect').addEventListener('click',checkAI);$('aiToggle').addEventListener('change',()=>{ai.enabled=ai.ready&&$('aiToggle').checked;if(ai.enabled){scheduleAI()}else{invalidateAI(true);setAIStatus(ai.ready?'PAUSED':'OFFLINE');setAIMessage('AI coaching is off; instant local cues still work.');analyze()}});$('eraseAllBtn').addEventListener('click',async()=>{
    if(!window.confirm('Stop listening, clear transcript, optional context and names, reset the goal, and forget ALL in-memory speaker profiles?'))return;
    stop();cancelEnroll();
    try{
@@ -419,7 +473,7 @@
    }catch(e){setMsg('Erase was not confirmed by the server: '+(e.message||'unknown error')+'. Stop the Terminal server to discard its RAM voiceprints.');}
  });
  $('copyBtn').addEventListener('click',()=>copy(transcriptText(),$('copyBtn')));$('copyBriefBtn').addEventListener('click',()=>copy(promptText(),$('copyBriefBtn')));$('clearBtn').addEventListener('click',()=>{if(state.turns.length && !window.confirm('Clear all captured passages in this session?'))return;reset()});$('sampleBtn').addEventListener('click',()=>{reset();for(const [s,t] of [['me','Could we review the options for the next meeting?'],['other','Thursday works, but I need the outline before Wednesday afternoon.'],['me','I can send the outline Tuesday. Does a Thursday review work for everyone?']])addTurn(t,s,'demo');setMsg('Fictional example loaded. Start or add your own lines when ready.')});
- document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.wantsListen){stop();setMsg('Microphone stopped when the tab became hidden. Restart explicitly when ready.')}});window.addEventListener('pagehide',()=>{cancelEnroll();state.wantsListen=false;stopLocal();clearRestart();if(state.recognition){try{state.recognition.abort()}catch(e){}}});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.wantsListen){stop();setMsg('Microphone stopped when the tab became hidden. Restart explicitly when ready.')}});window.addEventListener('pagehide',()=>{cancelEnroll();state.wantsListen=false;stopLocal();clearRestart()});
  $('capability').textContent='Checking local Whisper';renderSpeakers();analyze();syncButtons();checkAI();
 })();
 </script>

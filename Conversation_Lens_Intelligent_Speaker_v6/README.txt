@@ -11,6 +11,16 @@ NEUTRAL DEFAULT (current repository revision)
 - The optional context field is passed to the AI only when the user enters it.
 - Names are learned only from consenting, actual recorded introductions or separate voluntary enrollment; context never creates a voiceprint.
 
+LATEST PRIVACY + USABILITY UPLIFT
+- BIG MAC AI IS OPT-IN: availability checks do not send transcript text; actively enable the checkbox. Only text/context go through the private LAN tunnel, never audio or embeddings.
+- The same enrollment recording is rejected as a repeated sample or under a different speaker name.
+- Another open tab receives a capture conflict. Approve takeover explicitly or Stop the previous tab.
+- Correct transcribed words using Correct words. Correcting text does not verify or relabel a voice.
+- Review the literal passage behind each sourced local cue. Grounded AI quotations also link to matching passages.
+- Processing backlog and skipped recording windows are visibly tracked; skipped audio cannot silently be recovered.
+- On narrow screens setup/mic precede coaching/transcript, and DOM order matches.
+- With Whisper down use manual text entry; external browser speech providers are disabled.
+
 WHAT CHANGED FROM v5
 - Silence-guided local audio segmentation: end a window around 0.9s after measured silence following speech, never sooner than ~2.8s, with an 8.9s hard cap. This is acoustic-energy heuristics, not a trained turn boundary detector. If the input meter is unavailable, fixed-length clipping remains available.
 - Visible real-time mic input meter and no-signal warning. The meter tests microphone energy, not proof that words can be transcribed.
@@ -41,7 +51,7 @@ PRIVACY
 - Conversation audio is POSTed only to the MacBook localhost server in normal Whisper mode; ephemeral FFmpeg/Whisper files are removed after worker completion. No automatically saved transcript history. Speaker vectors and audio hashes stay in server RAM and are lost at server exit or erase.
 - The coaching prompt sends transcript snippets and editable context, NOT raw mic audio or voice embeddings, to Big Mac via the existing local tunnel.
 - STOP prevents further microphone capture immediately in the UI and sends a revoke request to the server; any already-running Whisper process may finish computation but its result is discarded after the server receives the revoke request. STOP does not erase preexisting voice profiles unless you choose Erase or Forget profiles.
-- If local Whisper is unavailable, the legacy browser speech fallback may be offered by the existing UI, and browsers can send audio to a speech provider. For a privacy-sensitive conversation, do not use browser fallback; use local Whisper or manual entry.
+- Browser speech-service fallback is deliberately disabled; when local Whisper is unavailable, manual text entry still works. This prevents unrequested external audio processing.
 - This is NOT authentication, surveillance, or evidence of consent to record. Do not identify someone from their voice without their knowledge and consent.
 
 KNOWN LIMITS
@@ -51,7 +61,9 @@ KNOWN LIMITS
 - Volume threshold, room noise, mic placement, pauses, accents, and similar-sounding speakers materially affect identification.
 - Speaker cosine scores are uncalibrated heuristics, NOT identity probabilities or confidence percentages.
 - Audio segmentation does not guarantee sentence boundaries. Long uninterrupted speaking can still be cut at 8.9 seconds.
-- v6 was tested with simulated audio and fake acoustic vectors; human multi-speaker benchmark on the target physical microphone is the required acceptance gate.
+- Brave UI tests simulate microphone input and acoustic vectors; full-stack synthetic-speech smoke exercised real FFmpeg, Whisper, the ONNX voice embedding worker and Big Mac AI on the MacBook. Human voice accuracy remains untested.
+- Big Mac AI can take several seconds per suggestion; not an instantaneous interruption system.
+- Second-tab takeover revokes the previous tab's capture session without modifying earlier text.
 
 ROLLBACK
 v5, v4, v3 and DexDictate were not modified. This ZIP installs as a separate folder. Stop v6 and launch your previous version to roll back.

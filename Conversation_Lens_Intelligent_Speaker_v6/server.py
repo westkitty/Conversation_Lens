@@ -40,6 +40,8 @@ SPEAKER_WORKER = APP_DIR / 'speaker_worker.py'
 SPEAKERS = {}
 # Introduction metadata is process-local like the embeddings; no durable biometric directory.
 SPEAKER_META = {}
+# SHA-256 of voluntarily enrolled clips; RAM-only anti-replay evidence.
+ENROLLMENT_AUDIO_IDS = {}
 SPEAKERS_LOCK = threading.RLock()
 PROFILE_EPOCH = 0
 # A separate, revocable capture lease prevents late STT responses from learning voices
@@ -48,9 +50,12 @@ CAPTURE_LOCK = threading.RLock()
 CAPTURE_SESSION = None
 
 
-def open_capture_session():
+def open_capture_session(takeover=False):
+    """A second tab must explicitly request takeover; never silently revoke another tab."""
     global CAPTURE_SESSION
     with CAPTURE_LOCK:
+        if CAPTURE_SESSION is not None and not takeover:
+            return None
         CAPTURE_SESSION = secrets.token_urlsafe(24)
         return CAPTURE_SESSION
 
@@ -467,8 +472,13 @@ def enroll_speaker(name, payload, media_type):
     name = name.strip()
     if not speaker_status()['ready']:
         raise RuntimeError('Speaker model unavailable')
+    audio_digest = hashlib.sha256(payload).hexdigest()
     with SPEAKERS_LOCK:
         epoch = PROFILE_EPOCH
+        if audio_digest in ENROLLMENT_AUDIO_IDS.get(name, set()):
+            raise ValueError('That exact recording was already used. Record a fresh voice sample.')
+        if any(audio_digest in ids for other, ids in ENROLLMENT_AUDIO_IDS.items() if other != name):
+            raise ValueError('That exact recording is already assigned to another speaker name.')
     with tempfile.TemporaryDirectory(prefix='lens-enroll-') as tmp:
         wav = decode_audio(payload, media_type, tmp)
         if not is_speech(wav):
@@ -485,11 +495,16 @@ def enroll_speaker(name, payload, media_type):
         # Bound all voiceprint data in RAM, no automatic saving or unconsented updates.
         if name not in SPEAKERS and len(SPEAKERS) >= 8:
             raise ValueError('Eight speaker profiles maximum')
+        if audio_digest in ENROLLMENT_AUDIO_IDS.get(name, set()):
+            raise ValueError('That exact recording was already used. Record a fresh voice sample.')
+        if any(audio_digest in ids for other, ids in ENROLLMENT_AUDIO_IDS.items() if other != name):
+            raise ValueError('That exact recording is already assigned to another speaker name.')
         profile = SPEAKERS.setdefault(name, [])
         if profile and max(similarity(embedding, prev) for prev in profile) < 0.64:
             raise ValueError('New sample differs from the existing profile. Verify that the same person is speaking')
         if len(profile) < 3:
             profile.append(embedding)
+            ENROLLMENT_AUDIO_IDS.setdefault(name, set()).add(audio_digest)
         SPEAKER_META.pop(name, None)  # explicit voice enrollment replaces provisional intro mode
         return {'name': name, 'samples': len(profile), 'active': len(profile) >= 2,
                 'message': 'Ready for tentative recognition' if len(profile) >= 2 else 'Record one more distinct voice sample'}
@@ -502,9 +517,11 @@ def forget_speakers(name=None):
         if name is None:
             SPEAKERS.clear()
             SPEAKER_META.clear()
+            ENROLLMENT_AUDIO_IDS.clear()
         else:
             SPEAKERS.pop(name, None)
             SPEAKER_META.pop(name, None)
+            ENROLLMENT_AUDIO_IDS.pop(name, None)
     return speaker_status()
 
 
@@ -637,7 +654,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     if body.get('consent') is not True:
                         self.respond(403, {'error': 'Consent required to begin capture'})
                     else:
-                        self.respond(200, {'capture': open_capture_session()})
+                        capture = open_capture_session(takeover=body.get('takeover') is True)
+                        if capture is None:
+                            self.respond(409, {'error': 'Capture already active in another tab. Stop it or explicitly approve takeover.'})
+                        else:
+                            self.respond(200, {'capture': capture})
                 elif self.path == '/api/capture/close':
                     self.respond(200, close_capture_session(body.get('capture')))
                 else:

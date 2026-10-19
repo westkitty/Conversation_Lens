@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+
 import tempfile
 import threading
 import time
@@ -13,6 +14,7 @@ import urllib.error
 from http.server import ThreadingHTTPServer
 from playwright.sync_api import sync_playwright
 
+BROWSER_EXECUTABLE=os.environ.get('LENS_BROWSER_EXECUTABLE') or next((p for p in ('/Applications/Brave Browser.app/Contents/MacOS/Brave Browser','/usr/bin/chromium','/usr/bin/chromium-browser') if Path(p).is_file()),'/usr/bin/chromium')
 ROOT=Path(__file__).parent/'Conversation_Lens_Intelligent_Speaker_v6'
 spec=importlib.util.spec_from_file_location('lens_v6_server',ROOT/'server.py')
 backend=importlib.util.module_from_spec(spec);spec.loader.exec_module(backend)
@@ -39,8 +41,10 @@ with tempfile.TemporaryDirectory(prefix='lens-v6-e2e-') as tmp:
     base='http://127.0.0.1:'+str(app.server_address[1])
     try:
       with sync_playwright() as p:
-        browser=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox','--disable-dev-shm-usage'])
+        browser=p.chromium.launch(headless=True,executable_path=BROWSER_EXECUTABLE,args=['--no-sandbox','--disable-dev-shm-usage'])
         for vw in (1200,375):
+          # Each viewport is independent; do not inherit the preceding test's mock speech.
+          txt.write_text('Hi, this is Dale, and I want us to understand each other.')
           backend.forget_speakers()
           page=browser.new_page(viewport={'width':vw,'height':800})
           errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
@@ -107,7 +111,7 @@ with tempfile.TemporaryDirectory(prefix='lens-v6-e2e-') as tmp:
           size=page.evaluate('document.documentElement.scrollWidth-window.innerWidth')
           assert size<=0,f'Horizontal overflow: {size}'
           page.close()
-          print(f'PASS Chromium viewport {vw}: microphone simulation, meter, real HTTP/WebM/ffmpeg, intro, learned voice, silence auto-boundary, Stop revoke, erase all, no console errors')
+          print(f'PASS Brave/Chromium viewport {vw}: microphone simulation, meter, real HTTP/WebM/ffmpeg, intro, learned voice, silence auto-boundary, Stop revoke, erase all, no console errors')
         browser.close()
     finally:
       app.shutdown();app.server_close()
