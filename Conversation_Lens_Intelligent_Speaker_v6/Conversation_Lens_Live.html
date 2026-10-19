@@ -167,7 +167,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
     <div class="row" style="margin-top:10px;align-items:end"><label class="small-label" for="speakerLockName">Pin a speaker label for future windows<select class="field" id="speakerLockName"><option value="">No lock</option></select></label><label class="small-label" for="speakerLockCount">Windows<input class="field" id="speakerLockCount" type="number" min="1" max="20" value="3"></label><button id="speakerLockBtn" class="btn small" type="button">Pin label</button></div><div id="speakerLockStatus" class="micro" role="status">No speaker label pinned.</div>
     <div id="speakerProfiles" class="speaker-profiles" aria-live="polite"><div class="quiet">No speakers enrolled.</div></div>
     <p class="note" id="enrollMessage" role="status">Self-introductions are <strong>provisional claims</strong>, not identity proof. The acoustic model can confuse similar voices; a name can always be corrected. Audio with overlaps or weak matches remains Unknown/Mixed.</p>
-    <div class="speaker-memory" id="speakerMemory">Voiceprint RAM: 0 bytes</div><div class="speaker-presence" id="speakerPresence">Possible voices this session: none yet</div>
+    <div class="speaker-memory" id="speakerMemory">Voiceprint RAM: 0 bytes</div><div id="talkTimeStats" class="speaker-memory">Attributed speech spans: none measured yet.</div><div class="speaker-presence" id="speakerPresence">Possible voices this session: none yet</div>
   </section>
   <section class="panel" aria-labelledby="transcriptTitle">
     <div class="panel-head"><h2 id="transcriptTitle">04 / Live transcript</h2><div class="tabrow"><button class="tab" id="sampleBtn" aria-label="Load a fictional demonstration">Try example</button></div></div>
@@ -251,6 +251,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
   const where={me:'Me',other:'Other',shared:'Unassigned',mixed:'Mixed'};
  const speakerLabel=k=>typeof k==='string'&&k.startsWith('name:')?k.slice(5):where[k]||'Unassigned';
  const speaker={ready:false,profiles:[],detected:new Set(),enrolling:false,active:null,controller:null,stream:null,recorder:null,timer:null,generation:0,ramBytes:0,lockName:'',lockRemaining:0};
+ const talkStats={byName:new Map(),attributedSeconds:0,mixedSeconds:0,overlapSeconds:0,unknownSeconds:0,unmeasuredWindows:0,mixedWindows:0,overlapWindows:0,unknownWindows:0};
   const ui={selectedId:null,cues:[],lastCue:'',bookmarks:new Set(),highlights:new Set()};
   const savedSetting=(key,fallback)=>{try{return localStorage.getItem('lens-'+key)||fallback}catch(e){return fallback}};
   const setSetting=(key,value)=>{try{localStorage.setItem('lens-'+key,value)}catch(e){}};
@@ -273,6 +274,21 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
     state.turns.push(turn);if(state.turns.length>300)state.turns.splice(0,state.turns.length-300);
     renderTranscript();scheduleAnalysis();scheduleAI();syncButtons();
   }
+ function renderTalkTime(){
+   const host=$('talkTimeStats');if(!host)return;host.replaceChildren();
+   const summary=document.createElement('span');summary.textContent='Eligible non-overlap speech spans · denominator '+talkStats.attributedSeconds.toFixed(1)+'s';host.append(summary);
+   for(const [name,seconds] of [...talkStats.byName.entries()].sort((a,b)=>b[1]-a[1])){const row=document.createElement('div');const share=talkStats.attributedSeconds?100*seconds/talkStats.attributedSeconds:0;row.textContent=name+' · '+seconds.toFixed(1)+'s ('+share.toFixed(0)+'% of attributed spans)';host.append(row)}
+   const excluded=document.createElement('div');excluded.className='micro';excluded.textContent='Excluded windows — Mixed '+talkStats.mixedWindows+' ('+talkStats.mixedSeconds.toFixed(1)+'s measured), overlap '+talkStats.overlapWindows+' ('+talkStats.overlapSeconds.toFixed(1)+'s), unknown '+talkStats.unknownWindows+' ('+talkStats.unknownSeconds.toFixed(1)+'s), unmeasured '+talkStats.unmeasuredWindows+'. Manual labels and pins do not change acoustic attribution.';host.append(excluded);
+ }
+ function recordTalkTime(voice,ownerPinned=false){
+   const evidence=voice?.evidence||{},seconds=Number(evidence.speechSeconds),measured=Number.isFinite(seconds)&&seconds>0&&seconds<=20,label=voice?.label||'Unknown';
+   if(evidence.possibleOverlap){talkStats.overlapWindows++;if(measured)talkStats.overlapSeconds+=seconds;else talkStats.unmeasuredWindows++;renderTalkTime();return}
+   if(label==='Mixed'){talkStats.mixedWindows++;if(measured)talkStats.mixedSeconds+=seconds;else talkStats.unmeasuredWindows++;renderTalkTime();return}
+   if(ownerPinned||!measured||label==='Unknown'||label==='Me'||label==='Other'||!speaker.profiles.some(p=>p.name===label&&p.samples>0)||['provisional','heard-only','manual-lock'].includes(voice?.level)){
+     talkStats.unknownWindows++;if(measured)talkStats.unknownSeconds+=seconds;else talkStats.unmeasuredWindows++;renderTalkTime();return;
+   }
+   talkStats.byName.set(label,(talkStats.byName.get(label)||0)+seconds);talkStats.attributedSeconds+=seconds;renderTalkTime();
+ }
   function renderTranscript(){
     const area=$('transcript');const wasNearEnd=area.scrollHeight-area.scrollTop-area.clientHeight<40;
     area.replaceChildren();
@@ -759,7 +775,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
      if(isNamed){if(!provisional){speaker.detected.delete(voice.label+'?');speaker.detected.add(voice.label)}else if(!speaker.detected.has(voice.label)){speaker.detected.add(voice.label+'?')}}
      $('speakerPresence').textContent='Possible voices this session: '+([...speaker.detected].join(' · ')||'none yet');
      if(item.pcmWindow&&stt.pcmState)try{stt.pcmState.timeline.setStatus(item.pcmWindow,'done')}catch(e){}
-     if(text){state.lastFinalAt=Date.now();setStatus('live','LOCAL TRANSCRIPT · REVIEW WORDS');
+     if(text){recordTalkTime(voice,ownerPinned);state.lastFinalAt=Date.now();setStatus('live','LOCAL TRANSCRIPT · REVIEW WORDS');
       setMsg('Local transcription received; verify words and speaker labels. '+(ownerPinned?'owner-pinned label: '+voice.label:isNamed?'suggested speaker: '+voice.label+(provisional?' (provisional)':''):'voice: '+voice.label)+'.');addTurn(text,id,'speech',ownerPinned?'Owner-pinned speaker label; not an acoustic identity result':note,voice.evidence||null,ownerPinned)}
      else if(!state.lastFinalAt){setMsg('Local speech active. Quiet segment ignored. Say a complete test sentence.')}
     }catch(e){
@@ -867,7 +883,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
     if(payload.discarded)throw Error('A kept audio result was revoked before completion');
     const transcript=clean(payload.text),voice=payload.speaker||{label:'Unknown',reason:'No speaker result'};
     const label=voice.label==='Me'?'me':voice.label==='Mixed'?'mixed':voice.label==='Other'?'other':voice.label&&voice.label!=='Unknown'?'name:'+voice.label:'shared';
-    if(transcript)addTurn(transcript,label,'speech',voice.reason||'Kept after Stop; verify transcript and speaker label.',voice.evidence||null);
+    if(transcript){recordTalkTime(voice,false);addTurn(transcript,label,'speech',voice.reason||'Kept after Stop; verify transcript and speaker label.',voice.evidence||null)}
    }
    await postCapture('/api/capture/close',{capture:authorization.capture});stt.capture='';
    setStatus('off','NOT LISTENING');setMsg('Stopped. Selected windows were transcribed locally; dropped windows were not uploaded.');
@@ -884,6 +900,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
    stop();if($('editDialog').open)$('editDialog').close();
    editingId=null;invalidateAI(true);clearTimeout(updateTimer);
    state.turns=[];ui.bookmarks.clear();ui.highlights.clear();ui.cues.length=0;ui.lastCue='';
+   talkStats.byName.clear();talkStats.attributedSeconds=0;talkStats.mixedSeconds=0;talkStats.overlapSeconds=0;talkStats.unknownSeconds=0;talkStats.unmeasuredWindows=0;talkStats.mixedWindows=0;talkStats.overlapWindows=0;talkStats.unknownWindows=0;renderTalkTime();
    ui.selectedId=null;$('evidenceDrawer').hidden=true;renderCueTimeline();
    speaker.detected.clear();$('speakerPresence').textContent='Possible voices this session: none yet';
    state.paused=false;renderTranscript();analyze();syncButtons();

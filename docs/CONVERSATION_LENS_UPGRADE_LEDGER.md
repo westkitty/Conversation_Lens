@@ -234,7 +234,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 56 | Custom local cue rules | Existing built-in local rules | PARTIAL | Owner-defined bounded rule editor/execution is absent |
 | 57 | Running action-item/decision extraction | New local source-linked candidate ledger; `test_frontend.py` asserts decision/action extraction and passage navigation | PASS | Phrase-based candidates only; no semantic deduplication or persistence |
 | 58 | Hotkey voice-note annotation | Separate private typed note exists | PARTIAL | Hotkey voice-note capture is absent |
-| 59 | Speaker comparison/talk-time stats | No eligible-span accounting | PARTIAL | No talk-time UI or denominator disclosure |
+| 59 | Speaker comparison/talk-time stats | UI reports only measured `speechSeconds` from enrolled, non-overlap acoustic matches; Mixed/overlap/unknown/pinned/unmeasured windows are separately excluded; `test_frontend.py` verifies denominator and overlap accounting | PASS | Depends on the worker returning eligible speech-span measurements; manual labels never add speaker time |
 | 60 | Continue last coaching thought | Existing coaching history only | PARTIAL | Thread-aware continuation call is absent |
 
 ### Current phase evidence
@@ -268,3 +268,8 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 
 - Each recent coaching card now owns an editable/copyable next-line field. The opt-in per-card Regenerate button sends the current transcript and selected local Ollama settings, then updates only that card; unavailable or busy AI states are explicit and leave existing cards intact.
 - QA-venv `test_frontend.py` passed at 1200px and 375px. It edits and copies a card-specific line, then verifies a local mocked Ollama response changes that card's suggestion. Rows 19 and 27 are PASS for this exercised path.
+
+## Acoustic span accounting — 2026-10-18
+
+- Added session-only per-speaker speech-span totals using `speechSeconds` supplied by the voice worker. The denominator includes only measured enrolled-speaker spans without overlap; Mixed, overlap, unknown, manually pinned, and missing measurements are called out separately. Transcript reassignment does not alter acoustic totals.
+- QA-venv `test_frontend.py` passed at 1200px and 375px, asserting a 2.5-second enrolled-speaker attribution and 1.2-second overlap exclusion. Row 59 is PASS for this measured-worker path; speech spans unavailable from the worker remain explicitly unmeasured.

@@ -136,12 +136,13 @@ with sync_playwright() as p:
         assert page.locator('.who').last.inner_text()=='Dale ?'
         assert page.evaluate('window.fake.transcribe')==1
         # Second window closes on ~900ms of detected silence, after a minimum ~2.8s.
-        page.evaluate("window.fake.transcriptQueue.push({text:'I want us to understand each other.',speaker:{label:'Dale',level:'probable',reason:'Tentative acoustic',evidence:{full:{best:'Dale',cosine:.9345,margin:.1456},first:{best:'Dale',cosine:.901,margin:.101},second:{best:'Dale',cosine:.909,margin:.112},halfCosine:.85,possibleOverlap:false}},introduction:{name:'Dale',state:'strengthened',message:'Two matching windows'}})")
+        page.evaluate("window.fake.transcriptQueue.push({text:'I want us to understand each other.',speaker:{label:'Dale',level:'probable',reason:'Tentative acoustic',evidence:{full:{best:'Dale',cosine:.9345,margin:.1456},first:{best:'Dale',cosine:.901,margin:.101},second:{best:'Dale',cosine:.909,margin:.112},halfCosine:.85,possibleOverlap:false,speechSeconds:2.5}},introduction:{name:'Dale',state:'strengthened',message:'Two matching windows'}})")
         page.wait_for_timeout(950)
         page.evaluate('window.fake.quiet=true')
         page.wait_for_function('window.fake.recorders.length>=3',timeout=9000)
         page.wait_for_function("document.querySelectorAll('.turn').length>=2")
         assert page.locator('.who').last.inner_text()=='Dale'
+        assert 'Dale · 2.5s (100% of attributed spans)' in page.locator('#talkTimeStats').inner_text()
         assert page.locator('#levelText').inner_text().startswith('Quiet')
         assert page.locator('#levelRail').get_attribute('aria-valuenow')=='0'
         page.get_by_role('button',name='Boost for two minutes: Dale').click()
@@ -322,6 +323,7 @@ with sync_playwright() as p:
         }''')
         before_pcm=page.evaluate('window.fake.transcribe')
         page.locator('#pcmPreRoll').fill('100')
+        page.evaluate("window.fake.transcriptQueue.push({text:'Overlapping test speakers.',speaker:{label:'Mixed',evidence:{possibleOverlap:true,speechSeconds:1.2}}})")
         page.locator('#consent').check();page.locator('#pcmMode').check();page.locator('#startBtn').click()
         page.wait_for_function("document.querySelector('#captureModeStatus').textContent.includes('bounded in-memory ring')")
         page.wait_for_function(f'window.fake.transcribe>{before_pcm}',timeout=7000)
@@ -329,6 +331,7 @@ with sync_playwright() as p:
         pcm=page.evaluate('window.fake.pcmUploads.at(-1)')
         assert pcm['contentType']=='audio/wav' and pcm['bytes']>50000 and pcm['forceMixed']=='true',pcm
         page.wait_for_function("document.querySelectorAll('.turn').length===1",timeout=3000)
+        assert 'overlap 1 (1.2s)' in page.locator('#talkTimeStats').inner_text()
         page.locator('#stopBtn').click();page.wait_for_function("document.querySelector('#statusText').textContent==='NOT LISTENING'")
         assert page.evaluate('window.fake.drains.length')==0
         assert not errors,errors
