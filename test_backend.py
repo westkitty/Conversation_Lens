@@ -55,12 +55,13 @@ pathlib.Path(args[args.index('-of')+1]+'.txt').write_text(pathlib.Path(os.enviro
   base='http://127.0.0.1:'+str(app.server_address[1])
   try:
     status,data=req(base+'/api/status');assert status==200 and data['captureControl'] and data['stt']['ready'] and data['speakers']['ready']
-    h={'X-Lens-Token':data['token'],'Content-Type':'application/json','Origin':base}
-    audio_h={'X-Lens-Token':data['token'],'Content-Type':'audio/webm','Origin':base,'X-Lens-Language':'en','X-Lens-Auto-Names':'enabled','X-Lens-Voice-Consent':'confirmed'}
+    h={'X-Lens-Token':data['token'],'Content-Type':'application/json','Origin':base,'X-Lens-Protocol':'3'}
+    audio_h={'X-Lens-Token':data['token'],'Content-Type':'audio/webm','Origin':base,'X-Lens-Protocol':'3','X-Lens-Language':'en','X-Lens-Auto-Names':'enabled','X-Lens-Voice-Consent':'confirmed'}
     assert req(base+'/api/capture/open',b'{"consent":false}',h)[0]==403
     assert req(base+'/api/capture/open',b'{"consent":true}',{**h,'Origin':'http://evil.invalid'})[0]==403
     assert req(base+'/api/capture/open',b'{"consent":true}',{**h,'X-Lens-Token':'wrong'})[0]==403
     assert req(base+'/api/transcribe',clip,audio_h)[0]==422, 'Capture session must be explicit'
+    assert req(base+'/api/capture/open',b'{"consent":true}',{**h,'X-Lens-Protocol':'2'})[0]==426, 'Mismatched clients must fail closed'
     code,data=req(base+'/api/capture/open',b'{"consent":true}',h)
     assert code==200 and isinstance(data['capture'],str)
     lease=data['capture'];assert lease==backend.CAPTURE_SESSION
@@ -89,7 +90,7 @@ pathlib.Path(args[args.index('-of')+1]+'.txt').write_text(pathlib.Path(os.enviro
     assert not work.is_alive()
     assert result['response'][0]==200 and result['response'][1]['discarded'] is True,result
     assert len(backend.SPEAKERS['Dale'])==before
-    assert req(base+'/api/transcribe',clip,{**audio_h,'X-Lens-Capture-Session':lease})[0]==422
+    assert req(base+'/api/transcribe',clip,{**audio_h,'X-Lens-Capture-Session':lease})[0]==409
     # Another open starts a brand new ID; close(old) may never kill new capture.
     code,new=req(base+'/api/capture/open',b'{"consent":true}',h)
     assert new['capture']!=lease
@@ -97,7 +98,7 @@ pathlib.Path(args[args.index('-of')+1]+'.txt').write_text(pathlib.Path(os.enviro
     assert backend.CAPTURE_SESSION==new['capture']
     code,takeover=req(base+'/api/capture/open',b'{"consent":true,"takeover":true}',h)
     assert code==200 and takeover['capture']!=new['capture'] and backend.CAPTURE_SESSION==takeover['capture']
-    assert req(base+'/api/transcribe',clip,{**audio_h,'X-Lens-Capture-Session':new['capture']})[0]==422
+    assert req(base+'/api/transcribe',clip,{**audio_h,'X-Lens-Capture-Session':new['capture']})[0]==409
     assert req(base+'/api/session/erase',b'{"confirm":false}',h)[0]==403
     code,wipe=req(base+'/api/session/erase',b'{"confirm":true}',h)
     assert code==200 and wipe['erased'] is True

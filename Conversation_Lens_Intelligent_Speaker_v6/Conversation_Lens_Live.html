@@ -43,12 +43,63 @@
 .edit-dialog .action-row{justify-content:flex-end}
 #queueText{color:#badbd3;font-size:11px}
 #queueText[data-loss="true"]{color:#ffd3b5;font-weight:750}
+
+/* Live working rail and precision controls */
+.toolbar-strip{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.toolbar-strip .field{width:auto;min-width:120px;padding:6px}
+.grid:not(.mobile-layout) .right-col{position:sticky;top:12px;max-height:calc(100dvh - 24px);overflow-y:auto;scrollbar-width:thin}
+.grid[data-layout="transcript"]{grid-template-columns:minmax(460px,1.65fr) minmax(285px,.72fr)}
+.grid[data-layout="coaching"]{grid-template-columns:minmax(290px,.7fr) minmax(480px,1.3fr)}
+.grid[data-layout="focus"]{grid-template-columns:minmax(300px,1fr) minmax(320px,.85fr)}
+.grid[data-layout="focus"] #setupTitle,.grid[data-layout="focus"] #speakerTitle{opacity:.8}
+.grid[data-layout="focus"] .left-col>section:first-child,.grid[data-layout="focus"] .left-col>section:nth-child(3),.grid[data-layout="focus"] #anchorTitle{display:none}
+.coach-controls{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.coach-controls .field{flex:1 1 180px;width:100%;min-width:0}
+.control-kbd{font-size:11px;color:var(--muted);margin:7px 0}
+.quick-filters{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}.quick-filters .field{flex:1 1 115px;min-width:90px}
+.turn.selected{background:#1b2631;border-radius:8px;box-shadow:inset 3px 0 var(--cyan);padding-left:8px}
+.turn.bookmarked .who:after{content:" ★";color:var(--amber)}.turn.highlighted .turn-text{background:#564b226e;border-radius:4px}
+.turn-meta select.field{max-width:145px;width:auto;padding:3px 6px;font-size:11px;min-height:28px}
+.turn-meta .turn-actions{display:flex;gap:5px;flex-wrap:wrap}
+.evidence-drawer{margin:10px 0;padding:12px;border:1px solid #4b6679;background:#0c1822;border-radius:11px;font-size:12px}
+.evidence-drawer[hidden]{display:none}.evidence-drawer h3{font-size:14px;margin:0 0 5px}
+.evidence-drawer p{overflow-wrap:anywhere}.evidence-drawer .evidence-score{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:9px 0}
+.evidence-score>div{border:1px solid var(--edge);border-radius:7px;padding:7px;min-width:0;font-variant-numeric:tabular-nums}
+.evidence-quote{background:#2c433f;border-radius:3px;padding:1px 2px}
+.coaching-history{display:grid;gap:7px;margin-top:10px}.history-card{border:1px solid var(--edge);border-radius:8px;padding:9px;background:#0c141d;font-size:12px}
+.history-card button{margin-top:6px}.coaching-needs{font-size:11px;color:var(--amber);margin-top:9px}
+.speaker-memory{font-size:11px;color:var(--muted);margin-top:8px}
+html[data-contrast="high"]{--bg:#000;--surface:#080808;--raised:#141414;--edge:#8b9da8;--muted:#d6dfeb;--ink:#fff;--cyan:#aef0ff}
+html[data-mono="on"] body{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-motion="on"] *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+#sheetToggle{display:none}
+@media(max-width:810px){
+ .grid[data-layout]{display:flex}
+ .grid.mobile-layout .hero-cue{position:fixed;left:10px;right:10px;bottom:env(safe-area-inset-bottom,0px);z-index:30;max-height:65dvh;overflow:auto;box-shadow:0 0 24px #000c}
+ .grid.mobile-layout .hero-cue[data-collapsed="true"]{padding:10px 12px;max-height:95px}
+ .grid.mobile-layout .hero-cue[data-collapsed="true"] .caps,.grid.mobile-layout .hero-cue[data-collapsed="true"] #cueText,.grid.mobile-layout .hero-cue[data-collapsed="true"] .coach-controls{display:none}
+ .grid.mobile-layout .hero-cue[data-collapsed="true"] #cueTitle{font-size:14px;margin:5px 0;padding-right:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #sheetToggle{display:inline-block;position:absolute;right:12px;top:9px;z-index:2;min-height:30px}
+ .shell{padding-bottom:120px}.grid.mobile-layout .right-col{overflow:visible}
+}
+
+
+.window-tuner{margin:11px 0;padding:10px;border:1px solid var(--edge);border-radius:10px;background:#0c141b}
+.window-tuner .two{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.window-tuner label{font-size:11px;color:var(--muted);min-width:0}
+.window-tuner output{color:var(--cyan);font-variant-numeric:tabular-nums}
+.window-tuner input[type=range]{width:100%;accent-color:var(--red)}
+.energy-plot{display:block;width:100%;height:72px;border:1px solid var(--edge);border-radius:8px;background:#0c1016;margin-top:7px}
+.skipped-marker{border:1px solid #765547;border-radius:8px;margin-top:6px;padding:8px;background:#241e20;font-size:11px;color:#ead1bb;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+#cutHistory,#durationDistribution{font-size:11px;color:var(--muted);margin-top:6px}
+@media(max-width:400px){.window-tuner .two{grid-template-columns:1fr}}
 </style>
+<script src="/packet-a/lens_pcm_core.js"></script>
+<script src="/packet-a/lens_pcm_capture.js"></script>
 </head>
 <body>
 <div class="shell">
 <header class="top">
   <div class="brand"><div class="logo" aria-hidden="true">◉</div><div><div class="eyebrow">Stinky Weasel Productions / Working tool</div><h1>CONVERSATION LENS<span style="color:var(--red)">.</span></h1><p class="sub">Adaptive local transcription, tentative speaker identity, and grounded live coaching.</p></div></div>
+  <div class="toolbar-strip"><label class="small-label" for="layoutMode">Layout</label><select id="layoutMode" class="field" aria-label="Screen layout"><option value="split">Split</option><option value="transcript">Transcript-heavy</option><option value="coaching">Coaching-heavy</option><option value="focus">Focus</option></select><label class="check"><input id="contrastMode" type="checkbox">High contrast</label><label class="check"><input id="monoMode" type="checkbox">Mono</label><label class="check"><input id="motionMode" type="checkbox">Reduce motion</label></div>
   <div id="status" class="status" role="status" aria-live="polite"><span class="led"></span><span id="statusText">NOT LISTENING</span></div>
 </header>
 <div class="intro"><p>Listen for what matters. Surface a few useful observations. <strong>Keep the actual conversation between the people in it.</strong></p><p class="micro"><span class="info-label">First principle:</span> cues are hypotheses, not verdicts about what anyone thinks or feels.</p></div>
@@ -63,7 +114,15 @@
       <div><label class="small-label" for="aim">Conversation goal</label><select id="aim" class="field"><option value="observe">Observe neutrally (default)</option><option value="understand">Clarify meaning</option><option value="resolve">Find decisions and next steps</option><option value="repair">Repair a misunderstanding</option><option value="boundary">Clarify boundaries or requirements</option></select></div>
       <div><label class="small-label" for="language">Speech language</label><select id="language" class="field"><option value="en-US">English</option><option value="es-MX">Español (México)</option><option value="de-DE">Deutsch</option></select></div>
     </div>
-    <div class="north" id="northStar" style="margin:13px 0 0">North star: notice what was actually said without assuming a topic or objective.</div>
+    <label class="input-label" for="privateNote">Sticky owner note / goal (not part of transcript)</label>
+    <textarea id="privateNote" class="field" rows="2" maxlength="1200" placeholder="What you want help noticing or doing next."></textarea>
+    <div class="two">
+      <label class="small-label" for="groundingMode">Grounding<select id="groundingMode" class="field"><option value="exact">Exact (default)</option><option value="fuzzy">Fuzzy / visibly approximate</option><option value="free">Free / ungrounded</option></select></label>
+      <label class="small-label" for="coachPreset">Coaching style<select id="coachPreset" class="field"><option value="">Neutral</option><option value="Brief, practical, one sentence per point.">Fast and concise</option><option value="Focus on decisions, responsibilities and next actions without assigning blame.">Decisions</option><option value="Offer a clarifying question and distinguish direct words from interpretation.">Clarifier</option><option value="custom">Custom fragment</option></select></label>
+    </div>
+    <label class="small-label" for="customFragment">Custom system-prompt fragment</label>
+    <textarea id="customFragment" class="field" rows="2" maxlength="1200" placeholder="Only used when Custom fragment is selected."></textarea>
+    <div class="north" id="northStar"  style="margin:13px 0 0">North star: notice what was actually said without assuming a topic or objective.</div>
   </section>
   <section class="panel" aria-labelledby="listenTitle">
     <div class="panel-head"><h2 id="listenTitle">02 / Listen</h2><small id="capability">Checking LOCAL transcription…</small></div>
@@ -71,9 +130,24 @@
     <select id="micSpeaker" class="field"><option value="shared">Unassigned (recommended)</option><option value="me">Me</option><option value="other">Other person</option></select>
     <label class="check"><input id="consent" type="checkbox"><span>Everyone being transcribed knows and agrees. Microphone permission is requested only after I press Start.</span></label>
     <div class="action-row"><button class="btn primary" id="startBtn" disabled>Start listening</button><button class="btn stop" id="stopBtn" disabled>Stop</button><button class="btn ghost" id="pauseBtn" disabled>Pause cues</button></div>
+    <label class="check"><input id="pcmMode" type="checkbox"><span><strong>Use sample-accurate PCM capture (experimental).</strong> Uses a bounded 45-second memory ring and local 16 kHz WAV windows. MediaRecorder remains the default and fallback.</span></label>
+    <div id="captureModeStatus" class="micro" role="status">Capture mode: MediaRecorder fallback.</div>
     <div class="audio-state"><span id="micMessage" role="status" aria-live="polite">The transcript stays in this page until you clear or close it.</span><em id="counter">0 passages</em></div>
     <div class="level-row"><div class="level-rail" role="meter" aria-label="Microphone input level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="levelRail"><div id="levelFill" class="level-fill"></div></div><span id="levelText">Input meter idle</span><span id="windowText">Silence-guided segments</span><span id="queueText" role="status" aria-live="polite" data-loss="false">Queue idle</span></div>
-    <div class="interim" id="interim" data-empty="true" aria-live="off">Recognized speech appears here as you talk.</div>
+    <div class="window-tuner"><div class="panel-head"><strong class="small-label">Live cuts &amp; recording windows</strong><small>Meter-based cut timing · 115 ms resolution</small></div>
+       <canvas id="energyCanvas" class="energy-plot" width="600" height="72" role="img" aria-label="Current window energy and silence threshold timeline"></canvas>
+       <div id="cutHistory">No cut recorded.</div><div id="durationDistribution">Window history: none</div>
+       <div class="two" style="margin-top:10px">
+         <label for="vadThreshold">Silence threshold / RMS <output id="vadThresholdValue">0.009</output><input type="range" id="vadThreshold" min="0.006" max="0.025" step="0.001" value="0.009"></label>
+         <label for="vadSilence">Silence to cut <output id="vadSilenceValue">900ms</output><input type="range" id="vadSilence" min="400" max="1600" step="100" value="900"></label>
+         <label for="vadMinSpeech">Minimum active speech <output id="vadMinSpeechValue">250ms</output><input type="range" id="vadMinSpeech" min="100" max="1200" step="50" value="250"></label>
+         <label for="vadHardCap">Hard window cap <output id="vadHardCapValue">8900ms</output><input type="range" id="vadHardCap" min="4000" max="9000" step="100" value="8900"></label>
+         <label for="pcmPreRoll">PCM pre-roll <output id="pcmPreRollValue">0ms</output><input type="range" id="pcmPreRoll" min="0" max="500" step="50" value="0"></label>
+         <label for="pcmPostRoll">PCM post-roll <output id="pcmPostRollValue">0ms</output><input type="range" id="pcmPostRoll" min="0" max="500" step="50" value="0"></label>
+       </div><div class="row"><button id="pauseIntakeBtn" class="btn small ghost" type="button">Pause new-window intake</button><span id="skipCount" class="micro">0 skipped</span></div>
+       <div id="skippedWindows" aria-live="polite"></div>
+     </div>
+     <div class="interim" id="interim"  data-empty="true" aria-live="off">Recognized speech appears here as you talk.</div>
     <p class="note">Whisper transcribes silence-guided recording windows on the MacBook; audio clips are temporary. Session voiceprints stay in server RAM and disappear on exit. With spoken-name learning OFF, normal speaker matching still works for explicitly enrolled voices. AI coaching runs through Big Mac.</p>
   </section>
   <section class="panel" aria-labelledby="speakerTitle">
@@ -86,28 +160,41 @@
     <div class="row" style="margin-top:12px"><label class="input-label" style="flex:1 1 180px;margin:0" for="enrollName">Name on transcript<input id="enrollName" class="field" maxlength="30" pattern="[A-Za-z][A-Za-z0-9 '-]*" placeholder="e.g., Dale or Morgan" autocomplete="off" style="margin-top:6px"></label></div>
     <label class="check"><input id="enrollConsent" type="checkbox"><span>The person supplying this voice sample has agreed to be identified by this app.</span></label>
     <div class="action-row"><button class="btn primary" id="enrollBtn" type="button" disabled>Record a voice sample (7s)</button><button class="btn ghost" id="forgetBtn" type="button">Forget voice profiles</button></div>
+    <div class="row" style="margin-top:10px;align-items:end"><label class="small-label" for="speakerLockName">Pin a speaker label for future windows<select class="field" id="speakerLockName"><option value="">No lock</option></select></label><label class="small-label" for="speakerLockCount">Windows<input class="field" id="speakerLockCount" type="number" min="1" max="20" value="3"></label><button id="speakerLockBtn" class="btn small" type="button">Pin label</button></div><div id="speakerLockStatus" class="micro" role="status">No speaker label pinned.</div>
     <div id="speakerProfiles" class="speaker-profiles" aria-live="polite"><div class="quiet">No speakers enrolled.</div></div>
     <p class="note" id="enrollMessage" role="status">Self-introductions are <strong>provisional claims</strong>, not identity proof. The acoustic model can confuse similar voices; a name can always be corrected. Audio with overlaps or weak matches remains Unknown/Mixed.</p>
-    <div class="speaker-presence" id="speakerPresence">Possible voices this session: none yet</div>
+    <div class="speaker-memory" id="speakerMemory">Voiceprint RAM: 0 bytes</div><div class="speaker-presence" id="speakerPresence">Possible voices this session: none yet</div>
   </section>
   <section class="panel" aria-labelledby="transcriptTitle">
     <div class="panel-head"><h2 id="transcriptTitle">04 / Live transcript</h2><div class="tabrow"><button class="tab" id="sampleBtn" aria-label="Load a fictional demonstration">Try example</button></div></div>
-    <div class="transcript" id="transcript" aria-label="Conversation transcript" tabindex="0"><div class="empty"><div><b>No conversation captured yet.</b>Start listening or add a line manually.</div></div></div>
-    <form id="manualForm" class="manual-row"><label class="hide" for="manualSpeaker">Speaker</label><select id="manualSpeaker" class="field" aria-label="Manual line speaker"><option value="shared">Unassigned (default)</option><option value="me">Me</option><option value="other">Other person</option></select><label class="hide" for="manualText">Conversation line</label><input id="manualText" class="field" placeholder="Type something said…" required maxlength="2000"><button class="btn" type="submit">Add line</button></form>
-    <div class="transcript-tools"><button class="btn small ghost" id="copyBtn">Copy transcript</button><button class="btn small ghost" id="copyBriefBtn">Copy GPT review prompt</button><button class="btn small ghost" id="clearBtn">Clear transcript</button><button class="btn small stop" id="eraseAllBtn" type="button">Erase all session data</button></div>
+    <div class="quick-filters"><select id="filterSpeaker" class="field" aria-label="Filter transcript speaker"><option value="all">All speakers</option></select><input id="filterKeyword" class="field" aria-label="Filter transcript keyword" placeholder="Filter words…"><label class="check" style="margin:0"><input id="filterCoached" type="checkbox">With coaching</label></div>
+    <div class="transcript" id="transcript"  aria-label="Conversation transcript" tabindex="0"><div class="empty"><div><b>No conversation captured yet.</b>Start listening or add a line manually.</div></div></div>
+    <aside id="evidenceDrawer" class="evidence-drawer" hidden aria-label="Selected passage evidence">
+      <div class="row" style="justify-content:space-between"><h3 id="evidenceTitle">Source passage</h3><button type="button" id="closeEvidence" class="btn small ghost">Close evidence</button></div>
+      <p id="evidenceSource"></p><div id="evidenceScores" class="evidence-score"></div><p id="evidenceReason" class="micro"></p>
+    </aside>
+    <form id="manualForm"  class="manual-row"><label class="hide" for="manualSpeaker">Speaker</label><select id="manualSpeaker" class="field" aria-label="Manual line speaker"><option value="shared">Unassigned (default)</option><option value="me">Me</option><option value="other">Other person</option></select><label class="hide" for="manualText">Conversation line</label><input id="manualText" class="field" placeholder="Type something said…" required maxlength="2000"><button class="btn" type="submit">Add line</button></form>
+    <div class="transcript-tools"><button class="btn small ghost" id="copyBtn">Copy transcript</button><button class="btn small ghost" id="copyBriefBtn">Copy GPT review prompt</button><button class="btn small ghost" id="exportTranscriptBtn">Export Markdown</button><button class="btn small ghost" id="exportPlainBtn">Export plain</button><button class="btn small ghost" id="clearBtn">Clear transcript</button><button class="btn small stop" id="eraseAllBtn" type="button">Erase all session data</button></div>
   </section>
 </div>
 <div class="stack right-col">
-  <section class="hero-cue" aria-live="polite" aria-atomic="true"><div class="caps">Grounded observation</div><h2 id="cueTitle">Waiting for conversation</h2><p id="cueText">Start listening or add a passage. Observations will be based on the words actually captured.</p></section>
+  <section class="hero-cue" aria-live="polite" aria-atomic="true" data-collapsed="true"><button id="sheetToggle" class="btn small ghost" type="button" aria-expanded="false">Expand cue ↑</button><div class="caps">Latest grounded observation · pinned</div><h2 id="cueTitle">Waiting for conversation</h2><p id="cueText">Start listening or add a passage. Observations will be based on the words actually captured.</p><div class="coach-controls"><input id="nextLine" class="field" aria-label="Edit suggested next line" maxlength="350" placeholder="Your next line…"><button id="copyNextBtn" class="btn small ghost" type="button">Copy as my line</button><button id="getCueBtn" class="btn small primary" type="button">Get cue now</button></div><p id="coachingNeeds" class="coaching-needs">Needs transcript · local cues work without AI</p><p class="control-kbd">Space pause cues · C new cue · N/P navigate · E evidence · 1–9 assign · M Mixed</p></section>
   <section class="panel" aria-labelledby="aiTitle">
  <div class="panel-head"><h2 id="aiTitle">Local AI / Big Mac</h2><small id="aiHealth" role="status">Checking connection...</small></div>
  <label class="check"><input id="aiToggle" type="checkbox" disabled><span><strong>Enable Big Mac AI analysis (off by default).</strong> Send captured transcript text and any context you enter through the private local tunnel for additional suggestions. No microphone audio or voiceprints are sent.</span></label>
- <div id="aiReview" class="ai-review" hidden aria-live="polite"><div class="ai-label">AI observation</div><strong id="aiObservation"></strong><div class="ai-line"><span class="ai-label">Evidence</span><p class="ai-quote" id="aiEvidence"></p><button id="aiEvidenceJump" class="btn small ghost evidence-link" type="button" hidden>Review quoted passage</button></div><div class="ai-line"><span class="ai-label">Possible next words</span><p class="ai-text" id="aiNext"></p></div><p class="ai-note" id="aiCaution"></p></div>
- <p class="ai-note" id="aiMessage">While the Big Mac model is unavailable, instant local language cues remain active.</p>
+ <div id="aiReview" class="ai-review" hidden aria-live="polite"><div class="ai-label">AI observation</div><strong id="aiObservation"></strong><div class="ai-line"><span class="ai-label">Evidence · <span id="groundingBadge">EXACT</span></span><p class="ai-quote" id="aiEvidence"></p><button id="aiEvidenceJump" class="btn small ghost evidence-link" type="button" hidden>Review quoted passage</button></div><div class="ai-line"><span class="ai-label">Possible next words</span><p class="ai-text" id="aiNext"></p></div><p class="ai-note" id="aiCaution"></p></div>
+ <button id="retryLoose" class="btn small ghost" type="button" hidden>Retry with looser grounding</button><p class="ai-note" id="aiMessage">While the Big Mac model is unavailable, instant local language cues remain active.</p>
  <div class="row" style="margin-top:10px"><button id="aiReconnect" class="btn small ghost" type="button">Check connection</button></div>
- <p class="note">AI requests go through the MacBook-to-Big Mac tunnel. Microphone audio and speaker embeddings remain on the MacBook. If Whisper is unavailable, manual transcript entry still works.</p>
+ <details style="margin-top:12px"><summary class="input-label">Live local Ollama tuning</summary><div class="two">
+       <label class="small-label" for="ollamaUrl">Local tunnel URL<input id="ollamaUrl" class="field" value="http://127.0.0.1:11435"></label>
+       <label class="small-label" for="ollamaModel">Model<input id="ollamaModel" class="field" value="gemma3:4b"></label>
+       <label class="small-label" for="ollamaTimeout">Timeout seconds<input id="ollamaTimeout" class="field" type="number" min="3" max="90" step="1" value="45"></label>
+       <label class="small-label" for="ollamaTemperature">Temperature<input id="ollamaTemperature" class="field" type="number" min="0" max="1" step=".05" value=".25"></label>
+       </div><button id="checkModelBtn" type="button" class="btn small ghost">Check selected model</button></details>
+    <details style="margin-top:10px"><summary class="input-label">Diagnostic panel</summary><div class="row"><button id="loadDiagnostics" type="button" class="btn small ghost">Refresh local timings</button><span id="healthPill" class="micro">Health not queried</span></div><pre id="diagnosticLog" class="micro" style="max-height:180px;overflow:auto;white-space:pre-wrap"></pre></details>
+    <p class="note">AI requests go through the MacBook-to-Big Mac tunnel. Microphone audio and speaker embeddings remain on the MacBook. If Whisper is unavailable, manual transcript entry still works.</p>
  </section>
- <section class="panel" aria-labelledby="signalTitle"><div class="panel-head"><h2 id="signalTitle">What I'm noticing</h2><small id="analysisAge">Ready for conversation</small></div><div id="signals" aria-live="polite" aria-atomic="false"><div class="quiet">I will look for questions, important claims, decisions, action items, clarification requests, and changing priorities. I won't invent context or assign an unidentified speaker.</div></div><p class="lens-meta">Local cue engine · observes language patterns · no hidden model or mind-reading</p></section>
+ <section class="panel" aria-labelledby="signalTitle"><div class="panel-head"><h2 id="signalTitle">What I'm noticing</h2><small id="analysisAge">Ready for conversation</small></div><div id="signals" aria-live="polite" aria-atomic="false"><div class="quiet">I will look for questions, important claims, decisions, action items, clarification requests, and changing priorities. I won't invent context or assign an unidentified speaker.</div></div><p class="lens-meta">Local cue engine · observes language patterns · no hidden model or mind-reading</p><div id="coachingTimeline" class="coaching-history" aria-label="Recent coaching cards"></div></section>
   <section class="panel" aria-labelledby="anchorTitle"><div class="panel-head"><h2 id="anchorTitle">Conversation anchor</h2><small>Optional question, not a required response</small></div><p id="anchor" style="font-size:14px;color:#d9e0ea">“Which point would be useful to clarify next?”</p><p class="note">You can ignore every suggestion. The people in the room remain the authority on what they mean.</p></section>
 </div>
 </main>
@@ -147,17 +234,23 @@
  $('context').value='';
  const state={turns:[],turnSerial:0,wantsListen:false,paused:false,lastFinalAt:0};
  const stt={ready:false,reason:'Checking local Whisper engine',stream:null,recorder:null,chunkTimer:null,
-    queue:[],sending:false,controller:null,generation:0,readyToken:false,dropped:0,capture:'',
-    context:null,source:null,meter:null,meterData:null,meterTimer:null,noiseFloor:.004,
+    queue:[],sending:false,controller:null,inFlight:null,stopping:false,windowSerial:0,generation:0,readyToken:false,dropped:0,capture:'',
+    context:null,source:null,meter:null,meterData:null,meterTimer:null,pcmCapture:null,pcmState:null,noiseFloor:.004,
     inputDetected:false,windowStarted:0,windowVoiceMs:0,windowLastVoiceAt:0,windowHasMeter:false,
+     vad:{threshold:.009,silenceMs:900,minSpeechMs:250,hardCapMs:8900},
+     series:[],cuts:[],durations:[],skipped:[],skipSerial:0,pausedIntake:false,
     levelMax:0,meterStarted:0};
  const LOCAL_WINDOW_MS=8900,MIN_WINDOW_MS=2800,END_SILENCE_MS=900;
  const ai={ready:false,enabled:false,token:'',model:'',timer:null,inFlight:false,pending:false,revision:0,session:0,lastStarted:0,lastResult:null,lastResultTurns:0,controller:null};
  let micProofTimer=null,editingId=null;
  const goals={observe:['notice what was actually said without assuming a topic or objective.','“Which point would be useful to clarify next?”'],understand:['clarify terms, questions, or differing interpretations.','“What does that mean in this conversation?”'],resolve:['identify decisions, owners, and practical next steps.','“What decision or next step, if any, was agreed?”'],repair:['check for misunderstandings and possible repair openings.','“What would help clarify what was meant?”'],boundary:['make requests, requirements, and preferences explicit.','“Is this a requirement, a preference, or a proposal?”']};
- const where={me:'Me',other:'Other',shared:'Unassigned'};
+  const where={me:'Me',other:'Other',shared:'Unassigned',mixed:'Mixed'};
  const speakerLabel=k=>typeof k==='string'&&k.startsWith('name:')?k.slice(5):where[k]||'Unassigned';
- const speaker={ready:false,profiles:[],detected:new Set(),enrolling:false,active:null,controller:null,stream:null,recorder:null,timer:null,generation:0};
+ const speaker={ready:false,profiles:[],detected:new Set(),enrolling:false,active:null,controller:null,stream:null,recorder:null,timer:null,generation:0,ramBytes:0,lockName:'',lockRemaining:0};
+  const ui={selectedId:null,cues:[],lastCue:'',bookmarks:new Set(),highlights:new Set()};
+  const savedSetting=(key,fallback)=>{try{return localStorage.getItem('lens-'+key)||fallback}catch(e){return fallback}};
+  const setSetting=(key,value)=>{try{localStorage.setItem('lens-'+key,value)}catch(e){}};
+
  let updateTimer=null;
  const now=()=>new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
  const clean=t=>String(t||'').replace(/\s+/g,' ').trim().slice(0,2000);
@@ -168,11 +261,123 @@
  function setStatus(name,msg){$('status').className='status'+(name==='live'?' live':name==='paused'?' paused':'');$('statusText').textContent=msg}
  function setMsg(msg){$('micMessage').textContent=msg}
  function syncButtons(){ $('enrollBtn').disabled=!speaker.enrolling&&(state.wantsListen||!speaker.ready||!$('enrollConsent').checked||!/^([A-Za-z][A-Za-z0-9 '-]{0,29})$/.test($('enrollName').value.trim())); $('enrollBtn').textContent=speaker.enrolling?'Cancel voice sample':'Record a voice sample (7s)'; $('startBtn').disabled=!$('consent').checked||state.wantsListen||!stt.ready; $('stopBtn').disabled=!state.wantsListen; $('pauseBtn').disabled=state.turns.length===0 && !state.wantsListen; $('pauseBtn').textContent=state.paused?'Resume cues':'Pause cues';$('counter').textContent=state.turns.length+' passage'+(state.turns.length===1?'':'s') }
- function addTurn(text,speakerId='shared',origin='typed',voiceNote=''){ const t=clean(text);if(!t)return; let safe=where[speakerId]?speakerId:'shared';if(typeof speakerId==='string'&&speakerId.startsWith('name:')&&((origin==='speech'&&/introduction|acoustic match|voice candidate/i.test(voiceNote))||speaker.profiles.some(x=>x.name===speakerId.slice(5)&&x.samples>0)))safe=speakerId;state.turns.push({id:++state.turnSerial,text:t,speaker:safe,time:now(),origin,edited:false,voiceNote:clean(voiceNote).slice(0,170)});if(state.turns.length>300)state.turns.splice(0,state.turns.length-300);renderTranscript();scheduleAnalysis();scheduleAI();syncButtons() }
- function renderTranscript(){const area=$('transcript');area.replaceChildren();if(state.turns.length===0){const e=document.createElement('div');e.className='empty';const inner=document.createElement('div');const b=document.createElement('b');b.textContent='No conversation captured yet.';inner.append(b,document.createTextNode('Start listening or add a line manually.'));e.append(inner);area.append(e);return}const frag=document.createDocumentFragment();for(const t of state.turns){const row=document.createElement('div');row.className='turn';row.id='passage-'+t.id;row.tabIndex=-1;const meta=document.createElement('div');meta.className='turn-meta';const who=document.createElement('span');who.className='who '+(t.speaker==='other'?'other':t.speaker==='shared'?'shared':t.speaker.startsWith('name:')?'named':'');who.textContent=speakerLabel(t.speaker)+(t.speaker.startsWith('name:')&&/provisional|heard-only|not verified/i.test(t.voiceNote)?' ?':'');const time=document.createElement('span');time.textContent=t.time+(t.origin==='speech'?' · mic':'')+(t.edited?' · words corrected':'');meta.append(who,time);
-  if(t.origin==='speech'){const correction=document.createElement('select');correction.className='field';correction.style.cssText='width:auto;max-width:140px;padding:3px 6px;font-size:11px';correction.setAttribute('aria-label','Correct speaker for this passage');for(const [value,label] of [['shared','Unassigned'],['me','Me (manual)'],['other','Other (manual)'],...speaker.profiles.filter(p=>p.samples>0).map(p=>['name:'+p.name,p.name+' (manual)'])]){const option=document.createElement('option');option.value=value;option.textContent=label;option.selected=t.speaker===value;correction.append(option)}correction.addEventListener('change',()=>{t.speaker=correction.value;t.voiceNote='Manually corrected by user; not a verified acoustic attribution';renderTranscript();scheduleAnalysis();invalidateAI(true);scheduleAI()});meta.append(correction)}const editButton=document.createElement('button');editButton.type='button';editButton.className='btn small ghost';editButton.textContent='Correct words';editButton.setAttribute('aria-label','Correct words in passage '+t.id);editButton.addEventListener('click',()=>editTurn(t.id));meta.append(editButton);const body=document.createElement('p');body.className='turn-text';body.textContent=t.text;row.append(meta,body);if(t.voiceNote){const note=document.createElement('small');note.className='voice-note';note.textContent=t.voiceNote;row.append(note)}frag.append(row)}area.append(frag);area.scrollTop=area.scrollHeight}
+  function addTurn(text,speakerId='shared',origin='typed',voiceNote='',evidence=null,manualSpeaker=false){
+    const t=clean(text);if(!t)return;
+    let safe=where[speakerId]?speakerId:'shared';
+    if(typeof speakerId==='string'&&speakerId.startsWith('name:')&&((origin==='speech'&&/introduction|acoustic match|voice candidate/i.test(voiceNote))||speaker.profiles.some(x=>x.name===speakerId.slice(5)&&x.samples>0)))safe=speakerId;
+    const turn={id:++state.turnSerial,text:t,speaker:safe,time:now(),origin,edited:false,manualSpeaker:manualSpeaker===true,voiceNote:clean(voiceNote).slice(0,170),evidence};
+    state.turns.push(turn);if(state.turns.length>300)state.turns.splice(0,state.turns.length-300);
+    renderTranscript();scheduleAnalysis();scheduleAI();syncButtons();
+  }
+  function renderTranscript(){
+    const area=$('transcript');const wasNearEnd=area.scrollHeight-area.scrollTop-area.clientHeight<40;
+    area.replaceChildren();
+    const query=$('filterKeyword').value.trim().toLowerCase(), speakerFilter=$('filterSpeaker').value;
+    const turns=state.turns.filter(t=>(speakerFilter==='all'||t.speaker===speakerFilter)&&
+      (!query||t.text.toLowerCase().includes(query))&&(!$('filterCoached').checked||ui.cues.some(c=>c.sourceId===t.id)));
+    if(!turns.length){
+      const e=document.createElement('div');e.className='empty';
+      const b=document.createElement('b');b.textContent=state.turns.length?'No matching passages.':'No conversation captured yet.';
+      e.append(b,document.createTextNode(state.turns.length?'Change the transcript filter.':'Start listening or add a line manually.'));
+      area.append(e);return;
+    }
+    const frag=document.createDocumentFragment();
+    for(const t of turns){
+      const row=document.createElement('div');row.className='turn'+(ui.selectedId===t.id?' selected':'')+
+        (ui.bookmarks.has(t.id)?' bookmarked':'')+(ui.highlights.has(t.id)?' highlighted':'');
+      row.id='passage-'+t.id;row.tabIndex=-1;row.addEventListener('click',()=>selectTurn(t.id));
+      const meta=document.createElement('div');meta.className='turn-meta';
+      const who=document.createElement('span');who.className='who '+(t.speaker==='other'?'other':t.speaker==='shared'?'shared':t.speaker==='mixed'?'mixed':t.speaker.startsWith('name:')?'named':'');
+      who.textContent=speakerLabel(t.speaker)+(t.speaker.startsWith('name:')&&/provisional|heard-only|not verified/i.test(t.voiceNote)?' ?':'');
+      const time=document.createElement('span');time.textContent=t.time+(t.origin==='speech'?' · mic':'')+(t.edited?' · words corrected':'');
+      meta.append(who,time);
+      const correction=document.createElement('select');correction.className='field';
+      correction.setAttribute('aria-label','Correct speaker for this passage');
+      for(const [value,label] of [['shared','Unassigned'],['me','Me'],['other','Other'],['mixed','Mixed'],...speaker.profiles.filter(p=>p.samples>0).map(p=>['name:'+p.name,p.name+' (manual)'])]){
+        const opt=document.createElement('option');opt.value=value;opt.textContent=label;opt.selected=t.speaker===value;correction.append(opt);
+      }
+      correction.addEventListener('change',()=>assignTurn(t.id,correction.value));
+      meta.append(correction);
+      const actions=document.createElement('div');actions.className='turn-actions';
+      const action=(text,label,cb)=>{const b=document.createElement('button');b.type='button';b.className='btn small ghost';b.textContent=text;b.setAttribute('aria-label',label);b.addEventListener('click',cb);actions.append(b)};
+      action('Evidence','Evidence for passage '+t.id,()=>openEvidence(t.id));
+      action(ui.bookmarks.has(t.id)?'★':'☆','Bookmark passage '+t.id,()=>{ui.bookmarks.has(t.id)?ui.bookmarks.delete(t.id):ui.bookmarks.add(t.id);renderTranscript()});
+      action(ui.highlights.has(t.id)?'Unmark':'Highlight','Highlight passage '+t.id,()=>{ui.highlights.has(t.id)?ui.highlights.delete(t.id):ui.highlights.add(t.id);renderTranscript()});
+      action('Correct words','Correct words in passage '+t.id,()=>editTurn(t.id));
+      meta.append(actions);
+      const body=document.createElement('p');body.className='turn-text';body.textContent=t.text;row.append(meta,body);
+      if(t.voiceNote){const note=document.createElement('small');note.className='voice-note';note.textContent=t.voiceNote;row.append(note)}
+      frag.append(row);
+    }
+    area.append(frag);if(wasNearEnd&&speakerFilter==='all'&&!query)area.scrollTop=area.scrollHeight;
+  }
+  function selectTurn(id){ui.selectedId=id;for(const row of $('transcript').querySelectorAll('.turn'))row.classList.toggle('selected',row.id==='passage-'+id)}
+  function assignTurn(id,key){
+    const t=state.turns.find(t=>t.id===id);if(!t||!(where[key]||(key.startsWith('name:')&&speaker.profiles.some(p=>key==='name:'+p.name))))return;
+    t.speaker=key;t.manualSpeaker=true;t.voiceNote='Manually assigned by owner; acoustic identity not verified';
+    selectTurn(id);invalidateAI(true);renderTranscript();scheduleAnalysis();scheduleAI();syncButtons();
+  }
+  function openEvidence(id,quote=''){
+    const t=state.turns.find(t=>t.id===id);if(!t)return;selectTurn(id);
+    $('evidenceTitle').textContent='Passage '+id+' · '+speakerLabel(t.speaker);
+    const source=$('evidenceSource');source.replaceChildren();
+    const pos=quote?t.text.toLowerCase().indexOf(quote.toLowerCase()):-1;
+    if(pos>=0&&quote){source.append(document.createTextNode(t.text.slice(0,pos)));
+      const mark=document.createElement('mark');mark.className='evidence-quote';mark.textContent=t.text.slice(pos,pos+quote.length);source.append(mark,document.createTextNode(t.text.slice(pos+quote.length)))}
+    else source.textContent=t.text;
+    const target=$('evidenceScores');target.replaceChildren();
+    const data=t.evidence||{};for(const key of ['full','first','second']){
+      const item=data[key]||{},cell=document.createElement('div');
+      const cosine=item.cosine==null?'n/a':Number(item.cosine).toFixed(4);
+      const margin=item.margin==null?'n/a':Number(item.margin).toFixed(4);
+      cell.textContent=key.toUpperCase()+' · '+(item.best||'Unknown')+'\ncos '+cosine+' · margin '+margin;cell.style.whiteSpace='pre-line';target.append(cell);
+    }
+    $('evidenceReason').textContent=(t.voiceNote||'No speaker analysis available')+
+      (data.halfCosine==null?'':' · Half-window cosine '+data.halfCosine)+
+      (data.possibleOverlap?' · Possible overlap: auto-name learning blocked':'')+
+      '. Cosine and margin are not identity probabilities.';
+    $('evidenceDrawer').hidden=false;
+  }
+  function refreshHeroActions(sourceId=null,kind='local'){
+    $('nextLine').value=$('cueTitle').textContent==='Waiting for conversation'?'':$('cueTitle').textContent;
+    const needs=[];
+    if(!state.turns.length)needs.push('Transcript needs at least one passage');
+    if(!speaker.profiles.some(p=>p.active))needs.push('Speaker comparisons need two voice samples per profile');
+    if(!ai.enabled)needs.push('Big Mac coaching is off; local cards remain active');
+    if(!ai.ready)needs.push('Ollama is unavailable');
+    $('coachingNeeds').textContent=needs.length?'Missing: '+needs.join(' · '):'Grounded coaching active';
+    if(!state.turns.length)return;
+    const signature=kind+'|'+state.turns.length+'|'+$('cueTitle').textContent+'|'+$('cueText').textContent;
+    if(signature===ui.lastCue)return;
+    ui.lastCue=signature;
+    ui.cues.unshift({id:Date.now(),sourceId,kind,title:$('cueTitle').textContent,why:$('cueText').textContent});
+    ui.cues.length=Math.min(30,ui.cues.length);
+    renderCueTimeline();if($('filterCoached').checked)renderTranscript();
+  }
+  function renderCueTimeline(){
+    const target=$('coachingTimeline');target.replaceChildren();
+    for(const c of ui.cues.slice(0,10)){
+      const card=document.createElement('div');card.className='history-card';
+      const name=document.createElement('strong');name.textContent=c.kind.toUpperCase()+' · '+c.title;
+      const desc=document.createElement('p');desc.textContent=c.why;card.append(name,desc);
+      if(c.sourceId){const b=document.createElement('button');b.className='btn small ghost';b.textContent='Jump to passage '+c.sourceId;b.addEventListener('click',()=>{jumpToTurn(c.sourceId);openEvidence(c.sourceId)});card.append(b)}
+      target.append(card);
+    }
+  }
+  function exportSession(withCoaching){
+    const lines=withCoaching?['# Conversation Lens session','','## Transcript','']:['# Conversation transcript',''];
+    for(const t of state.turns){
+      const marker=(ui.bookmarks.has(t.id)?' ★':'')+(ui.highlights.has(t.id)?' [highlight]':'');
+      lines.push('- ['+t.time+'] **'+speakerLabel(t.speaker)+'**'+marker+': '+t.text);
+    }
+    if(withCoaching){lines.push('','## Coaching cards','');for(const c of [...ui.cues].reverse())lines.push('- **'+c.kind+' / '+c.title+'**'+(c.sourceId?' (passage '+c.sourceId+')':'')+': '+c.why)}
+    const blob=new Blob([lines.join('\n')+'\n'],{type:'text/markdown;charset=utf-8'});
+    const anchor=document.createElement('a');const url=URL.createObjectURL(blob);
+    anchor.href=url;anchor.download=withCoaching?'conversation-lens-session.md':'conversation-lens-transcript.md';
+    document.body.append(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
  function editTurn(id){const turn=state.turns.find(t=>t.id===id);if(!turn)return;editingId=id;$('editText').value=turn.text;$('editError').textContent='';$('editDialog').showModal();$('editText').focus()}
- function jumpToTurn(id){const row=document.getElementById('passage-'+id);if(!row)return;const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;row.scrollIntoView({block:'nearest',behavior:reduced?'auto':'smooth'});row.focus({preventScroll:true})}
+  function jumpToTurn(id){const row=document.getElementById('passage-'+id);if(!row)return;selectTurn(id);const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;row.scrollIntoView({block:'nearest',behavior:reduced?'auto':'smooth'});row.focus({preventScroll:true})}
  function scheduleAnalysis(){clearTimeout(updateTimer);updateTimer=setTimeout(analyze,120)}
  function setAIStatus(msg){$('aiHealth').textContent=msg}
  function setAIMessage(msg){$('aiMessage').textContent=msg}
@@ -185,10 +390,18 @@
    if(!rsp.ok)throw Error('No local relay');
    const val=await rsp.json();
    if(val.app!=='conversation-lens'||typeof val.token!=='string')throw Error('Not the Conversation Lens server');
+   if(val.protocol!==3)throw Error('Local server protocol mismatch. Relaunch the matching Conversation Lens version.');
    ai.token=val.token;ai.ready=!!val.ready;ai.model=val.model||'';
    stt.ready=!!(val.stt&&val.stt.ready);
-   stt.reason=val.stt&&val.stt.reason || 'Local speech unavailable';speaker.ready=!!(val.speakers&&val.speakers.ready);speaker.profiles=val.speakers&&Array.isArray(val.speakers.profiles)?val.speakers.profiles:[];renderSpeakers();
-   $('capability').textContent=stt.ready?'LOCAL WHISPER READY':'Local Whisper unavailable';
+   stt.reason=val.stt&&val.stt.reason || 'Local speech unavailable';speaker.ready=!!(val.speakers&&val.speakers.ready);speaker.profiles=val.speakers&&Array.isArray(val.speakers.profiles)?val.speakers.profiles:[];
+    speaker.ramBytes=val.speakers?.ramBytes||0;
+    if(val.ollamaDefaults&&!$('ollamaUrl').dataset.touched){
+      $('ollamaUrl').value=val.ollamaDefaults.url||$('ollamaUrl').value;
+      $('ollamaModel').value=val.ollamaDefaults.model||$('ollamaModel').value;
+    }
+    renderSpeakers();
+    $('capability').textContent=stt.ready?'LOCAL WHISPER READY':'Local Whisper unavailable';
+    refreshHeroActions();
    if(!state.wantsListen)setMsg(stt.ready?'Local speech ready. Confirm consent and press Start.':stt.reason+'; use manual entry until the local engine is ready.');
    if(ai.ready){setAIStatus('READY · '+ai.model);$('aiToggle').disabled=false;
     $('aiToggle').checked=ai.enabled;
@@ -203,11 +416,32 @@
   }
   syncButtons();
  }
- function scheduleAI(){ai.revision++;if(!ai.ready||!ai.enabled||state.paused||!state.turns.length)return;ai.pending=true;if(ai.inFlight)return;clearTimeout(ai.timer);const wait=Math.max(1000,9000-(Date.now()-ai.lastStarted));ai.timer=setTimeout(runAI,wait)}
- async function runAI(){if(!ai.pending||ai.inFlight||!ai.ready||!ai.enabled||state.paused||!state.turns.length)return;ai.pending=false;ai.inFlight=true;ai.lastStarted=Date.now();const gen=ai.session;const reqVersion=ai.revision;const currentCount=state.turns.length;const controller=new AbortController();ai.controller=controller;setAIStatus('THINKING · '+ai.model);setAIMessage('Analyzing through passage '+currentCount+'; you can keep talking.');const turns=state.turns.slice(-12).map(t=>({speaker:(t.speaker.startsWith('name:')&&/provisional|heard-only|unverified|not verified/i.test(t.voiceNote))?'Unassigned':speakerLabel(t.speaker),text:t.text}));try{const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json','X-Lens-Token':ai.token},body:JSON.stringify({goal:$('aim').selectedOptions[0].text,context:$('context').value,turns}),signal:controller.signal});if(!res.ok){const error=await res.json().catch(()=>({}));throw new Error(error.error||'AI request failed ('+res.status+')')}const data=await res.json();if(gen!==ai.session||reqVersion!==ai.revision||!ai.enabled||state.paused)return;const i=data.insight;if(!i||typeof i.observation!=='string'||typeof i.next_step!=='string')throw new Error('Invalid AI response');ai.lastResult=i;ai.lastResultTurns=currentCount;$('aiObservation').textContent=i.observation;$('aiEvidence').textContent=i.evidence||'No exact quotation supplied';const norm=s=>String(s||'').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();const quote=norm(i.evidence);const source=quote.length>=6?state.turns.slice(-12).find(t=>norm(t.text).includes(quote)):null;const jump=$('aiEvidenceJump');jump.hidden=!source;if(source){jump.textContent='Review passage '+source.id;jump.onclick=()=>jumpToTurn(source.id)}else jump.onclick=null;$('aiNext').textContent=i.next_step;$('aiCaution').textContent=i.caution||'';$('aiReview').hidden=false;setAIStatus('LIVE · '+ai.model);setAIMessage('Model observation covers passage '+currentCount+(state.turns.length>currentCount?' ('+(state.turns.length-currentCount)+' newer)':'' )+'. It is a suggestion, not a verdict.');if(state.turns.length<=currentCount+1){$('cueTitle').textContent=i.next_step;$('cueText').textContent=i.observation}}catch(e){if(e.name!=='AbortError'&&gen===ai.session){setAIStatus('AI ERROR');setAIMessage((e.message||'AI request failed')+'. Local cues still work.');}}finally{ai.inFlight=false;if(ai.controller===controller)ai.controller=null;if(ai.pending&&ai.ready&&ai.enabled&&!state.paused) scheduleAI();}}
+ function scheduleAI(urgent=false){
+   ai.revision++;
+   if(urgent)ai.urgent=true;
+   if(!ai.ready||!ai.enabled||state.paused||!state.turns.length)return;
+   ai.pending=true;if(ai.inFlight)return;
+   clearTimeout(ai.timer);
+   // A manual cue request skips debounce, but never starts a second simultaneous model call.
+   const wait=ai.urgent?0:Math.max(300,5500-(Date.now()-ai.lastStarted));
+   ai.urgent=false;ai.timer=setTimeout(runAI,wait);
+ }
+ async function runAI(){if(!ai.pending||ai.inFlight||!ai.ready||!ai.enabled||state.paused||!state.turns.length)return;ai.pending=false;ai.inFlight=true;ai.lastStarted=Date.now();const gen=ai.session;const reqVersion=ai.revision;const currentCount=state.turns.length;const controller=new AbortController();ai.controller=controller;setAIStatus('THINKING · '+ai.model);setAIMessage('Analyzing through passage '+currentCount+'; you can keep talking.');const older=state.turns.slice(0,-8);
+     const priority=/\b(?:decide|decided|deadline|promise|agreed|need|must|important|next step|why|because|confused)\b/i;
+     const chosen=[...older.map((t,i)=>({t,i})).filter(o=>priority.test(o.t.text)).slice(-6).map(o=>o.t),...state.turns.slice(-8)];
+     const turns=chosen.map(t=>({speaker:(t.speaker.startsWith('name:')&&!t.manualSpeaker&&/provisional|heard-only|unverified|not verified/i.test(t.voiceNote))?'Unassigned':speakerLabel(t.speaker),text:t.text.slice(0,900),manual:t.manualSpeaker===true}));
+     const preset=$('coachPreset').value;const fragment=preset==='custom' ? $('customFragment').value : preset;
+     const ollama={url:$('ollamaUrl').value.trim(),model:$('ollamaModel').value.trim(),
+       timeout:Number($('ollamaTimeout').value),temperature:Number($('ollamaTemperature').value)};
+     try{const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json','X-Lens-Token':ai.token},body:JSON.stringify({
+       goal:$('aim').selectedOptions[0].text,context:$('context').value,turns,note:$('privateNote').value,
+       grounding:$('groundingMode').value,system_fragment:fragment,ollama}),signal:controller.signal});if(!res.ok){const error=await res.json().catch(()=>({}));throw new Error(error.error||'AI request failed ('+res.status+')')}const data=await res.json();if(gen!==ai.session||reqVersion!==ai.revision||!ai.enabled||state.paused)return;const i=data.insight;if(!i||typeof i.observation!=='string'||typeof i.next_step!=='string')throw new Error('Invalid AI response');ai.lastResult=i;ai.lastResultTurns=currentCount;$('aiObservation').textContent=i.observation;$('aiEvidence').textContent=i.evidence||'No exact quotation supplied';const norm=s=>String(s||'').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();const quote=norm(i.evidence);const source=quote.length>=6?state.turns.slice(-80).find(t=>norm(t.text).includes(quote)):null;const jump=$('aiEvidenceJump');jump.hidden=!source;if(source){jump.textContent='Review passage '+source.id;jump.onclick=()=>{jumpToTurn(source.id);openEvidence(source.id,i.evidence)}}else jump.onclick=null;$('aiNext').textContent=i.next_step;$('aiCaution').textContent=i.caution||'';
+     $('groundingBadge').textContent=(i.evidence_status||'unknown').toUpperCase();
+     $('retryLoose').hidden=!['rejected','approximate','ungrounded'].includes(i.evidence_status||'');
+     $('aiReview').hidden=false;setAIStatus('LIVE · '+ai.model);setAIMessage('Model observation covers passage '+currentCount+(state.turns.length>currentCount?' ('+(state.turns.length-currentCount)+' newer)':'' )+'. It is a suggestion, not a verdict.');if(state.turns.length<=currentCount+1){$('cueTitle').textContent=i.next_step;$('cueText').textContent=i.observation;refreshHeroActions(source?source.id:null,'ai')}}catch(e){if(e.name!=='AbortError'&&gen===ai.session){setAIStatus('AI ERROR');setAIMessage((e.message||'AI request failed')+'. Local cues still work.');}}finally{ai.inFlight=false;if(ai.controller===controller)ai.controller=null;if(ai.pending&&ai.ready&&ai.enabled&&!state.paused) scheduleAI();}}
 
  function make(kind,title,why,tryLine,evidence,score=1){const matched=signalEvidence;signalEvidence=null;return {kind,title,why,tryLine,evidence,score,sourceId:matched?matched.id:null,sourceText:matched?matched.text:''}}
- function analyze(){if(state.paused){$('analysisAge').textContent='Cues paused';return}const turns=state.turns;const full=turns.map(t=>t.text).join(' ');const recent=turns.slice(-12).map(t=>t.text).join(' ');const low=recent.toLowerCase();const rules=[];const goal=$('aim').value;const g=goals[goal]||goals.observe;$('northStar').textContent='North star: '+g[0];$('anchor').textContent=g[1];if(!recent){$('cueTitle').textContent='Waiting for conversation';$('cueText').textContent='Start listening or add a passage. Observations will be based on the words actually captured.';$('analysisAge').textContent='Ready for conversation';$('signals').replaceChildren();const q=document.createElement('div');q.className='quiet';q.textContent='I will look for questions, important claims, decisions, action items, clarification requests, and changing priorities. I won’t invent context or assign an unidentified speaker.';$('signals').append(q);return}
+ function analyze(){if(state.paused){$('analysisAge').textContent='Cues paused';return}const turns=state.turns;const full=turns.map(t=>t.text).join(' ');const recent=turns.slice(-12).map(t=>t.text).join(' ');const low=recent.toLowerCase();const rules=[];const goal=$('aim').value;const g=goals[goal]||goals.observe;$('northStar').textContent='North star: '+g[0];$('anchor').textContent=g[1];if(!recent){$('cueTitle').textContent='Waiting for conversation';$('cueText').textContent='Start listening or add a passage. Observations will be based on the words actually captured.';$('analysisAge').textContent='Ready for conversation';$('signals').replaceChildren();const q=document.createElement('div');q.className='quiet';q.textContent='I will look for questions, important claims, decisions, action items, clarification requests, and changing priorities. I won’t invent context or assign an unidentified speaker.';$('signals').append(q);refreshHeroActions(null);return}
  // Evidence-backed, explicitly tentative micro-observations; no probabilistic diagnosis.
  // General-purpose cues come before specialized repair cues. Never assume a domain.
  if(has(low,/\b(what is the deadline|when is it due|by (?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|next week)|i(?:'ll| will) send|we(?:'ll| will) send|action item|follow[- ]?up|assigned to|due date)\b/i))rules.push(make('Next steps','A time or task commitment may be emerging','A possible timing or task commitment was spoken. Check the owner, timing, and dependencies before treating it as settled.','“Is there an agreed action, owner, and deadline?”','Spoken task or timing language',8));
@@ -224,11 +458,11 @@
  const latest=turns.slice(-8); if(latest.length>=5){const questions=latest.filter(t=>/[?¿]/.test(t.text)).length;if(questions===0)rules.push(make('Curiosity','Few explicit questions in the recent exchange','The last several captured passages contained no question marks; transcription may omit punctuation. Consider checking your interpretation.','“Is there a question worth asking before moving on?”','Few transcribed questions recently',3))}
  if(turns.length>=5){let pairs=0;const norm=s=>new Set(s.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(w=>w.length>3));const windowTurn=turns.slice(-5);for(let i=0;i<windowTurn.length;i++)for(let j=i+1;j<windowTurn.length;j++){let a=norm(windowTurn[i].text),b=norm(windowTurn[j].text);if(a.size>3&&b.size>3){let inCommon=[...a].filter(x=>b.has(x)).length;if(inCommon/Math.min(a.size,b.size)>.7)pairs++}}if(pairs>0)rules.push(make('Possible loop','Similar phrases are recurring','Several recent passages share many of the same words. That does not prove a stalemate, but it may justify naming the stuck point.','“Could we summarize what is known and what remains open?”','Repeated word overlap in recent passages',5))}
  if(!rules.length)rules.push(make('Listening','The shape of the discussion is still emerging','There is not enough grounded evidence yet for a stronger observation. Avoid forcing an interpretation.','“Which point would be useful to clarify next?”','Conversation is still developing',1));
- rules.sort((a,b)=>b.score-a.score);const shown=rules.slice(0,3);const chosen=shown[0];$('cueTitle').textContent=chosen.tryLine;$('cueText').textContent=chosen.why;$('analysisAge').textContent='Updated from '+turns.length+' passage'+(turns.length===1?'':'s');if(ai.lastResult&&!state.paused&&ai.enabled&&state.turns.length<=ai.lastResultTurns+1){$('cueTitle').textContent=ai.lastResult.next_step;$('cueText').textContent=ai.lastResult.observation}const root=$('signals');root.replaceChildren();for(const i of shown){const card=document.createElement('article');card.className='insight';const tag=document.createElement('div');tag.className='tag';tag.textContent=i.kind;const title=document.createElement('h3');title.textContent=i.title;const p=document.createElement('p');p.textContent=i.why;const quote=document.createElement('blockquote');quote.textContent=i.tryLine;const source=document.createElement('span');source.className='source';source.textContent='Trigger: '+i.evidence;card.append(tag,title,p,quote,source);if(i.sourceId){const heard=document.createElement('div');heard.className='heard-source';heard.textContent='Captured passage '+i.sourceId+': “'+i.sourceText.slice(0,190)+(i.sourceText.length>190?'…':'')+'”';const jump=document.createElement('button');jump.className='btn small ghost evidence-link';jump.type='button';jump.textContent='Review passage '+i.sourceId;jump.addEventListener('click',()=>jumpToTurn(i.sourceId));heard.append(document.createElement('br'),jump);card.append(heard)}else{const note=document.createElement('small');note.className='source';note.textContent='Aggregate pattern or early observation; no exact single-passage quotation.';card.append(note)}root.append(card)} }
+ rules.sort((a,b)=>b.score-a.score);const shown=rules.slice(0,3);const chosen=shown[0];$('cueTitle').textContent=chosen.tryLine;$('cueText').textContent=chosen.why;$('analysisAge').textContent='Updated from '+turns.length+' passage'+(turns.length===1?'':'s');if(ai.lastResult&&!state.paused&&ai.enabled&&state.turns.length<=ai.lastResultTurns+1){$('cueTitle').textContent=ai.lastResult.next_step;$('cueText').textContent=ai.lastResult.observation}const root=$('signals');root.replaceChildren();for(const i of shown){const card=document.createElement('article');card.className='insight';const tag=document.createElement('div');tag.className='tag';tag.textContent=i.kind;const title=document.createElement('h3');title.textContent=i.title;const p=document.createElement('p');p.textContent=i.why;const quote=document.createElement('blockquote');quote.textContent=i.tryLine;const source=document.createElement('span');source.className='source';source.textContent='Trigger: '+i.evidence;card.append(tag,title,p,quote,source);if(i.sourceId){const heard=document.createElement('div');heard.className='heard-source';heard.textContent='Captured passage '+i.sourceId+': “'+i.sourceText.slice(0,190)+(i.sourceText.length>190?'…':'')+'”';const jump=document.createElement('button');jump.className='btn small ghost evidence-link';jump.type='button';jump.textContent='Review passage '+i.sourceId;jump.addEventListener('click',()=>jumpToTurn(i.sourceId));heard.append(document.createElement('br'),jump);card.append(heard)}else{const note=document.createElement('small');note.className='source';note.textContent='Aggregate pattern or early observation; no exact single-passage quotation.';card.append(note)}root.append(card)}refreshHeroActions(chosen.sourceId,'local') }
  function clearRestart(){clearTimeout(micProofTimer);micProofTimer=null}
  function postCapture(path,body,{keepalive=false}={}){
    if(!ai.token)return Promise.reject(Error('Local server is unavailable'));
-   return fetch(path,{method:'POST',headers:{'Content-Type':'application/json','X-Lens-Token':ai.token},
+   return fetch(path,{method:'POST',headers:{'Content-Type':'application/json','X-Lens-Token':ai.token,'X-Lens-Protocol':'3'},
       body:JSON.stringify(body),keepalive,signal:keepalive?undefined:AbortSignal.timeout(6000)}).then(async response=>{
       const data=await response.json().catch(()=>({}));if(!response.ok)throw Error(data.error||'Capture request failed');return data;
    });
@@ -246,18 +480,78 @@
    $('levelFill').style.width='0%';$('levelRail').setAttribute('aria-valuenow','0');
    $('levelText').textContent='Input meter idle';$('windowText').textContent='Silence-guided segments';
  }
- function updateQueueStatus(){const indicator=$('queueText');const pending=stt.queue.length+(stt.sending?1:0);const dropped=stt.dropped;indicator.dataset.loss=String(dropped>0);indicator.textContent=!state.wantsListen?(dropped?dropped+' recording window(s) skipped · stopped':'Queue idle'):(pending?'Processing '+pending+' window(s)'+(dropped?' · '+dropped+' skipped':''):(dropped?dropped+' window(s) skipped':'Up to date'))}
+ function updateQueueStatus(){const indicator=$('queueText');const pending=stt.queue.length+(stt.sending?1:0);const dropped=stt.dropped;indicator.dataset.loss=String(dropped>0);renderSkipped();$('pauseIntakeBtn').textContent=stt.pausedIntake?'Resume intake':'Pause new-window intake';indicator.textContent=!state.wantsListen?(dropped?dropped+' recording window(s) skipped · stopped':'Queue idle'):(pending?'Processing '+pending+' window(s)'+(dropped?' · '+dropped+' skipped':''):(dropped?dropped+' window(s) skipped':'Up to date'))}
+ function drawEnergy(){
+   const canvas=$('energyCanvas'),ctx=canvas.getContext('2d');if(!ctx)return;
+   const w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);
+   ctx.fillStyle='#0c1016';ctx.fillRect(0,0,w,h);
+   ctx.strokeStyle='#354754';ctx.beginPath();ctx.moveTo(0,h-14);ctx.lineTo(w,h-14);ctx.stroke();
+   const points=stt.series;if(!points.length)return;
+   const rmsScale=.05,span=stt.vad.hardCapMs;
+   ctx.strokeStyle='#d6ae8a';ctx.beginPath();
+   const floor=stt.vad.threshold;
+   ctx.moveTo(0,h-12-Math.min(1,floor/rmsScale)*(h-20));
+   ctx.lineTo(w,h-12-Math.min(1,floor/rmsScale)*(h-20));ctx.stroke();
+   ctx.strokeStyle='#98d8d7';ctx.beginPath();
+   points.forEach((v,i)=>{
+     const x=Math.min(w,v.elapsed/span*w),y=h-12-Math.min(1,v.rms/rmsScale)*(h-20);
+     if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+   });
+   ctx.stroke();
+ }
+ function recordCut(reason,elapsed){
+   stt.cuts.unshift({reason,elapsed:Math.round(elapsed),at:now()});
+   if(stt.cuts.length>6)stt.cuts.length=6;
+   $('cutHistory').textContent=stt.cuts.map(c=>c.at+' · '+c.reason+' at '+c.elapsed+'ms (meter ±115ms)').join(' | ');
+ }
+ function updateDurationHistory(){
+   if(!stt.durations.length){$('durationDistribution').textContent='Window history: none';return}
+   const sorted=[...stt.durations].sort((a,b)=>a-b);
+   $('durationDistribution').textContent=stt.durations.length+' windows · median '+sorted[Math.floor(sorted.length/2)]+'ms · range '+sorted[0]+'–'+sorted.at(-1)+'ms';
+ }
+ function scheduleHardCap(recorder){
+   clearTimeout(stt.chunkTimer);
+   const remaining=Math.max(0,stt.vad.hardCapMs-(performance.now()-stt.windowStarted));
+   stt.chunkTimer=setTimeout(()=>{if(stt.recorder===recorder&&recorder.state==='recording'){recordCut('hard cap',performance.now()-stt.windowStarted);try{recorder.stop()}catch(e){}}},remaining);
+ }
+ function renderSkipped(){
+   const host=$('skippedWindows');host.replaceChildren();$('skipCount').textContent=stt.dropped+' skipped';
+   for(const marker of stt.skipped.slice(0,4)){
+     const row=document.createElement('div');row.className='skipped-marker';
+     const text=document.createElement('span');text.textContent='Window '+marker.id+' · '+marker.reason+' · '+marker.time;
+     row.append(text);
+     if(marker.item&&marker.item.generation===stt.generation&&state.wantsListen){
+       const btn=document.createElement('button');btn.type='button';btn.className='btn small ghost';
+       btn.textContent='Reprocess buffered audio';btn.addEventListener('click',()=>{
+         if(stt.queue.length>=3){setMsg('Wait until the queue has room before reprocessing.');return}
+         stt.queue.push(marker.item);marker.item=null;renderSkipped();updateQueueStatus();sendLocalQueue();
+       });
+       row.append(btn);
+     }
+     host.append(row);
+   }
+ }
+ function skipWindow(item,reason){
+   stt.dropped++;stt.skipped.unshift({id:++stt.skipSerial,reason,time:now(),item});
+   while(stt.skipped.length>4){const old=stt.skipped.pop();old.item=null}
+   renderSkipped();
+ }
  function stopLocal(){
    stt.generation++;clearTimeout(stt.chunkTimer);stt.chunkTimer=null;
+   if(stt.pcmCapture){const capture=stt.pcmCapture;stt.pcmCapture=null;capture.stop().catch(()=>{})}
+   if(stt.pcmState?.ring)stt.pcmState.ring.erase();stt.pcmState=null;
    const capture=stt.capture;stt.capture='';closeCapture(capture,true);
    if(stt.controller){stt.controller.abort();stt.controller=null}
-   stt.queue.length=0;updateQueueStatus();
+   stt.queue.length=0;stt.pausedIntake=false;
+    for(const marker of stt.skipped)marker.item=null;
+    updateQueueStatus();
    const rec=stt.recorder;stt.recorder=null;
    if(rec&&rec.state!=='inactive'){try{rec.stop()}catch(e){}}
    stopMeter();
    const stream=stt.stream;stt.stream=null;
    if(stream)for(const track of stream.getTracks())track.stop();
  }
+ function erasePCMState(){if(stt.pcmState?.ring)stt.pcmState.ring.erase();stt.pcmState=null;$('captureModeStatus').textContent='Capture mode: MediaRecorder fallback.'}
  function startMeter(stream,generation){
    const AudioCtor=window.AudioContext||window.webkitAudioContext;
    if(!AudioCtor){$('levelText').textContent='Meter unavailable';return}
@@ -281,7 +575,13 @@
          $('levelText').textContent='No input signal';
          if(!state.lastFinalAt)setMsg('The selected mic has produced no measurable signal. Speak aloud, then check Brave microphone device and macOS permission if the meter stays at zero.');
        }
-       const speech=rms>Math.max(.009,stt.noiseFloor*2.6);
+       const threshold=Math.max(stt.vad.threshold,stt.noiseFloor*2.6);
+        const speech=rms>threshold;
+        if(stt.recorder?.state==='recording'){
+          stt.series.push({elapsed:now-stt.windowStarted,rms,threshold});
+          if(stt.series.length>100)stt.series.shift();
+          drawEnergy();
+        }
        if(!speech)stt.noiseFloor=stt.noiseFloor*.98+Math.min(.015,rms)*.02;
        if(speech&&stt.recorder?.state==='recording'){
          stt.windowVoiceMs+=115;stt.windowLastVoiceAt=now;
@@ -289,13 +589,48 @@
        if(stt.recorder?.state==='recording'){
          const elapsed=now-stt.windowStarted;
          $('windowText').textContent=Math.round(elapsed/1000)+'s / up to 9s';
-         if(elapsed>=MIN_WINDOW_MS&&stt.windowVoiceMs>=250&&
-            now-stt.windowLastVoiceAt>=END_SILENCE_MS){
-           try{stt.recorder.stop()}catch(e){}
+         if(elapsed>=MIN_WINDOW_MS&&stt.windowVoiceMs>=stt.vad.minSpeechMs&&
+            now-stt.windowLastVoiceAt>=stt.vad.silenceMs){
+            recordCut('silence',elapsed);try{stt.recorder.stop()}catch(e){}
          }
        }
      },115);
    }catch(e){stopMeter();$('levelText').textContent='Input meter unavailable; timed clips still work'}
+ }
+
+ function enqueuePCMWindow(start,end,reason='silence'){
+   const p=stt.pcmState;if(!p||!p.timeline||end-start<MIN_WINDOW_MS*16)return false;
+   try{
+     const segment=p.timeline.register(start,end,{reason,possibleOverlap:false,speaker:$('micSpeaker').value});
+     const rendered=p.timeline.render(segment.id,{preRollMs:Number($('pcmPreRoll').value),postRollMs:Number($('pcmPostRoll').value)});
+     const clip=new Blob([rendered.wav],{type:'audio/wav'});
+     const item={id:'pcm_'+(++stt.windowSerial),clip,speaker:$('micSpeaker').value,language:$('language').value.slice(0,2),autoNames:$('autoNames').checked&&$('consent').checked&&!rendered.forceMixed,generation:stt.generation,forceMixed:rendered.forceMixed,pcmWindow:segment.id};
+     p.timeline.setStatus(segment.id,'processing');
+     if(stt.pausedIntake&&!stt.stopping){skipWindow(item,'Intake paused');p.timeline.setStatus(segment.id,'dropped');return true}
+     if(stt.queue.length>=3){const old=stt.queue.shift();skipWindow(old,'Transcription backlog');if(old.pcmWindow)try{p.timeline.setStatus(old.pcmWindow,'dropped')}catch(e){}}
+     stt.queue.push(item);stt.durations.push(Math.round((end-start)/16));if(stt.durations.length>36)stt.durations.shift();updateDurationHistory();
+     p.cursor=end;updateQueueStatus();if(!stt.stopping)sendLocalQueue();return true;
+   }catch(error){setMsg('PCM window was rejected locally: '+error.message);return false}
+ }
+ function acceptPCMSamples(samples,generation){
+   if(generation!==stt.generation||(!state.wantsListen&&!stt.stopping)||!stt.pcmState)return;
+   const p=stt.pcmState,added=p.ring.append(samples),n=samples.length;
+   let sq=0;for(let i=0;i<n;i++){const v=samples[i]/32768;sq+=v*v}const rms=Math.sqrt(sq/Math.max(1,n));
+   const at=added.end,ms=at/16,threshold=Math.max(stt.vad.threshold,stt.noiseFloor*2.6),speech=rms>threshold;
+   stt.series.push({elapsed:ms-(p.lastCutMs||0),rms,threshold});if(stt.series.length>100)stt.series.shift();drawEnergy();
+   const level=Math.min(100,Math.round(rms*850));$('levelFill').style.width=level+'%';$('levelRail').setAttribute('aria-valuenow',String(level));$('levelText').textContent=level>8?'Input · '+level+'%':'Quiet · '+level+'%';
+   if(!speech)stt.noiseFloor=stt.noiseFloor*.98+Math.min(.015,rms)*.02;
+   if(speech){if(p.windowStart==null)p.windowStart=Math.max(p.cursor,added.start-Math.round(Number($('pcmPreRoll').value)*16));p.lastVoiceAt=ms;p.voiceMs+=n/16}
+   if(p.windowStart!=null){const elapsed=ms-p.windowStart/16;$('windowText').textContent=Math.round(elapsed/1000)+'s / up to 9s';
+     if(elapsed>=MIN_WINDOW_MS&&p.voiceMs>=stt.vad.minSpeechMs&&(ms-p.lastVoiceAt)>=stt.vad.silenceMs){recordCut('PCM silence',elapsed);if(enqueuePCMWindow(p.windowStart,at,'silence')){p.lastCutMs=ms;p.windowStart=null;p.voiceMs=0;stt.series=[]}}
+     else if(elapsed>=stt.vad.hardCapMs){recordCut('PCM hard cap',elapsed);if(enqueuePCMWindow(p.windowStart,at,'hard cap')){p.lastCutMs=ms;p.windowStart=null;p.voiceMs=0;stt.series=[]}}
+   }
+ }
+ async function startPCMCapture(stream,generation){
+   const ring=new LensPCM.PCM16Ring({maxSeconds:45}),timeline=new LensPCM.WindowTimeline(ring,{minEditMs:250,maxRenderMs:9000});timeline.setCaptureID(stt.capture);
+   stt.pcmState={ring,timeline,cursor:0,windowStart:null,lastVoiceAt:0,voiceMs:0,lastCutMs:0};
+   const mic=new LensPCMCapture.MicCapture({stream,stopTracks:false,onPCM:samples=>acceptPCMSamples(samples,generation),onError:error=>{if(generation===stt.generation)setMsg('PCM capture error: '+error.message)}});
+   await mic.start();if(generation!==stt.generation||!state.wantsListen){await mic.stop();ring.erase();stt.pcmState=null;return false}stt.pcmCapture=mic;return true;
  }
 
  function createLocalWindow(generation){
@@ -306,80 +641,93 @@
   try{recorder=new MediaRecorder(stt.stream,mime?{mimeType:mime,audioBitsPerSecond:32000}:{audioBitsPerSecond:32000});}
   catch(e){state.wantsListen=false;stopLocal();setStatus('off','MIC FORMAT FAILED');setMsg('Brave could not start local audio recording: '+e.message);syncButtons();return}
   stt.recorder=recorder;
-  stt.windowStarted=performance.now();stt.windowVoiceMs=0;stt.windowLastVoiceAt=0;
+  stt.windowStarted=performance.now();stt.windowVoiceMs=0;stt.windowLastVoiceAt=0;stt.series=[];drawEnergy();
   stt.windowHasMeter=!!stt.meter;
   recorder.ondataavailable=e=>{if(e.data&&e.data.size)pieces.push(e.data)};
   recorder.onerror=()=>{if(generation!==stt.generation)return;state.wantsListen=false;stopLocal();setStatus('off','AUDIO DEVICE FAILED');setMsg('Brave microphone stream failed. Check site permissions.');syncButtons()};
   recorder.onstop=()=>{
-   if(generation!==stt.generation||!state.wantsListen)return;
+   if(generation!==stt.generation||(!state.wantsListen&&!stt.stopping))return;
    // Preserve the completed window's energy state BEFORE initializing the next window.
-   const hadMeter=stt.windowHasMeter, spokenMs=stt.windowVoiceMs;
+   const hadMeter=stt.windowHasMeter, spokenMs=stt.windowVoiceMs,duration=Math.round(performance.now()-stt.windowStarted);stt.durations.push(duration);if(stt.durations.length>36)stt.durations.shift();updateDurationHistory();
    // Start the next independent recording immediately; WebM fragments cannot be decoded individually.
-   createLocalWindow(generation);
+   if(!stt.stopping)createLocalWindow(generation);
    if(!pieces.length)return;
    // VAD is an optional, conservative segmentation hint; fall back to server RMS gate.
    if(hadMeter&&spokenMs<230)return;
    const clip=new Blob(pieces,{type:recorder.mimeType||mime||'audio/webm'});
    if(clip.size<600)return;
-   if(stt.queue.length>=3){stt.dropped++;stt.queue.shift();setMsg('Local speech is slower than the conversation: one old audio window was skipped ('+stt.dropped+' total).')}
-   stt.queue.push({clip,speaker:$('micSpeaker').value,language:$('language').value.slice(0,2),autoNames:$('autoNames').checked&&$('consent').checked,generation});
-   updateQueueStatus();sendLocalQueue();
+   if(stt.pausedIntake&&!stt.stopping){skipWindow({clip,speaker:$('micSpeaker').value,language:$('language').value.slice(0,2),autoNames:false,generation},'Intake paused');updateQueueStatus();return}
+    if(stt.queue.length>=3){skipWindow(stt.queue.shift(),'Transcription backlog');setMsg('Local speech is slower than the conversation: skipped an older window ('+stt.dropped+' total).')}
+   stt.queue.push({id:'live_'+(++stt.windowSerial),clip,speaker:$('micSpeaker').value,language:$('language').value.slice(0,2),autoNames:$('autoNames').checked&&$('consent').checked&&!speaker.lockName,generation});
+   updateQueueStatus();if(!stt.stopping)sendLocalQueue();
   };
   try{recorder.start()}catch(e){state.wantsListen=false;stopLocal();setStatus('off','MIC START FAILED');setMsg('Recording could not begin: '+e.message);syncButtons();return}
   clearTimeout(stt.chunkTimer);
-  stt.chunkTimer=setTimeout(()=>{if(stt.recorder===recorder&&recorder.state==='recording')try{recorder.stop()}catch(e){}},LOCAL_WINDOW_MS);
+  scheduleHardCap(recorder);
  }
  async function sendLocalQueue(){
   if(stt.sending||!stt.queue.length)return;
   stt.sending=true;updateQueueStatus();
   try{
    while(stt.queue.length&&state.wantsListen){
-    const item=stt.queue.shift();updateQueueStatus();
+    const item=stt.queue.shift();stt.inFlight=item;updateQueueStatus();
     if(item.generation!==stt.generation)continue;
     const controller=new AbortController();stt.controller=controller;
     try{
      const rsp=await fetch('/api/transcribe',{method:'POST',headers:{'Content-Type':item.clip.type||'audio/webm',
-      'X-Lens-Token':ai.token,'X-Lens-Capture-Session':stt.capture,'X-Lens-Language':item.language,
-      'X-Lens-Auto-Names':item.autoNames&&$('autoNames').checked&&$('consent').checked?'enabled':'disabled',
-      'X-Lens-Voice-Consent':item.autoNames&&$('autoNames').checked&&$('consent').checked?'confirmed':'no'},body:item.clip,signal:controller.signal});
+      'X-Lens-Token':ai.token,'X-Lens-Protocol':'3','X-Lens-Capture-Session':stt.capture,'X-Lens-Window-ID':item.id,'X-Lens-Language':item.language,
+      'X-Lens-Auto-Names':item.autoNames&&!speaker.lockName&&$('autoNames').checked&&$('consent').checked?'enabled':'disabled',
+      'X-Lens-Voice-Consent':item.autoNames&&$('autoNames').checked&&$('consent').checked?'confirmed':'no',...(item.forceMixed?{'X-Lens-Force-Mixed':'true'}:{})},body:item.clip,signal:controller.signal});
      const out=await rsp.json().catch(()=>({}));
-     if(!rsp.ok)throw Error(out.error||'Whisper returned '+rsp.status);
+     if(!rsp.ok){
+        if(rsp.status===429&&(item.retries||0)<2){
+          item.retries=(item.retries||0)+1;
+          stt.queue.unshift(item);await new Promise(resolve=>setTimeout(resolve,700*item.retries));continue;
+        }
+        throw Error(out.error||'Whisper returned '+rsp.status);
+      }
      if(item.generation!==stt.generation||!state.wantsListen)break;
-     if(out.discarded)continue;
+     if(out.discarded){stt.dropped++;setMsg('Stale result dropped after capture revocation.');updateQueueStatus();continue}
      const text=clean(out.text);
-     const voice=out.speaker&&typeof out.speaker.label==='string'?out.speaker:{label:'Unknown',reason:'No match'};
+     let voice=out.speaker&&typeof out.speaker.label==='string'?out.speaker:{label:'Unknown',reason:'No match'};
+     let ownerPinned=false;
+     if(speaker.lockRemaining>0&&speaker.lockName&&voice.label!=='Mixed'){
+      voice={...voice,label:speaker.lockName,level:'manual-lock',reason:'Owner-pinned label; not an acoustic identity result'};ownerPinned=true;
+      speaker.lockRemaining--;if(!speaker.lockRemaining)speaker.lockName='';updateSpeakerLockStatus();
+     }
      const intro=out.introduction&&typeof out.introduction.name==='string'?out.introduction:null;
      const isNamed=voice.label!=='Unknown'&&voice.label!=='Mixed'&&/^[A-Za-z][A-Za-z0-9 '-]{0,29}$/.test(voice.label)&&
        (speaker.profiles.some(p=>p.name===voice.label&&p.samples>0)||(intro&&intro.name===voice.label));
      const provisional=voice.level==='provisional'||voice.level==='heard-only';
-     const id=isNamed?'name:'+voice.label:'shared';
+     const id=voice.label==='Mixed'?'mixed':isNamed?'name:'+voice.label:'shared';
      const note=voice.label==='Mixed'?'Possible overlapping voices: '+(Array.isArray(voice.possible)?voice.possible.join(' + '):'multiple')+'; no reliable word attribution':
        intro&&isNamed&&['candidate','heard-only'].includes(intro.state)?'Self-introduction: '+voice.label+' — provisional; not verified':
        isNamed?'Tentative acoustic match: '+voice.label+(provisional?' — provisional; not verified':' — verify manually'):(voice.reason||'Unknown voice');
      if(intro){const box=$('introductionStatus');box.dataset.state=intro.state||'idle';box.textContent=(intro.message||'Heard an introduction')+' · The voice identity is not guaranteed.';
-       try{const profiles=await fetch('/api/speakers',{cache:'no-store'}).then(x=>x.json());if(item.generation!==stt.generation||!state.wantsListen)break;if(profiles&&profiles.speakers&&Array.isArray(profiles.speakers.profiles)){speaker.profiles=profiles.speakers.profiles;renderSpeakers()}}catch(e){/* transcript remains usable if profile refresh fails */}}
+       try{const profiles=await fetch('/api/speakers',{cache:'no-store'}).then(x=>x.json());if(item.generation!==stt.generation||!state.wantsListen)break;if(profiles&&profiles.speakers&&Array.isArray(profiles.speakers.profiles)){speaker.profiles=profiles.speakers.profiles;speaker.ramBytes=profiles.speakers.ramBytes||0;renderSpeakers()}}catch(e){/* transcript remains usable if profile refresh fails */}}
      if(isNamed){if(!provisional){speaker.detected.delete(voice.label+'?');speaker.detected.add(voice.label)}else if(!speaker.detected.has(voice.label)){speaker.detected.add(voice.label+'?')}}
      $('speakerPresence').textContent='Possible voices this session: '+([...speaker.detected].join(' · ')||'none yet');
+     if(item.pcmWindow&&stt.pcmState)try{stt.pcmState.timeline.setStatus(item.pcmWindow,'done')}catch(e){}
      if(text){state.lastFinalAt=Date.now();setStatus('live','LOCAL TRANSCRIPT · REVIEW WORDS');
-      setMsg('Local transcription received; verify words and speaker labels. '+(isNamed?'suggested speaker: '+voice.label+(provisional?' (provisional)':''):'voice: '+voice.label)+'.');addTurn(text,id,'speech',note)}
+      setMsg('Local transcription received; verify words and speaker labels. '+(ownerPinned?'owner-pinned label: '+voice.label:isNamed?'suggested speaker: '+voice.label+(provisional?' (provisional)':''):'voice: '+voice.label)+'.');addTurn(text,id,'speech',ownerPinned?'Owner-pinned speaker label; not an acoustic identity result':note,voice.evidence||null,ownerPinned)}
      else if(!state.lastFinalAt){setMsg('Local speech active. Quiet segment ignored. Say a complete test sentence.')}
     }catch(e){
      if(e.name==='AbortError'||item.generation!==stt.generation)break;
      state.wantsListen=false;stopLocal();setStatus('off','LOCAL TRANSCRIPTION ERROR');
      setMsg((e.message||'Local speech error')+'. Select Check connection and retry.');syncButtons();break;
-    }finally{if(stt.controller===controller)stt.controller=null}
+    }finally{if(stt.controller===controller)stt.controller=null;if(stt.inFlight===item)stt.inFlight=null}
    }
   }finally{stt.sending=false;updateQueueStatus();if(stt.queue.length&&state.wantsListen)queueMicrotask(sendLocalQueue)}
  }
  async function startLocal(){
   if(!stt.ready||!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder!=='function'){
-   setMsg('Local Whisper requires Brave microphone access and MediaRecorder.');return;
+   setMsg('Local Whisper requires Brave microphone access and the local recording API.');return;
   }
   if(speaker.enrolling){setMsg('Finish or cancel the voice sample before starting the conversation.');return}
   if(!ai.token){setMsg('Local server token unavailable. Check connection first.');return}
   if(!$('consent').checked){setMsg('Confirm everyone knows and agrees first.');return}
   if(state.wantsListen)return;
-  state.wantsListen=true;state.lastFinalAt=0;stt.dropped=0;updateQueueStatus();const generation=++stt.generation;
+  state.wantsListen=true;state.lastFinalAt=0;stt.dropped=0;stt.pausedIntake=false;stt.skipped=[];stt.cuts=[];stt.durations=[];updateDurationHistory();updateQueueStatus();const generation=++stt.generation;
   setStatus('paused','REQUESTING MIC');setMsg('Brave will request microphone permission for LOCAL Whisper.');syncButtons();
   try{
    const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:true,autoGainControl:true}});
@@ -400,7 +748,10 @@
    startMeter(stream,generation);
    setStatus('live','LOCAL MIC ACTIVE / UNVERIFIED');
    setMsg('Local Whisper listens in silence-guided windows (9 seconds maximum). Speak naturally; results follow shortly.');
-   createLocalWindow(generation);
+   if($('pcmMode').checked){
+     try{const active=await startPCMCapture(stream,generation);if(active){$('captureModeStatus').textContent='Capture mode: AudioWorklet PCM · bounded in-memory ring · local WAV';setMsg('Sample-accurate local PCM capture is active. Audio remains in a bounded memory ring until each window is submitted or erased.')}}
+     catch(error){if(generation!==stt.generation||!state.wantsListen)return;stt.pcmState?.ring?.erase();stt.pcmState=null;$('pcmMode').checked=false;$('captureModeStatus').textContent='Capture mode: MediaRecorder fallback (AudioWorklet unavailable).';setMsg('PCM capture could not start; continuing with MediaRecorder fallback: '+error.message);createLocalWindow(generation)}
+   }else createLocalWindow(generation);
    micProofTimer=setTimeout(()=>{if(state.wantsListen&&generation===stt.generation&&!state.lastFinalAt)setMsg('Microphone is active, but no words are verified yet. Check input device and speak a test sentence.')},25000);
   }catch(e){
    if(generation!==stt.generation)return;
@@ -408,22 +759,116 @@
    setMsg(hadStream?'Private capture setup failed: '+(e.message||'server error')+'. Check the local server and retry.':'Brave microphone permission failed: '+(e.name||'error')+'. Allow microphone for this local page in Brave.');syncButtons();
   }
  }
- function stop(){state.wantsListen=false;stopLocal();clearRestart();invalidateAI(false);$('interim').textContent='Listening stopped. You can still type passages.';$('interim').dataset.empty='true';setStatus('off','NOT LISTENING');setMsg('Stopped. Local audio capture halted; temporary clips are deleted by the server.');syncButtons()}
+ async function stop(){
+  const capture=stt.capture;
+  if(!state.wantsListen&&!capture)return;
+  const pending=[];let freezeConfirmed=!capture;
+  state.wantsListen=false;stt.stopping=true;clearRestart();invalidateAI(false);
+  clearTimeout(stt.chunkTimer);stt.chunkTimer=null;
+  try{
+   if(capture){await postCapture('/api/capture/freeze',{capture});freezeConfirmed=true}
+  }catch(error){
+   if(capture)closeCapture(capture,true);
+   setStatus('off','STOP NOT VERIFIED');setMsg('The server did not confirm Stop freeze. Pending audio was dropped locally: '+(error.message||'connection failure'));pending.length=0;
+  }
+  if(stt.pcmCapture){
+   const mic=stt.pcmCapture;stt.pcmCapture=null;
+   try{await mic.stop()}catch(error){setMsg('PCM flush failed after Stop freeze: '+error.message)}
+   const p=stt.pcmState;
+   if(p&&p.windowStart!=null&&p.ring.end-p.windowStart>=MIN_WINDOW_MS*16){enqueuePCMWindow(p.windowStart,p.ring.end,'Stop');p.windowStart=null}
+  }
+  const recorder=stt.recorder;stt.recorder=null;
+  if(recorder&&recorder.state!=='inactive')await new Promise(resolve=>{let done=false;const finish=()=>{if(done)return;done=true;clearTimeout(timer);resolve()};const timer=setTimeout(finish,1500);recorder.addEventListener?.('stop',finish,{once:true});try{recorder.stop()}catch(e){finish()}});
+  if(freezeConfirmed)pending.push(...[...(stt.inFlight?[stt.inFlight]:[]),...stt.queue].filter((item,index,list)=>item?.clip&&list.findIndex(x=>x.id===item.id)===index).slice(0,4));
+  const generation=++stt.generation;stt.stopping=false;
+  stt.capture='';stt.queue.length=0;stt.inFlight=null;
+  if(stt.controller){stt.controller.abort();stt.controller=null}
+  stopMeter();const stream=stt.stream;stt.stream=null;if(stream)for(const track of stream.getTracks())track.stop();
+  stt.pausedIntake=false;for(const marker of stt.skipped)marker.item=null;updateQueueStatus();syncButtons();
+  if(!capture){setStatus('off','NOT LISTENING');setMsg('Stopped. No server capture lease was active.');return}
+  if(!pending.length){await postCapture('/api/capture/close',{capture}).catch(()=>{});erasePCMState();setStatus('off','NOT LISTENING');setMsg('Stopped. No queued audio windows needed a disposition.');return}
+  const selected=[];
+  for(let i=0;i<pending.length;i++){
+   const item=pending[i];
+   if(window.confirm('Keep pending audio window '+(i+1)+' of '+pending.length+' for local transcription? Choose Cancel or No to drop it.'))selected.push(item);
+  }
+  if(!selected.length){await postCapture('/api/capture/close',{capture}).catch(()=>{});erasePCMState();setStatus('off','NOT LISTENING');setMsg('Stopped. All pending windows were dropped.');return}
+  try{
+   const prepared=[];
+   for(const [i,item] of selected.entries()){
+    const bytes=new Uint8Array(await item.clip.arrayBuffer());
+    const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(x=>x.toString(16).padStart(2,'0')).join('');
+    prepared.push({item,bytes,id:'keep_'+generation+'_'+(i+1),sha256:digest});
+   }
+   erasePCMState();
+   const authorization=await postCapture('/api/capture/drain',{capture,windows:prepared.map(x=>({window_id:x.id,sha256:x.sha256,force_mixed:x.item.forceMixed===true}))});
+   stt.capture=authorization.capture;
+   setStatus('paused','STOP DRAIN · LOCAL TRANSCRIPTION');setMsg('Processing only the windows you chose to keep. Stop remains in effect.');
+   for(const entry of prepared){
+    let response,payload={},attempt=0;
+    do{
+    response=await fetch('/api/transcribe',{method:'POST',headers:{'Content-Type':entry.item.clip.type||'audio/webm','X-Lens-Token':ai.token,'X-Lens-Protocol':'3','X-Lens-Capture-Session':authorization.capture,'X-Lens-Window-ID':entry.id,'X-Lens-Language':entry.item.language,'X-Lens-Auto-Names':entry.item.autoNames&&!speaker.lockName&&$('consent').checked?'enabled':'disabled','X-Lens-Voice-Consent':entry.item.autoNames&&!speaker.lockName&&$('consent').checked?'confirmed':'no',...(entry.item.forceMixed?{'X-Lens-Force-Mixed':'true'}:{})},body:entry.bytes});
+     payload=await response.json().catch(()=>({}));
+     if(response.status!==429||attempt++>=5)break;
+     await new Promise(resolve=>setTimeout(resolve,Math.min(2500,500*attempt)));
+    }while(true);
+    if(!response.ok)throw Error(payload.error||'Kept audio failed with HTTP '+response.status);
+    if(payload.discarded)throw Error('A kept audio result was revoked before completion');
+    const transcript=clean(payload.text),voice=payload.speaker||{label:'Unknown',reason:'No speaker result'};
+    const label=voice.label==='Me'?'me':voice.label==='Mixed'?'mixed':voice.label==='Other'?'other':voice.label&&voice.label!=='Unknown'?'name:'+voice.label:'shared';
+    if(transcript)addTurn(transcript,label,'speech',voice.reason||'Kept after Stop; verify transcript and speaker label.',voice.evidence||null);
+   }
+   await postCapture('/api/capture/close',{capture:authorization.capture});stt.capture='';
+   setStatus('off','NOT LISTENING');setMsg('Stopped. Selected windows were transcribed locally; dropped windows were not uploaded.');
+  }catch(error){
+   setStatus('off','STOP DRAIN INCOMPLETE');setMsg('Stop remains in effect. Kept windows were not fully processed: '+(error.message||'retry unavailable')+'. The server will expire the bounded drain lease.');
+  }
+  $('interim').textContent='Listening stopped. You can still type passages.';$('interim').dataset.empty='true';syncButtons();
+ }
  function start(){if(stt.ready){startLocal();return}setMsg('Local Whisper is unavailable; manual transcript entry remains available. Browser speech services are disabled to avoid unrequested external audio processing.')}
  function transcriptText(){return state.turns.map(t=>'['+t.time+'] '+speakerLabel(t.speaker)+(t.voiceNote?' ('+t.voiceNote+')':'')+': '+t.text).join('\n')}
  function promptText(){const extra=$('context').value.trim();return 'Act as a neutral live-conversation observer. Infer no background, topic, participants, or purpose beyond the actual transcript and any context I explicitly add. Provide up to three grounded observations, quote exact matching phrases, distinguish fact from hypothesis, and optionally suggest a short clarifying question. Do not mind-read, diagnose, take sides, or assign uncertain speakers.\n\nMODE: '+$('aim').selectedOptions[0].text+(extra?'\nUSER-SUPPLIED CONTEXT:\n'+extra:'')+'\n\nTRANSCRIPT:\n'+(transcriptText()||'(none)')}
- async function copy(text,button){try{if(!navigator.clipboard||!window.isSecureContext)throw new Error('Clipboard unavailable');await navigator.clipboard.writeText(text);button.textContent='Copied';setTimeout(()=>{button.textContent=button.id==='copyBtn'?'Copy transcript':'Copy GPT review prompt'},1700)}catch(e){const el=document.createElement('textarea');el.value=text;el.style.cssText='position:fixed;left:12px;bottom:12px;width:60%;height:100px;z-index:9999';document.body.append(el);el.focus();el.select();setMsg('Clipboard permission was blocked. The text is selected; copy it manually, then close this field.');el.addEventListener('blur',()=>el.remove(),{once:true})}}
- function reset(){stop();if($('editDialog').open)$('editDialog').close();editingId=null;invalidateAI(true);clearTimeout(updateTimer);state.turns=[];speaker.detected.clear();$('speakerPresence').textContent='Possible voices this session: none yet';state.paused=false;renderTranscript();analyze();syncButtons();setMsg('Transcript cleared. Context and goal were retained; use Forget voice profiles to clear voiceprints as well.')}
+ async function copy(text,button){const original=button.textContent;try{if(!navigator.clipboard||!window.isSecureContext)throw new Error('Clipboard unavailable');await navigator.clipboard.writeText(text);button.textContent='Copied';setTimeout(()=>{button.textContent=original},1700)}catch(e){const el=document.createElement('textarea');el.value=text;el.style.cssText='position:fixed;left:12px;bottom:12px;width:60%;height:100px;z-index:9999';document.body.append(el);el.focus();el.select();setMsg('Clipboard permission was blocked. The text is selected; copy it manually, then close this field.');el.addEventListener('blur',()=>el.remove(),{once:true})}}
+ function reset(){
+   stop();if($('editDialog').open)$('editDialog').close();
+   editingId=null;invalidateAI(true);clearTimeout(updateTimer);
+   state.turns=[];ui.bookmarks.clear();ui.highlights.clear();ui.cues.length=0;ui.lastCue='';
+   ui.selectedId=null;$('evidenceDrawer').hidden=true;renderCueTimeline();
+   speaker.detected.clear();$('speakerPresence').textContent='Possible voices this session: none yet';
+   state.paused=false;renderTranscript();analyze();syncButtons();
+   setMsg('Transcript cleared. Context and goal were retained; use Forget voice profiles to clear voiceprints as well.');
+ }
  function renderSpeakers(){
   $('speakerHealth').textContent=speaker.ready?'LOCAL VOICE MODEL READY':'VOICE MODEL UNAVAILABLE';
-  const target=$('speakerProfiles');target.replaceChildren();
+   const target=$('speakerProfiles');target.replaceChildren();$('speakerMemory').textContent='Voiceprint RAM (vector estimate): '+speaker.ramBytes+' bytes';
   if(!speaker.profiles.length){const d=document.createElement('div');d.className='quiet';d.textContent='No voices enrolled in this session.';target.append(d)}
-  for(const p of speaker.profiles){const row=document.createElement('div');row.className='speaker-profile';const name=document.createElement('b');name.textContent=p.name;const details=document.createElement('span');details.textContent=p.source==='conversation'?(p.active?'Learned in conversation · '+p.samples+' windows · tentative':'Self-introduced · '+p.samples+' sample · learning'):(p.active?'Ready · '+p.samples+' samples':'Needs another sample ('+p.samples+'/2)');row.append(name,details);const btn=document.createElement('button');btn.className='btn small ghost';btn.type='button';btn.textContent='Remove';btn.setAttribute('aria-label','Forget '+p.name);btn.addEventListener('click',()=>forgetSpeakers(p.name));row.append(btn);target.append(row)}
+  for(const p of speaker.profiles){const row=document.createElement('div');row.className='speaker-profile';const name=document.createElement('b');name.textContent=p.name;const details=document.createElement('span');details.textContent=(p.source==='conversation'?(p.active?'Learned in conversation · '+p.samples+' windows · tentative':'Self-introduced · '+p.samples+' sample · learning'):(p.active?'Ready · '+p.samples+' samples':'Needs another sample ('+p.samples+'/2)'))+(p.lastSeenSeconds==null?'':' · last seen '+p.lastSeenSeconds+'s ago');row.append(name,details);
+    const boost=document.createElement('button');boost.type='button';boost.className='btn small ghost';
+    const seconds=p.boostSeconds||0;
+    boost.textContent=seconds?'Boost '+seconds+'s · disable':'Boost 2m';
+    boost.setAttribute('aria-label',(seconds?'Disable boost for ':'Boost for two minutes: ')+p.name);
+    boost.addEventListener('click',()=>boostSpeaker(p.name,seconds?0:120));
+    row.append(boost);
+    const btn=document.createElement('button');btn.className='btn small ghost';btn.type='button';btn.textContent='Remove';btn.setAttribute('aria-label','Forget '+p.name);btn.addEventListener('click',()=>forgetSpeakers(p.name));row.append(btn);target.append(row)}
+  const lock=$('speakerLockName'),locked=speaker.lockName;lock.replaceChildren();const none=document.createElement('option');none.value='';none.textContent='No lock';lock.append(none);
+  for(const p of speaker.profiles.filter(x=>x.samples>0)){const option=document.createElement('option');option.value=p.name;option.textContent=p.name;lock.append(option)}
+  lock.value=[...lock.options].some(o=>o.value===locked)?locked:'';updateSpeakerLockStatus();
   const manual=$('manualSpeaker');[...manual.options].filter(x=>x.value.startsWith('name:')).forEach(x=>x.remove());
   for(const p of speaker.profiles.filter(x=>x.samples>0)){const option=document.createElement('option');option.value='name:'+p.name;option.textContent=p.name+' (manual)';manual.append(option)}
-  syncButtons();
+   const filter=$('filterSpeaker'),prior=filter.value;
+   filter.replaceChildren();for(const [value,label] of [['all','All speakers'],['shared','Unassigned'],['me','Me'],['other','Other'],['mixed','Mixed'],...speaker.profiles.filter(p=>p.samples>0).map(p=>['name:'+p.name,p.name])]){
+     const opt=document.createElement('option');opt.value=value;opt.textContent=label;filter.append(opt);
+   }
+   filter.value=[...filter.options].some(o=>o.value===prior)?prior:'all';
+   syncButtons();
+  }
+ function updateSpeakerLockStatus(){
+  const exists=speaker.profiles.some(p=>p.name===speaker.lockName&&p.samples>0);
+  if(speaker.lockName&&!exists){speaker.lockName='';speaker.lockRemaining=0}
+  $('speakerLockStatus').textContent=speaker.lockName&&speaker.lockRemaining?'Pinned '+speaker.lockName+' for '+speaker.lockRemaining+' future audio window(s). This is a manual label, not an acoustic match.':'No speaker label pinned.';
+  $('speakerLockName').value=speaker.lockName||'';
  }
- function cancelEnroll(){speaker.generation++;clearTimeout(speaker.timer);speaker.timer=null;try{speaker.controller?.abort()}catch(e){}speaker.controller=null;const rec=speaker.recorder;speaker.recorder=null;if(rec&&rec.state!=='inactive'){try{rec.stop()}catch(e){}}const stream=speaker.stream;speaker.stream=null;if(stream)for(const t of stream.getTracks())t.stop();speaker.enrolling=false;syncButtons()}
+  function cancelEnroll(){speaker.generation++;clearTimeout(speaker.timer);speaker.timer=null;try{speaker.controller?.abort()}catch(e){}speaker.controller=null;const rec=speaker.recorder;speaker.recorder=null;if(rec&&rec.state!=='inactive'){try{rec.stop()}catch(e){}}const stream=speaker.stream;speaker.stream=null;if(stream)for(const t of stream.getTracks())t.stop();speaker.enrolling=false;syncButtons()}
  async function beginEnroll(){
   if(speaker.enrolling){cancelEnroll();$('enrollMessage').textContent='Sample canceled; no voiceprint saved.';return}
   if(state.wantsListen||!speaker.ready||!ai.token){$('enrollMessage').textContent='Stop listening and check the local speaker model first.';return}
@@ -440,9 +885,9 @@
       stream.getTracks().forEach(x=>x.stop());speaker.stream=null;speaker.recorder=null;
       if(!parts.length){cancelEnroll();$('enrollMessage').textContent='No audio captured; retry.';return}
       $('enrollMessage').textContent='Analyzing local voice sample…';const controller=new AbortController();speaker.controller=controller;
-      try{const clip=new Blob(parts,{type:rec.mimeType||mime||'audio/webm'});const response=await fetch('/api/speakers/enroll',{method:'POST',headers:{'Content-Type':clip.type,'X-Lens-Token':ai.token,'X-Lens-Speaker':name,'X-Lens-Voice-Consent':'confirmed'},body:clip,signal:controller.signal});const data=await response.json().catch(()=>({}));if(!response.ok)throw Error(data.error||'Enrollment failed');if(gen!==speaker.generation)return;
+      try{const clip=new Blob(parts,{type:rec.mimeType||mime||'audio/webm'});const response=await fetch('/api/speakers/enroll',{method:'POST',headers:{'Content-Type':clip.type,'X-Lens-Token':ai.token,'X-Lens-Protocol':'3','X-Lens-Speaker':name,'X-Lens-Voice-Consent':'confirmed'},body:clip,signal:controller.signal});const data=await response.json().catch(()=>({}));if(!response.ok)throw Error(data.error||'Enrollment failed');if(gen!==speaker.generation)return;
         $('enrollMessage').textContent=data.message+'. '+name+': '+data.samples+' sample(s).';$('enrollConsent').checked=false;
-        const status=await fetch('/api/speakers',{cache:'no-store'}).then(x=>x.json());if(gen!==speaker.generation)return;speaker.profiles=status.speakers.profiles;renderSpeakers();
+        const status=await fetch('/api/speakers',{cache:'no-store'}).then(x=>x.json());if(gen!==speaker.generation)return;speaker.profiles=status.speakers.profiles;speaker.ramBytes=status.speakers.ramBytes||0;renderSpeakers();
       }catch(e){if(e.name!=='AbortError'&&gen===speaker.generation)$('enrollMessage').textContent=e.message||'Enrollment failed';}
       finally{if(gen===speaker.generation){speaker.enrolling=false;speaker.controller=null;syncButtons()}}
     };
@@ -450,22 +895,41 @@
     speaker.timer=setTimeout(()=>{if(gen===speaker.generation&&rec.state==='recording'){try{rec.stop()}catch(e){cancelEnroll()}}},7000);
   }catch(e){if(gen!==speaker.generation)return;cancelEnroll();$('enrollMessage').textContent='Could not record voice: '+(e.name||'microphone permission denied')}
  }
+ async function boostSpeaker(name,seconds){
+   if(!ai.token||!speaker.profiles.some(p=>p.name===name))return;
+   try{
+     const response=await fetch('/api/speakers/boost',{method:'POST',
+       headers:{'X-Lens-Token':ai.token,'Content-Type':'application/json'},
+       body:JSON.stringify({name,seconds})});
+     const data=await response.json();
+     if(!response.ok)throw Error(data.error||'Could not change voice boost');
+     speaker.profiles=data.speakers?.profiles||[];
+     speaker.ramBytes=data.speakers?.ramBytes||0;
+     renderSpeakers();
+     $('enrollMessage').textContent=seconds?
+       name+' temporarily has a 0.05 lower cosine threshold for 120 seconds. Overlap and score-margin vetoes still apply.':
+       name+' boost disabled. Normal threshold restored.';
+   }catch(e){$('enrollMessage').textContent=e.message||'Boost request failed'}
+ }
  async function forgetSpeakers(name){if(speaker.enrolling)return;if(!ai.token)return;if(!window.confirm(name?'Forget the session voiceprint for '+name+'?':'Forget every enrolled voiceprint?'))return;
-  try{const res=await fetch('/api/speakers/forget',{method:'POST',headers:{'X-Lens-Token':ai.token,'Content-Type':'application/json'},body:JSON.stringify(name?{name}:{all:true})});const obj=await res.json();if(!res.ok)throw Error(obj.error||'Forget failed');speaker.profiles=obj.speakers.profiles;speaker.detected.clear();$('speakerPresence').textContent='Possible voices this session: none yet';renderSpeakers();$('enrollMessage').textContent='Voiceprints discarded from server RAM. Existing transcript text is not changed.'}catch(e){$('enrollMessage').textContent=e.message||'Could not clear profiles'}
+  try{const res=await fetch('/api/speakers/forget',{method:'POST',headers:{'X-Lens-Token':ai.token,'Content-Type':'application/json'},body:JSON.stringify(name?{name}:{all:true})});const obj=await res.json();if(!res.ok)throw Error(obj.error||'Forget failed');speaker.profiles=obj.speakers.profiles;speaker.ramBytes=obj.speakers.ramBytes||0;speaker.detected.clear();$('speakerPresence').textContent='Possible voices this session: none yet';renderSpeakers();$('enrollMessage').textContent='Voiceprints discarded from server RAM. Existing transcript text is not changed.'}catch(e){$('enrollMessage').textContent=e.message||'Could not clear profiles'}
  }
  $('editForm').addEventListener('submit',event=>{event.preventDefault();const turn=state.turns.find(t=>t.id===editingId);const value=clean($('editText').value);if(!turn||!value){$('editError').textContent='Enter the corrected words before saving.';return}if(value!==turn.text){turn.text=value;turn.edited=true;invalidateAI(true);renderTranscript();analyze();scheduleAI()}$('editDialog').close();editingId=null;syncButtons()});
  $('cancelEditBtn').addEventListener('click',()=>$('editDialog').close());
  $('editDialog').addEventListener('close',()=>{editingId=null});
+ $('speakerLockBtn').addEventListener('click',()=>{const name=$('speakerLockName').value;if(!name){speaker.lockName='';speaker.lockRemaining=0;updateSpeakerLockStatus();return}const profile=speaker.profiles.find(p=>p.name===name&&p.samples>0),count=Number($('speakerLockCount').value);if(!profile||!Number.isInteger(count)||count<1||count>20){$('speakerLockStatus').textContent='Choose an enrolled speaker and a window count from 1 to 20.';return}speaker.lockName=name;speaker.lockRemaining=count;updateSpeakerLockStatus()});
  $('autoNames').addEventListener('change',()=>{if(state.wantsListen&&!$('autoNames').checked){stop();setMsg('Speaker-name learning revoked; capture stopped to discard pending audio. Press Start to continue without it.')}const box=$('introductionStatus');if($('autoNames').checked){box.dataset.state='idle';box.textContent='Natural introductions enabled for this session, with everyone’s consent. Speak a name and continue with a sentence.'}else{box.dataset.state='idle';box.textContent='Spoken-name learning OFF. Voiceprints already enrolled for this session remain until you choose Forget profiles or close the server.'}});
  $('enrollName').addEventListener('input',syncButtons);$('enrollConsent').addEventListener('change',syncButtons);$('enrollBtn').addEventListener('click',beginEnroll);$('forgetBtn').addEventListener('click',()=>forgetSpeakers());
+ $('pcmMode').addEventListener('change',()=>{$('captureModeStatus').textContent=$('pcmMode').checked?'Capture mode: AudioWorklet PCM requested; MediaRecorder fallback remains available.':'Capture mode: MediaRecorder fallback.'});
+ for(const [id,out] of [['pcmPreRoll','pcmPreRollValue'],['pcmPostRoll','pcmPostRollValue']])$(id).addEventListener('input',()=>$(out).textContent=$(id).value+'ms');
  $('manualForm').addEventListener('submit',e=>{e.preventDefault();addTurn($('manualText').value,$('manualSpeaker').value,'typed');$('manualText').value='';$('manualText').focus()});$('startBtn').addEventListener('click',start);$('stopBtn').addEventListener('click',stop);$('pauseBtn').addEventListener('click',()=>{state.paused=!state.paused;if(!state.paused){analyze();scheduleAI()}else{invalidateAI(false);$('analysisAge').textContent='Cues paused'}syncButtons()});$('consent').addEventListener('change',()=>{if(!$('consent').checked && state.wantsListen)stop();syncButtons()});$('context').addEventListener('input',()=>{invalidateAI(true);scheduleAnalysis();scheduleAI()});$('aim').addEventListener('change',()=>{invalidateAI(true);analyze();scheduleAI()});$('aiReconnect').addEventListener('click',checkAI);$('aiToggle').addEventListener('change',()=>{ai.enabled=ai.ready&&$('aiToggle').checked;if(ai.enabled){scheduleAI()}else{invalidateAI(true);setAIStatus(ai.ready?'PAUSED':'OFFLINE');setAIMessage('AI coaching is off; instant local cues still work.');analyze()}});$('eraseAllBtn').addEventListener('click',async()=>{
    if(!window.confirm('Stop listening, clear transcript, optional context and names, reset the goal, and forget ALL in-memory speaker profiles?'))return;
-   stop();cancelEnroll();
+   await stop();cancelEnroll();
    try{
      const data=await postCapture('/api/session/erase',{confirm:true});
      speaker.profiles=data.speakers?.profiles||[];
      $('enrollConsent').checked=false;$('autoNames').checked=false;
-     $('context').value='';$('aim').value='observe';$('manualSpeaker').value='shared';
+     $('context').value='';$('privateNote').value='';$('customFragment').value='';$('coachPreset').value='';$('groundingMode').value='exact';$('aim').value='observe';$('manualSpeaker').value='shared';
      $('enrollName').value='';$('consent').checked=false;
      $('introductionStatus').dataset.state='idle';$('introductionStatus').textContent='Spoken-name learning OFF. Enable only with everyone’s permission.';
      reset();renderSpeakers();$('enrollMessage').textContent='Server voiceprints, transcript, and optional context cleared. Neutral defaults restored.';
@@ -474,7 +938,71 @@
  });
  $('copyBtn').addEventListener('click',()=>copy(transcriptText(),$('copyBtn')));$('copyBriefBtn').addEventListener('click',()=>copy(promptText(),$('copyBriefBtn')));$('clearBtn').addEventListener('click',()=>{if(state.turns.length && !window.confirm('Clear all captured passages in this session?'))return;reset()});$('sampleBtn').addEventListener('click',()=>{reset();for(const [s,t] of [['me','Could we review the options for the next meeting?'],['other','Thursday works, but I need the outline before Wednesday afternoon.'],['me','I can send the outline Tuesday. Does a Thursday review work for everyone?']])addTurn(t,s,'demo');setMsg('Fictional example loaded. Start or add your own lines when ready.')});
  document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.wantsListen){stop();setMsg('Microphone stopped when the tab became hidden. Restart explicitly when ready.')}});window.addEventListener('pagehide',()=>{cancelEnroll();state.wantsListen=false;stopLocal();clearRestart()});
- $('capability').textContent='Checking local Whisper';renderSpeakers();analyze();syncButtons();checkAI();
+  for(const [id,field,suffix,format] of [
+    ['vadThreshold','threshold','','rms'],['vadSilence','silenceMs','ms','time'],
+    ['vadMinSpeech','minSpeechMs','ms','time'],['vadHardCap','hardCapMs','ms','time']
+  ]){
+    $(id).addEventListener('input',()=>{
+      stt.vad[field]=Number($(id).value);
+      $(id+'Value').textContent=format==='rms'?stt.vad[field].toFixed(3):String(stt.vad[field])+suffix;
+      drawEnergy();
+      if(field==='hardCapMs'&&stt.recorder?.state==='recording')scheduleHardCap(stt.recorder);
+    });
+  }
+  $('pauseIntakeBtn').addEventListener('click',()=>{stt.pausedIntake=!stt.pausedIntake;updateQueueStatus()});
+  $('retryLoose').addEventListener('click',()=>{
+    const mode=$('groundingMode');mode.value=mode.value==='exact'?'fuzzy':'free';
+    invalidateAI(false);scheduleAI(true);
+  });
+  async function checkCustomModel(){
+    setAIStatus('CHECKING MODEL');const response=await fetch('/api/ollama/check',{
+      method:'POST',headers:{'Content-Type':'application/json','X-Lens-Token':ai.token},
+      body:JSON.stringify({ollama:{url:$('ollamaUrl').value,model:$('ollamaModel').value,
+        timeout:Number($('ollamaTimeout').value),temperature:Number($('ollamaTemperature').value)}})});
+    const data=await response.json();ai.ready=response.ok&&!!data.ready;
+    $('aiToggle').disabled=!ai.ready;
+    if(!ai.ready){$('aiToggle').checked=false;ai.enabled=false;invalidateAI(true)}
+    setAIStatus(ai.ready?'READY · '+$('ollamaModel').value:'MODEL UNAVAILABLE');
+    setAIMessage(data.reason||'Check model settings');refreshHeroActions();
+  }
+  $('checkModelBtn').addEventListener('click',()=>checkCustomModel().catch(e=>setAIMessage(e.message||'Model check failed')));
+  async function loadDiagnostics(){
+    const [health,trace]=await Promise.all([fetch('/api/health').then(x=>x.json()),fetch('/api/diagnostics').then(x=>x.json())]);
+    $('healthPill').textContent=health.ok?'LOCAL HEALTH OK · protocol '+health.protocol:'Health unknown';
+    $('diagnosticLog').textContent=(trace.events||[]).slice(-30).map(e=>
+      new Date(e.at*1000).toLocaleTimeString()+' '+e.kind+' '+e.state+' '+e.elapsedMs+'ms').join('\n')||'No timing events yet.';
+  }
+  $('loadDiagnostics').addEventListener('click',()=>loadDiagnostics().catch(e=>{$('healthPill').textContent='Diagnostics unavailable';$('diagnosticLog').textContent=e.message||''}));
+  $('closeEvidence').addEventListener('click',()=>{$('evidenceDrawer').hidden=true});
+  for(const id of ['filterSpeaker','filterKeyword','filterCoached'])$(''+id).addEventListener(id==='filterKeyword'?'input':'change',renderTranscript);
+  $('exportTranscriptBtn').addEventListener('click',()=>exportSession(true));
+  $('exportPlainBtn').addEventListener('click',()=>exportSession(false));
+  $('copyNextBtn').addEventListener('click',()=>copy($('nextLine').value,$('copyNextBtn')));
+  $('getCueBtn').addEventListener('click',()=>{analyze();scheduleAI(true)});
+  $('sheetToggle').addEventListener('click',()=>{const sheet=document.querySelector('.hero-cue'),open=sheet.dataset.collapsed==='true';sheet.dataset.collapsed=String(!open);$('sheetToggle').textContent=open?'Collapse cue ↓':'Expand cue ↑';$('sheetToggle').setAttribute('aria-expanded',String(open))});
+  const layout=savedSetting('layout','split');$('layoutMode').value=['split','transcript','coaching','focus'].includes(layout)?layout:'split';
+  const setLayout=()=>{layoutGrid.dataset.layout=$('layoutMode').value;setSetting('layout',$('layoutMode').value)};
+  $('layoutMode').addEventListener('change',setLayout);setLayout();
+  for(const [control,attr,value] of [['contrastMode','contrast','high'],['monoMode','mono','on'],['motionMode','low-motion','on']]){
+    const input=$(control);input.checked=savedSetting(control,'off')==='on';
+    const apply=()=>{document.documentElement.dataset[attr==='low-motion'?'lowMotion':attr]=input.checked?value:'off';setSetting(control,input.checked?'on':'off')};
+    input.addEventListener('change',apply);apply();
+  }
+  for(const id of ['privateNote','groundingMode','coachPreset','customFragment','ollamaUrl','ollamaModel','ollamaTimeout','ollamaTemperature']){
+    $(id).addEventListener(id==='privateNote'||id==='customFragment'?'input':'change',()=>{if(id==='ollamaUrl')$('ollamaUrl').dataset.touched='true';invalidateAI(true);scheduleAI()});
+  }
+  document.addEventListener('keydown',e=>{
+    if(e.altKey||e.ctrlKey||e.metaKey||e.isComposing||$('editDialog').open||/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(document.activeElement?.tagName||''))return;
+    const turn=state.turns.find(t=>t.id===ui.selectedId)||state.turns.at(-1);
+    const key=e.key.toLowerCase();
+    if(e.code==='Space'){e.preventDefault();$('pauseBtn').click();return}
+    if(key==='c'){e.preventDefault();$('getCueBtn').click();return}
+    if(key==='e'&&turn){e.preventDefault();openEvidence(turn.id);return}
+    if((key==='n'||key==='p')&&state.turns.length){e.preventDefault();const i=Math.max(0,state.turns.findIndex(t=>t.id===turn?.id));jumpToTurn(state.turns[Math.min(state.turns.length-1,Math.max(0,i+(key==='n'?1:-1)))].id);return}
+    if(key==='m'&&turn){e.preventDefault();assignTurn(turn.id,'mixed');return}
+    if(/^[1-9]$/.test(key)&&turn){const options=['me','other',...speaker.profiles.filter(p=>p.samples>0).slice(0,7).map(p=>'name:'+p.name)];const target=options[Number(key)-1];if(target){e.preventDefault();assignTurn(turn.id,target)}}
+  });
+  $('capability').textContent='Checking local Whisper';renderSpeakers();analyze();syncButtons();checkAI();
 })();
 </script>
 </body>

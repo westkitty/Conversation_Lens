@@ -38,3 +38,7 @@ test-results/
 
 # Generated only by local browser QA, not production assets.
 qa_v6_*.png
+experiments/packet-a/preview_desktop.png
+experiments/packet-a/preview_mobile.png
+experiments/packet-a/packet_a_connected_desktop.png
+experiments/packet-a/packet_a_connected_mobile.png

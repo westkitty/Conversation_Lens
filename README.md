@@ -22,6 +22,8 @@ From this repository root:
 - **Visible audio backlog:** see outstanding windows and whether windows were skipped due to transcription lag.
 - **Mobile-first reading order:** setup and listening precede cues; DOM order changes with viewport to preserve keyboard navigation.
 - **No browser speech fallback:** when local Whisper is unavailable, transcription falls back to manual text input, NOT a remote browser speech provider.
+- **Stop disposition and capture protocol:** protocol 3 freezes the server-side capture lease before Stop, revokes late results, and asks which already buffered audio windows to keep. Only exact SHA-256-authorized kept clips enter the bounded local drain lease; rejected or dropped clips are not submitted.
+- **Opt-in PCM capture:** the Listen panel now has an experimental AudioWorklet mode with a bounded 45-second in-memory ring, 16 kHz WAV windows, and adjustable context roll. MediaRecorder remains the default and fallback. The tested Packet A sample-accurate split/merge editor is not yet connected to the production UI; see the upgrade ledger for the 60-item status matrix.
 
 ## Tests
 
@@ -37,7 +39,7 @@ The two browser tests require **Playwright plus an installed Brave (macOS) or Ch
 
 ## Privacy and security
 
-This repository is **private**. The current app ships with an empty optional context field and a neutral default observation mode. Erase all session data also clears the optional context and reverts the goal and speaker selection. **Earlier Git history may still contain a previous private scenario**, so do not make the repository public without separately reviewing and, if explicitly authorized, cleaning its history. Do not commit voice recordings, session transcript exports, audio models, runtime tokens, or voiceprints. The local server is intended to bind to 127.0.0.1 only. All participants must consent to live transcription and speaker identification.
+GitHub currently reports this repository as **public**. Keep fixtures synthetic and never commit voice recordings, session transcript exports, audio models, runtime tokens, private notes, embeddings, or voiceprints. The current app ships with an empty optional context field and a neutral default observation mode. Erase all session data also clears the optional context and reverts the goal and speaker selection. The local server is intended to bind to 127.0.0.1 only. All participants must consent to live transcription and speaker identification.
 
 Speaker self-introductions are provisional name claims, not identity verification. Overlapping speech and similar voices can be mislabeled. Do not use this app for monitoring non-consenting speakers or to establish facts about a person.
 

@@ -58,7 +58,7 @@ def main():
         base = "http://127.0.0.1:" + str(app.server_address[1])
         try:
             _, status = call(base + "/api/status")
-            headers = {"X-Lens-Token": status["token"], "Origin": base}
+            headers = {"X-Lens-Token": status["token"], "Origin": base, "X-Lens-Protocol": "3"}
             _, opened = call(base + "/api/capture/open", b'{"consent":true}',
                              {**headers, "Content-Type": "application/json"})
             lease = opened["capture"]

@@ -120,3 +120,127 @@ cd "$HOME/Conversation_Lens" && python3 test_backend.py && python3 test_regressi
 ```
 
 **State:** Source and tests were modified in the MacBook's checkout; no Git commit or push. This design/backlog packet is a separate downloadable file, not verified to exist in the MacBook checkout.
+
+## Additive execution checkpoint — October 18, 2026
+
+### Recovery and source state
+
+- Verified target: `MacBook-Air.local`, macOS 26.6.2, checkout `/Users/andrew/Conversation_Lens`, remote `git@github.com:westkitty/Conversation_Lens.git`.
+- Started at `main` / `a74e2b0ca9edbdd6c9e8f9591d0367d5048002bd`, upstream `origin/main`; the pre-existing modified `server.py`, live HTML, `test_frontend.py`, and untracked `test_live_upgrade.py` were preserved.
+- Recovery copies and patch, SHA-256 verified before integration: `/Users/andrew/Conversation_Lens_recovery_20261018/` (`working-tree.patch`, `files/`, `BASELINE.txt`, `SHA256SUMS`).
+- Fetched and inspected `origin/feat/conversation-lens-packet-a-handoff` at `46727fe93b4575eb66b110fd13d35e2b388dd51b`. It is a child of the verified base and adds only `docs/` plus the isolated `experiments/packet-a/` prototype and tests. Cherry-picked without conflict as `dc4b52c` onto `codex/conversation-lens-integration`; no rebase/reset/stash was used.
+- GitHub API readback reports this repository is public. Keep all future fixtures synthetic and exclude private transcript/session/voice data.
+
+### Implemented in this checkpoint
+
+- Added `Conversation_Lens_Intelligent_Speaker_v6/lens_stop_drain.py`, the tested in-memory lease coordinator, while retaining the existing v6 server, transcription route, capture token, speaker flow, and MediaRecorder fallback.
+- Added freeze and selected-drain routes to v6. Freeze revokes old admissions; drain requires the original frozen lease and exact selected clip hashes; each upload is one-use. Forced-mixed requests bypass speaker embedding/learning and are labeled `Mixed`.
+- Updated production Stop to freeze first, stop the current recorder, collect up to four queued/in-flight/finalized windows, ask Keep/Drop for each, send only kept bytes through the exact-hash drain lease, then close it. Failed freeze fails closed and drops local pending audio. A failed drain remains visibly incomplete; retry after an ambiguous network timeout is still a gap.
+- Bumped the capture protocol to version 3. The UI requires a matching server version, and protected capture/transcribe requests reject mismatches with HTTP 426.
+- Updated README privacy wording after live GitHub visibility readback and documented the current Stop behavior and remaining PCM editor gap.
+
+### Evidence observed in this checkpoint
+
+- Before integration, `test_backend.py`, `test_regressions.py`, and `test_live_upgrade.py` passed. The browser tests initially could not import Playwright with system Python; the configured `ConversationLensQA` virtual environment already had Playwright. Its Chromium runtime was installed in the user cache, not in the repository.
+- After integration, `test_backend.py`, `test_regressions.py`, and `test_live_upgrade.py` passed, including stale-stop revocation, protocol mismatch rejection, exact hash rejection, one-use drain, and mixed-learning veto.
+- Updated `test_frontend.py` passed at 1200px and 375px in Playwright Chromium, including Stop and recorder finalization. This is simulated microphone evidence, not physical-device acceptance.
+- `test_e2e.py` passed at 1200px and 375px using generated speech through the actual localhost/FFmpeg/Whisper/speaker HTTP path. It is not natural multi-speaker or microphone evidence.
+- `test_real_local_stack.py` passed with generated speech: Whisper recognized the synthetic 144-character sample in 3.55s; optional local Ollama returned grounded output in 3.02s; test-only voice profiles were erased. These timings are one run and not a comparative latency benchmark.
+- Packet A Node suite: 29/29 passed. Packet A Python coordinator/server suite: 12/12 passed. Browser Packet A tests must be rerun with the configured QA Python; running discovery under system Python 3.9 failed collection because Playwright is absent there.
+
+### Current phase status and remaining gates
+
+- Phase 0 recovery: PASS for target identity, dirty-work preservation, recovery copy verification, branch inspection, and base verification.
+- Phase 1: PARTIAL. Production Stop freeze/Keep/Drop and versioned admission are integrated. Production app still records WebM via MediaRecorder; Packet A AudioWorklet PCM capture, sample-boundary editing, split/merge, WAV pre/post-roll, bounded replay of already processed PCM, timeout-safe transactional retry, and PCM Stop drain are not yet integrated.
+- Phase 2–4: not closed. Existing local work covers many controls, but the complete 60-row acceptance matrix still needs current code/test mapping and identified gaps need implementation or explicit blocked evidence.
+- Phase 5: NOT COMPLETE. No physical Brave microphone permission/device interruption/restart test, natural two-speaker or overlap acceptance, 45-minute resource trial, M1/8GB resource measurement, or controlled baseline-vs-current latency comparison has been performed in this checkpoint.
+- No implementation commit beyond the handoff cherry-pick has been created or pushed. Main was not changed. Do not publish until the diff and public-repository privacy audit pass and the authorized release evidence is complete.
+
+Continue from this branch and preserve the recovery checkpoint. Do not call all 60 upgrades complete from these results.
+
+### Follow-up execution checkpoint — October 18, 2026
+
+- Added manual speaker pin/unpin for 1–20 future audio windows in the production UI. The pin is marked as an owner-provided label, not an acoustic result; it does not override `Mixed`, suppresses spoken-name learning while active, and clears after the requested count or profile removal. Frontend regression covers the one-window expiry and learning veto.
+- Tightened protocol 3 enforcement on capture open/close/freeze/drain and transcription endpoints. A mismatched version returns HTTP 426. The frontend checks the version from `/api/status` before enabling capture.
+- Full suite rerun after these changes: backend, safety regressions, live-upgrade HTTP tests, frontend Chromium at 1200px and 375px, E2E Chromium at both widths, generated-speech real local stack, all Packet A Python/Node suites, Packet A workbench UI, and HTTP bridge passed. Packet A reported 29 Node + 12 Python + inline/workbench/bridge browser checks with no failures.
+- Physical Brave check: foreground Brave opened `http://127.0.0.1:56069/`; microphone permission was granted for this local site until site close. The MacBook Air built-in microphone produced live meter readings (5%, then 14% during local speech playback); app reported `LOCAL MIC ACTIVE / UNVERIFIED` and later `LOCAL TRANSCRIPT · REVIEW WORDS`. A local macOS synthetic speech sample reached the local Whisper path, but its transcript contained substantial hallucinated text and word errors. This is a failure for reliable speech accuracy, not a successful natural-speech acceptance. A real two-person, natural overlap, device-unplug, and restart test was not performed because no consenting second speaker was available.
+- Physical Stop test: pressing Stop opened the Keep/Drop prompt for one pending window; the window was dropped, the app showed `NOT LISTENING`, and “Erase all session data” was confirmed. The page returned to 0 passages; no enrollment was enabled. The local server was stopped. The one temporary browser tab may remain in Brave; it contains no transcript.
+- One physical check exposed sample durations around 8.9 seconds despite the text UI reporting 9 seconds maximum. No controlled latency comparison or 45-minute memory trial was performed.
+- GitHub visibility remains public. No transcript, recording, private note, embedding, token, or screenshot was staged or pushed. No push has occurred.
+
+Current additions beyond the prior checkpoint: requirement 22 has a focused production UI test. Physical mic capture and Stop are tested; physical ASR quality is PARTIAL/FAIL for the synthetic speech attempt, and natural multi-speaker acceptance remains NOT TESTED.
+
+## Evidence matrix — 2026-10-18 handoff continuation
+
+This is an executable-evidence status snapshot, not a completion declaration. `PASS` means the current app behavior had a focused browser/backend/real-stack assertion in this checkout. `PARTIAL` means some behavior exists but the requested feature or proof is incomplete. `BLOCKED` means the behavior needs an unverified runtime/model capability. No requirement is counted complete from a control label alone.
+
+| ID | Requirement | Current evidence / implementation | Status | Remaining gap |
+|---:|---|---|---|---|
+| 1 | Persistent pinned coaching rail | Live HTML `.hero-cue`; `test_frontend.py` desktop/mobile | PASS | None observed in current browser checks |
+| 2 | Energy/silence graph; drag split/merge | Live HTML VAD graph; production PCM timeline in `experiments/packet-a/lens_pcm_core.js` | PARTIAL | Graph is meter based; PCM split/merge editor is not connected to production UI |
+| 3 | In-place speaker reassignment | Live HTML transcript speaker select; `test_frontend.py` reassignment | PASS | None observed in current browser checks |
+| 4 | Grounded evidence drawer | Live HTML evidence drawer; `test_frontend.py` cosine and margin display | PASS | Evidence remains measurements, not calibrated probabilities |
+| 5 | Keyboard controls | Live HTML keyboard handlers; `test_frontend.py` M and numeric assignment | PASS | Full shortcut set not independently enumerated |
+| 6 | Layout modes with memory | Live HTML layout persistence; `test_frontend.py` mode switch and resize | PASS | None observed in current browser checks |
+| 7 | Skipped-window reasons and reprocess | Live HTML skipped queue and retry action | PARTIAL | Browser suite does not exercise every skip/reprocess transition |
+| 8 | Flick-up mobile coaching sheet | Live HTML collapsible mobile sheet; button tested at 375px | PARTIAL | Swipe gesture is absent |
+| 9 | Per-window Stop keep/drop dialog | Live Stop freeze/drain in `server.py`; exact-hash drain backend test; Packet A chooser browser test | PASS | Physical microphone Stop/drain with multiple pending windows not exercised |
+| 10 | Speaker chips, last-seen, boost | Live HTML speaker profile chips; `test_frontend.py` last-seen and boost | PASS | Natural identity accuracy remains unverified |
+| 11 | Sticky optional context | Live HTML optional context and AI prompt | PARTIAL | Context is not visually sticky during scrolling |
+| 12 | Custom prompt fragment presets | Live HTML presets and custom field; `test_live_upgrade.py` request assertion | PASS | None observed in current tests |
+| 13 | Transcript filters | Live HTML speaker/keyword/coaching filters; `test_frontend.py` | PASS | None observed in current browser checks |
+| 14 | Reduced motion/contrast/mono | Live HTML preference controls and CSS | PARTIAL | Runtime accessibility contrast and motion audit not done |
+| 15 | Precise empty coaching ingredients | Live HTML missing-input status; `test_frontend.py` | PASS | None observed in current browser checks |
+| 16 | Sliding plus priority AI context | `server.py` `chosen_turns`; `test_live_upgrade.py` older-priority retention | PASS | No long-session capacity trial |
+| 17 | Exact/Fuzzy/Free grounding dial | `server.py` evidence validation; `test_live_upgrade.py` exact/fuzzy/free | PASS | None observed in current tests |
+| 18 | Offline interruption/repetition/topic-shift cards | Existing local language rules in live HTML | PARTIAL | Requested interruption and topic-shift classification is incomplete |
+| 19 | In-place copyable next-step cards | Current next-line editor/copy control in live HTML | PARTIAL | Historical cards do not each have independent edit/copy controls |
+| 20 | Mid-session coaching presets | Live HTML current settings flow to Ollama; `test_frontend.py` request payload | PASS | No provider/model switching during active request test |
+| 21 | Full/half speaker confidence strip | Evidence drawer exposes numeric full/half scores | PARTIAL | Requested strip visualization is absent |
+| 22 | Speaker lock N windows/unpin | Live HTML lock control; `test_frontend.py` one-window pin and expiry | PASS | None observed in current browser checks |
+| 23 | One-click Markdown/plain exports | Live HTML export actions; `test_frontend.py` download assertion | PASS | Plain export not independently checked in the current run |
+| 24 | Bookmarks/highlights in export | Live HTML marker actions and exporter; `test_frontend.py` bookmark/highlight actions | PARTIAL | Current export assertion does not verify marker contents |
+| 25 | Coaching pause, hot ASR | Live HTML pause and capture lifecycle | PARTIAL | Hot ASR action is not separately measured in this run |
+| 26 | Smart debounce/manual immediate cue | Live HTML scheduling and manual cue action | PARTIAL | Debounce latency and cancellation races lack focused timing tests |
+| 27 | Coaching timeline and per-card regenerate | Live HTML source-linked history | PARTIAL | Regeneration remains current-cue oriented, not per historical card |
+| 28 | Grounding badge/retry looser | Live HTML grounding state and retry control | PASS | Retry interaction not exercised in this turn |
+| 29 | Private note/goal for next AI call | `server.py` Ollama payload; `test_live_upgrade.py` private note assertion | PASS | None observed in current tests |
+| 30 | Live VAD tunables and preview | Live HTML VAD sliders/graph; `test_frontend.py` synthetic meter segmentation | PASS | Production PCM tuning has not been compared to physical speech |
+| 31 | Adaptive noise floor | Live HTML RMS noise estimate; browser meter regression | PARTIAL | No ambient-noise or changing-noise physical run |
+| 32 | Half-window overlap heat | `server.py` overlap/forced Mixed logic | PARTIAL | No heat visualization; natural overlap accuracy unverified |
+| 33 | Enrollment quality meter | Existing enrollment checks and rejection | PARTIAL | Pre-activation quality gauge is absent |
+| 34 | Instant speaker drop | Live HTML profile removal with confirmation | PARTIAL | Confirmation remains; instant action not implemented |
+| 35 | Longer follow-up enrollment sample | Existing sample guidance | PARTIAL | Guided longer follow-up flow is absent |
+| 36 | Raw cosine/margin available | `server.py` evidence and evidence drawer; `test_frontend.py` values | PASS | None observed in current checks |
+| 37 | Soft cap/merge suggestion | Existing profile count cap | PARTIAL | No soft-cap merge suggestion workflow |
+| 38 | Window-length distribution | Live HTML rolling median/range | PARTIAL | Histogram is absent |
+| 39 | Whisper model switcher | No production model switcher | BLOCKED | Must inventory installed models and verify reload/rollback before exposing switch |
+| 40 | Adjustable pre-roll/post-roll | Live HTML PCM controls; production PCM rendering uses `WindowTimeline.render` | PARTIAL | No production sample-boundary edit UI or physical roll-content proof |
+| 41 | Overlap Mixed + no name learning | `server.py` force-Mixed veto; backend regression and drain hash tests | PASS | Natural two-speaker overlap not tested |
+| 42 | Speaker embedding RAM/compact | Server RAM estimate is displayed | PARTIAL | Explicit compact action is absent |
+| 43 | Structured performance and lease logs | Bounded diagnostics/health; `test_live_upgrade.py` | PARTIAL | Per-stage timing and lease owner/age telemetry are incomplete |
+| 44 | Health endpoint and UI status | `/api/health`, UI health indicator; `test_frontend.py` | PASS | None observed in current browser checks |
+| 45 | Fallback when speaker worker times out | Existing transcript fallback path; backend tests | PASS | No forced timeout run in this turn |
+| 46 | Live Ollama endpoint/model/timeout/temp | `server.py` localhost validation and options; tests plus local stack | PASS | User-facing live settings not all independently exercised |
+| 47 | Capture lease rotation and stale notice | `lens_stop_drain.py`, v3 capture protocol; backend/live-upgrade tests | PASS | Physical tab takeover not exercised this turn |
+| 48 | Queue dashboard and pause intake | Live queue status and pause-intake control | PARTIAL | Full worker-stage graph is absent |
+| 49 | Explicit disk speaker-profile save/load | Not implemented; RAM-only remains default | PARTIAL | Explicit opt-in export/import is still required |
+| 50 | Rate limit and backpressure | Bounded queue/retry in app; Packet A 429 retention test | PASS | Main app saturation not stress-tested |
+| 51 | Finish/drop in-flight shutdown | Freeze, exact-hash drain lease, per-window Keep/Drop; backend tests | PASS | No physical multi-pending-window race test |
+| 52 | Versioned server-client messages | Protocol v3 required on protected requests; 426 mismatch regression | PASS | No older client compatibility matrix |
+| 53 | Recent-window replay/debug | Skipped live clips can be reprocessed while lease remains active | PARTIAL | Processed-window debug replay is absent |
+| 54 | Snapshot/restore | No session snapshot/restore implementation | PARTIAL | Versioned checksum/atomic restore flow is not built |
+| 55 | Multi-tab lease visibility/transfer | Explicit takeover and invalidation; browser/backend tests | PARTIAL | Owner/age visibility is absent; physical multi-tab test remains |
+| 56 | Custom local cue rules | Existing built-in local rules | PARTIAL | Owner-defined bounded rule editor/execution is absent |
+| 57 | Running action-item/decision extraction | Local phrase-based observations in live HTML | PARTIAL | Durable in-session action/decision ledger is absent |
+| 58 | Hotkey voice-note annotation | Separate private typed note exists | PARTIAL | Hotkey voice-note capture is absent |
+| 59 | Speaker comparison/talk-time stats | No eligible-span accounting | PARTIAL | No talk-time UI or denominator disclosure |
+| 60 | Continue last coaching thought | Existing coaching history only | PARTIAL | Thread-aware continuation call is absent |
+
+### Current phase evidence
+
+- Recovery checkpoint remains local-only at `/Users/andrew/Conversation_Lens_recovery_20261018/`; the starting tree and untracked files were preserved.
+- Packet A integration commit `dc4b52c` is on `codex/conversation-lens-integration`; production changes remain uncommitted and unpushed.
+- `python3 test_backend.py`, `python3 test_regressions.py`, `python3 test_live_upgrade.py`, QA-venv `test_frontend.py` (1200px and 375px, including synthetic production PCM-to-WAV queue), QA-venv `test_e2e.py` (both widths, HTTP/FFmpeg/Whisper/speaker path), and `python3 test_real_local_stack.py` passed. Latest local-stack sample: ASR 2.64s; Ollama 4.73s. These numbers are single-run observations, not a comparative latency benchmark.
+- Packet A tests passed with `/Users/andrew/Library/Application Support/ConversationLensQA/venv/bin/python`: 12 Python and 29 Node tests; browser workbench, inline UI, and server bridge checks passed at 1200px and 375px. System Python 3.9 lacks Playwright, so do not use it for those browser tests.
+- Physical Brave MediaRecorder microphone access, mic meter, Stop/drop and erase were exercised earlier. Production AudioWorklet PCM was not conclusively started on the physical device in this pass; a pending browser microphone request remained unresolved. Mark physical PCM, natural multi-speaker/overlap, 45-minute memory soak, and comparative latency as NOT TESTED.

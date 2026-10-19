@@ -16,11 +16,16 @@ import sys
 import tempfile
 import wave
 import threading
+import time
+from collections import deque
 import urllib.error
 import urllib.parse
 import urllib.request
 
 APP_DIR = Path(__file__).resolve().parent
+if str(APP_DIR) not in sys.path:
+    sys.path.insert(0, str(APP_DIR))
+from lens_stop_drain import CaptureDrainCoordinator, InvalidWindow, LeaseConflict
 OLLAMA = os.environ.get('LENS_OLLAMA_URL', 'http://127.0.0.1:11435').rstrip('/')
 MODEL = os.environ.get('LENS_MODEL', 'gemma3:4b').strip()
 MAX_BODY = 27000
@@ -44,6 +49,69 @@ SPEAKER_META = {}
 ENROLLMENT_AUDIO_IDS = {}
 SPEAKERS_LOCK = threading.RLock()
 PROFILE_EPOCH = 0
+SPEAKER_LAST_SEEN = {}
+SPEAKER_BOOST_UNTIL = {}
+
+
+def boost_seconds(name):
+    with SPEAKERS_LOCK:
+        return max(0, math.ceil(SPEAKER_BOOST_UNTIL.get(name, 0.0) - time.monotonic()))
+
+
+EVENTS = deque(maxlen=120)
+EVENTS_LOCK = threading.Lock()
+PROTOCOL_VERSION = 3
+DRAIN = CaptureDrainCoordinator()
+
+
+def event_record(category, state, elapsed=0, count=0):
+    # Diagnostic metadata only: never include words, names, clips or embeddings.
+    with EVENTS_LOCK:
+        EVENTS.append({'at': round(time.time(), 2), 'kind': category,
+                       'state': state, 'elapsedMs': round(elapsed * 1000),
+                       'count': int(count)})
+
+
+def ollama_options(payload):
+    config = payload.get('ollama') or {}
+    if not isinstance(config, dict):
+        raise ValueError('Invalid model settings')
+    url = bounded(config.get('url'), 150).strip().rstrip('/') or OLLAMA
+    parsed = urllib.parse.urlsplit(url)
+    # All model calls must use the local loopback tunnel, never an arbitrary host.
+    if parsed.scheme != 'http' or parsed.hostname not in ('127.0.0.1', 'localhost', '::1') or (
+            parsed.username or parsed.password or parsed.path or parsed.query or parsed.fragment):
+        raise ValueError('Model URL must be a localhost HTTP tunnel')
+    try:
+        if not 1 <= (parsed.port or 0) <= 65535:
+            raise ValueError('Model URL needs a valid port')
+    except ValueError:
+        raise ValueError('Model URL needs a valid port')
+    model = bounded(config.get('model'), 100).strip() or MODEL
+    if not re.fullmatch(r'[A-Za-z0-9_.:/-]{1,100}', model):
+        raise ValueError('Invalid model identifier')
+    try:
+        timeout = float(config.get('timeout', UPSTREAM_TIMEOUT))
+        temperature = float(config.get('temperature', .25))
+    except (TypeError, ValueError):
+        raise ValueError('Invalid model tuning')
+    if not math.isfinite(timeout) or not 3 <= timeout <= 90 or not math.isfinite(temperature) or not 0 <= temperature <= 1:
+        raise ValueError('Model timeout or temperature out of range')
+    return {'url': url, 'model': model, 'timeout': timeout, 'temperature': temperature}
+
+
+def chosen_turns(turns):
+    # Recent context is never evicted by older signal; older priority is strictly capped.
+    recent_start = max(0, len(turns) - 8)
+    older = list(enumerate(turns[:recent_start]))
+    priority = re.compile(r'\b(?:decid(?:e|ed|ing)|deadline|promise|agreed|must|need|follow.?up|'
+                          r'question|why|because|confused|important|next step|tomorrow)\b', re.I)
+    ranked = sorted(older, key=lambda pair: (bool(priority.search(
+        str(pair[1].get('text', '')))) if isinstance(pair[1], dict) else False, pair[0]), reverse=True)
+    indices = sorted([idx for idx, _ in ranked[:4]] + list(range(recent_start, len(turns))))
+    return [turns[idx] for idx in indices]
+
+
 # A separate, revocable capture lease prevents late STT responses from learning voices
 # after a listener presses Stop. No mic session is opened by GET or on app load.
 CAPTURE_LOCK = threading.RLock()
@@ -54,9 +122,10 @@ def open_capture_session(takeover=False):
     """A second tab must explicitly request takeover; never silently revoke another tab."""
     global CAPTURE_SESSION
     with CAPTURE_LOCK:
-        if CAPTURE_SESSION is not None and not takeover:
+        try:
+            CAPTURE_SESSION = DRAIN.open_capture(takeover=takeover)
+        except LeaseConflict:
             return None
-        CAPTURE_SESSION = secrets.token_urlsafe(24)
         return CAPTURE_SESSION
 
 
@@ -69,10 +138,12 @@ def close_capture_session(session=None, erase=False):
     with CAPTURE_LOCK:
         if erase:
             CAPTURE_SESSION = None
+            DRAIN.drop_all()
             forget_speakers()
             return {'closed': True, 'erased': True, 'speakers': speaker_status()}
-        if session and capture_is_active(session):
-            CAPTURE_SESSION = None
+        if session and DRAIN.close(session):
+            if CAPTURE_SESSION == session:
+                CAPTURE_SESSION = None
             return {'closed': True}
         return {'closed': False}
 
@@ -126,21 +197,29 @@ def call_ollama(payload):
     turns = payload.get('turns')
     if not isinstance(turns, list) or not turns:
         raise ValueError('No transcript passages')
-    turns = turns[-12:]
+    turns = chosen_turns(turns[-80:])
+    options = ollama_options(payload)
+    grounding = payload.get('grounding', 'exact')
+    if grounding not in ('exact', 'fuzzy', 'free'):
+        raise ValueError('Invalid grounding mode')
     cleaned = []
     for item in turns:
         if not isinstance(item, dict):
             continue
         name = item.get('speaker')
-        if name not in ('Me', 'Other', 'Unassigned'):
-            with SPEAKERS_LOCK:
-                if not isinstance(name, str) or name not in SPEAKERS or len(SPEAKERS[name]) < 2:
-                    name = 'Unassigned'
+        manual = item.get('manual') is True
+        if name == 'Mixed':
+            name = 'Mixed (overlap or intentionally combined voices)'
+        elif name not in ('Me', 'Other', 'Unassigned'):
+            if manual and isinstance(name, str) and SPEAKER_NAME_RE.fullmatch(name):
+                name += ' (owner-assigned label)'
+            else:
+                with SPEAKERS_LOCK:
+                    if not isinstance(name, str) or name not in SPEAKERS or len(SPEAKERS[name]) < 2:
+                        name = 'Unassigned'
+                    elif name in SPEAKER_META:
+                        name += ' (tentative acoustic label, NOT verified)'
         txt = bounded(item.get('text'), 1500).strip()
-        if isinstance(name, str):
-            with SPEAKERS_LOCK:
-                if name in SPEAKER_META and len(SPEAKERS.get(name, [])) >= 2:
-                    name += ' (tentative acoustic label, NOT verified)'
         if txt:
             cleaned.append({'speaker': name, 'text': txt})
     if not cleaned:
@@ -152,21 +231,35 @@ def call_ollama(payload):
     optional_context = bounded(payload.get('context'), 2400).strip()
     if optional_context:
         prompt_data['user_supplied_context'] = optional_context
+    private_note = bounded(payload.get('note'), 1200).strip()
+    if private_note:
+        prompt_data['owner_private_note'] = private_note
+    fragment = bounded(payload.get('system_fragment'), 1200).strip()
+    # Owner-edited local prompt fragment is a control, unlike transcript text.
+    instructions = SYSTEM_PROMPT + ('\nOWNER-SELECTED COACHING STYLE:\n' + fragment if fragment else '')
+    if private_note:
+        instructions += '\nOWNER COACHING PRIORITY (NOT A TRANSCRIPT FACT):\n' + private_note
+    if grounding == 'fuzzy':
+        instructions += '\nGROUNDING DIAL: Approximate paraphrases are acceptable, but do not present them as exact words. Prefer matching transcript quotes.'
+    elif grounding == 'free':
+        instructions += '\nGROUNDING DIAL: Offer exploratory suggestions beyond literal quotes when useful. State uncertainty and never falsely attribute words to a speaker.'
+    else:
+        instructions += '\nGROUNDING DIAL: Exact quotes only. If no direct transcript quotation supports the observation, state that there is not enough evidence.'
     generation = {
-        'model': MODEL,
-        'prompt': SYSTEM_PROMPT + '\n\nUNTRUSTED CONVERSATION DATA (JSON):\n' + json.dumps(prompt_data, ensure_ascii=False),
+        'model': options['model'],
+        'prompt': instructions + '\n\nUNTRUSTED CONVERSATION DATA (JSON):\n' + json.dumps(prompt_data, ensure_ascii=False),
         'stream': False,
         'format': 'json',
         'keep_alive': '90s',
-        'options': {'temperature': 0.25, 'num_predict': 240, 'num_ctx': 4096},
+        'options': {'temperature': options['temperature'], 'num_predict': 240, 'num_ctx': 4096},
     }
     req = urllib.request.Request(
-        OLLAMA + '/api/generate',
+        options['url'] + '/api/generate',
         data=json.dumps(generation).encode('utf-8'),
         headers={'Content-Type': 'application/json'},
         method='POST',
     )
-    with urllib.request.urlopen(req, timeout=UPSTREAM_TIMEOUT) as response:
+    with urllib.request.urlopen(req, timeout=options['timeout']) as response:
         result = json.load(response)
     raw = result.get('response', '')
     parsed = json.loads(raw)
@@ -179,10 +272,21 @@ def call_ollama(payload):
         return re.sub(r'[^\w]+', ' ', text.casefold()).strip()
     quote = answer['evidence'].strip(' \t\n"“”‘’\'`')
     normalized = normalize(quote)
-    if quote != 'Not enough transcript yet' and (len(normalized) < 6 or
-        not any(normalized in normalize(turn['text']) for turn in cleaned)):
-        answer['evidence'] = 'No matching quotation in the captured transcript'
-        answer['caution'] = 'Model evidence was not an exact transcript quotation; verify its suggestion before acting.'
+    exact = len(normalized) >= 6 and any(normalized in normalize(turn['text']) for turn in cleaned)
+    answer['evidence_status'] = 'exact' if exact else 'missing'
+    if not exact and quote != 'Not enough transcript yet':
+        overlap = max((len(set(normalized.split()) & set(normalize(t['text']).split())) /
+                       max(1, len(set(normalized.split()))) for t in cleaned), default=0)
+        if grounding == 'fuzzy' and len(normalized) >= 6 and overlap >= 0.7:
+            answer['evidence_status'] = 'approximate'
+            answer['caution'] = (answer['caution'] + ' Approximate paraphrase; not an exact quote.').strip()[:320]
+        elif grounding == 'free':
+            answer['evidence_status'] = 'ungrounded'
+        else:
+            answer['evidence_status'] = 'rejected'
+            answer['evidence'] = 'No matching quotation in the captured transcript'
+            answer['caution'] = 'Model evidence was not an exact transcript quotation; verify its suggestion before acting.'
+    answer['model_used'] = options['model']
     return answer
 
 
@@ -215,11 +319,14 @@ def speaker_status():
         names = []
         for name, samples in SPEAKERS.items():
             entry = {'name': name, 'samples': len(samples), 'active': len(samples) >= 2}
+            if name in SPEAKER_LAST_SEEN:
+                entry['lastSeenSeconds'] = max(0, int(time.monotonic() - SPEAKER_LAST_SEEN[name]))
+            entry['boostSeconds'] = boost_seconds(name)
             if name in SPEAKER_META:
                 entry['source'] = 'conversation'
                 entry['tentative'] = not entry['active']
             names.append(entry)
-    return {'ready': bool(ready), 'profiles': names, 'ephemeral': True,
+    return {'ready': bool(ready), 'profiles': names, 'ramBytes': sum(len(v) * 8 for vectors in SPEAKERS.values() for v in vectors), 'ephemeral': True,
             'reason': 'Voice model ready; natural introductions may establish tentative speakers (with opt-in)' if ready
                       else 'Install the local speaker-model dependency using Setup_Speakers.command'}
 
@@ -261,9 +368,28 @@ def nearest_speaker(embedding, profiles):
     if not ranked:
         return {'name': None, 'score': 0.0}
     name, score = ranked[0]
-    if score < SPEAKER_MIN or (len(ranked) >= 2 and score-ranked[1][1] < SPEAKER_MARGIN):
+    if score < SPEAKER_MIN - (0.05 if boost_seconds(name)>0 else 0) or (len(ranked) >= 2 and score-ranked[1][1] < SPEAKER_MARGIN):
         return {'name': None, 'score': round(score, 3)}
     return {'name': name, 'score': round(score, 3)}
+
+
+def speaker_evidence(vectors):
+    # Raw uncalibrated cosine evidence; no voice embeddings are sent to the UI.
+    with SPEAKERS_LOCK:
+        profiles = {name: list(samples) for name, samples in SPEAKERS.items() if samples}
+    def scores(vector):
+        if vector is None:
+            return {'best': None, 'cosine': None, 'margin': None}
+        ranked = sorted(((name, max(similarity(vector, v) for v in vv))
+                         for name, vv in profiles.items()), key=lambda p: p[1], reverse=True)
+        return {'best': ranked[0][0] if ranked else None,
+                'cosine': round(ranked[0][1], 4) if ranked else None,
+                'margin': round(ranked[0][1] - ranked[1][1], 4) if len(ranked) >= 2 else None}
+    first, second = vectors.get('first'), vectors.get('second')
+    half_cosine = round(similarity(first, second), 4) if first is not None and second is not None else None
+    return {'full': scores(vectors.get('full')), 'first': scores(first), 'second': scores(second),
+            'halfCosine': half_cosine, 'possibleOverlap': half_cosine is not None and half_cosine < .80,
+            'speechSeconds': vectors.get('speech_seconds')}
 
 
 def identify_speaker(vectors):
@@ -331,7 +457,7 @@ def _automatic_match(vectors):
     if not ranked or not _consistent_window(vectors):
         return {'label': 'Unknown', 'reason': 'Voice absent or audio window may contain more than one speaker', 'possible': []}
     best, best_score = ranked[0]
-    if best_score < AUTO_MATCH_MIN or (len(ranked)>1 and best_score-ranked[1][1] < AUTO_DIFFERENCE_MARGIN):
+    if best_score < AUTO_MATCH_MIN - (0.05 if boost_seconds(best)>0 else 0) or (len(ranked)>1 and best_score-ranked[1][1] < AUTO_DIFFERENCE_MARGIN):
         return {'label': 'Unknown', 'reason': 'Voice match not distinctive enough', 'possible': []}
     with SPEAKERS_LOCK:
         count = len(SPEAKERS.get(best, []))
@@ -398,6 +524,12 @@ def recognize_introduction(text, vectors, audio_id=None):
 
 def recognize_or_learn(text, vectors, consent=False, audio_id=None):
     """One ordered audio window; never infer a name from chat context or typed text."""
+    if vectors is not None and not _consistent_window(vectors):
+        name = parse_self_introduction(text) if consent else None
+        event = {'name': name, 'state': 'ambiguous',
+                 'message': 'Multiple voices may be present; no name learned'} if name else None
+        return {'label': 'Mixed', 'reason': 'Possible speaker change or overlap; name learning blocked',
+                'possible': []}, event
     if vectors is None or vectors.get('full') is None:
         if consent and parse_self_introduction(text):
             return recognize_introduction(text, vectors, audio_id=audio_id)
@@ -516,16 +648,21 @@ def forget_speakers(name=None):
         PROFILE_EPOCH += 1  # invalidate enrollment still calculating a voice embedding
         if name is None:
             SPEAKERS.clear()
+            SPEAKER_LAST_SEEN.clear()
+            SPEAKER_BOOST_UNTIL.clear()
             SPEAKER_META.clear()
             ENROLLMENT_AUDIO_IDS.clear()
         else:
             SPEAKERS.pop(name, None)
+            SPEAKER_LAST_SEEN.pop(name, None)
+            SPEAKER_BOOST_UNTIL.pop(name, None)
             SPEAKER_META.pop(name, None)
             ENROLLMENT_AUDIO_IDS.pop(name, None)
     return speaker_status()
 
 
-def transcribe_audio(payload, media_type, lang, auto_names=False, capture_session=None):
+def transcribe_audio(payload, media_type, lang, auto_names=False, capture_session=None,
+                     admission=None, force_mixed=False):
     with CAPTURE_LOCK:
         if not capture_is_active(capture_session):
             raise ValueError('Capture session inactive; restart listening')
@@ -554,24 +691,45 @@ def transcribe_audio(payload, media_type, lang, auto_names=False, capture_sessio
         # Suppress the most common hallucinations on silent/near-silent windows.
         if transcript.lower().strip(' .!') in ('thank you', 'thanks for watching', 'you', 'subtitles by'):
             return {'text': '', 'engine': 'whisper-cpp', 'speaker': {'label': 'Unknown', 'reason': 'Low-confidence transcript', 'possible': []}}
-        speaker = {'label': 'Unknown', 'reason': 'Voice identification not configured', 'possible': []}
+        speaker = ({'label': 'Mixed', 'reason': 'Edited or combined audio; speaker learning disabled', 'possible': []}
+                   if force_mixed else
+                   {'label': 'Unknown', 'reason': 'Voice identification not configured', 'possible': []})
         event = None
-        if transcript and speaker_status()['ready']:
+        evidence = None
+        if transcript and speaker_status()['ready'] and not force_mixed:
             with SPEAKERS_LOCK:
                 has_profiles = bool(SPEAKERS)
             if has_profiles or auto_names:
                 try:
                     vectors = speaker_vectors(wav)
+                    evidence = speaker_evidence(vectors)
                     with CAPTURE_LOCK:
                         if not capture_is_active(capture_session):
                             return {'text': '', 'discarded': True, 'speaker': {'label': 'Unknown'}, 'engine': 'whisper-cpp'}
-                        speaker, event = recognize_or_learn(transcript, vectors, auto_names,
-                                                           audio_id=hashlib.sha256(payload).hexdigest() if auto_names else None)
+                    if force_mixed:
+                        speaker = {'label': 'Mixed', 'reason': 'Edited or combined audio; speaker learning disabled', 'possible': []}
+                    else:
+                        learned = []
+                        def apply_voice_update():
+                            learned.append(recognize_or_learn(transcript, vectors, auto_names,
+                                audio_id=hashlib.sha256(payload).hexdigest() if auto_names else None))
+                        if admission is not None:
+                            if not DRAIN.atomic_apply(admission, apply_voice_update):
+                                return {'text': '', 'discarded': True, 'speaker': {'label': 'Unknown'}, 'engine': 'whisper-cpp'}
+                        else:
+                            apply_voice_update()
+                        speaker, event = learned[0]
                 except (RuntimeError, subprocess.TimeoutExpired, OSError):
                     speaker = {'label': 'Unknown', 'reason': 'Speaker model unavailable; transcript preserved', 'possible': []}
         with CAPTURE_LOCK:
             if not capture_is_active(capture_session):
                 return {'text': '', 'discarded': True, 'speaker': {'label': 'Unknown'}, 'engine': 'whisper-cpp'}
+            if evidence is not None:
+                speaker['evidence'] = evidence
+            label = speaker.get('label')
+            if label in SPEAKERS and label not in ('Unknown', 'Mixed'):
+                with SPEAKERS_LOCK:
+                    SPEAKER_LAST_SEEN[label] = time.monotonic()
         return {'text': bounded(transcript, 2500), 'engine': 'whisper-cpp', 'speaker': speaker,
                 'introduction': event}
 
@@ -612,11 +770,35 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.respond(403, {'error': 'Forbidden host'})
             return
         path = urllib.parse.urlparse(self.path).path
+        if path == '/api/health':
+            with CAPTURE_LOCK:
+                occupied = CAPTURE_SESSION is not None
+            self.respond(200, {'ok': True, 'protocol': PROTOCOL_VERSION,
+                               'captureActive': occupied, 'sttBusy': STT_LOCK.locked(),
+                               'aiBusy': MODEL_LOCK.locked(), 'speakerRamBytes': speaker_status()['ramBytes'],
+                               'captureDrain': DRAIN.state()})
+            return
+        if path == '/api/diagnostics':
+            with EVENTS_LOCK:
+                events = list(EVENTS)
+            self.respond(200, {'protocol': PROTOCOL_VERSION, 'events': events})
+            return
         if path == '/api/status':
-            self.respond(200, dict({'app': 'conversation-lens', 'token': APP_TOKEN, 'captureControl': True, 'stt': whisper_status(), 'speakers': speaker_status()}, **ollama_status()))
+            self.respond(200, dict({'app': 'conversation-lens', 'protocol': PROTOCOL_VERSION, 'captureControl': True, 'token': APP_TOKEN, 'ollamaDefaults': {'url': OLLAMA, 'model': MODEL, 'timeout': UPSTREAM_TIMEOUT, 'temperature': .25}, 'stt': whisper_status(), 'speakers': speaker_status()}, **ollama_status()))
             return
         if path == '/api/speakers':
             self.respond(200, {'speakers': speaker_status()})
+            return
+        if path.startswith('/packet-a/'):
+            relative = path.removeprefix('/packet-a/')
+            if relative not in ('lens_pcm_core.js', 'lens_pcm_capture.js', 'lens_stop_client.js'):
+                self.respond(404, {'error': 'Not found'})
+                return
+            content = (APP_DIR.parent / 'experiments' / 'packet-a' / relative).read_bytes()
+            self.send_response(200)
+            self.headers_base('text/javascript; charset=utf-8', len(content))
+            self.end_headers()
+            self.wfile.write(content)
             return
         if path not in ('/', '/Conversation_Lens_Live.html'):
             self.respond(404, {'error': 'Not found'})
@@ -631,7 +813,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             pass
 
     def do_POST(self):
-        if not self.allowed() or self.path not in ('/api/analyze', '/api/transcribe', '/api/speakers/enroll', '/api/speakers/forget', '/api/capture/open', '/api/capture/close', '/api/session/erase'):
+        if not self.allowed() or self.path not in ('/api/analyze', '/api/transcribe', '/api/speakers/enroll', '/api/speakers/forget', '/api/capture/open', '/api/capture/close', '/api/capture/freeze', '/api/capture/drain', '/api/session/erase', '/api/ollama/check', '/api/speakers/boost'):
             self.respond(403, {'error': 'Forbidden'})
             return
         host = self.headers.get('Host')
@@ -642,10 +824,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if self.headers.get('X-Lens-Token') != APP_TOKEN:
             self.respond(403, {'error': 'Token denied'})
             return
-        if self.path in ('/api/capture/open', '/api/capture/close', '/api/session/erase'):
+        versioned = ('/api/transcribe', '/api/speakers/enroll', '/api/capture/open',
+                     '/api/capture/close', '/api/capture/freeze', '/api/capture/drain')
+        if self.path in versioned and self.headers.get('X-Lens-Protocol') != str(PROTOCOL_VERSION):
+            self.respond(426, {'error': 'Client protocol mismatch', 'protocol': PROTOCOL_VERSION})
+            return
+        if self.path in ('/api/capture/open', '/api/capture/close', '/api/capture/freeze', '/api/capture/drain', '/api/session/erase'):
             try:
                 count = int(self.headers.get('Content-Length', '-1'))
-                if count < 2 or count > 320:
+                if count < 2 or count > 2400:
                     raise ValueError('Invalid capture request')
                 body = json.loads(self.rfile.read(count))
                 if not isinstance(body, dict):
@@ -661,6 +848,30 @@ class Handler(http.server.BaseHTTPRequestHandler):
                             self.respond(200, {'capture': capture})
                 elif self.path == '/api/capture/close':
                     self.respond(200, close_capture_session(body.get('capture')))
+                elif self.path == '/api/capture/freeze':
+                    capture = body.get('capture')
+                    if not isinstance(capture, str):
+                        raise ValueError('Invalid capture request')
+                    try:
+                        result = DRAIN.freeze(capture)
+                    except LeaseConflict as err:
+                        self.respond(409, {'error': str(err)})
+                    else:
+                        global CAPTURE_SESSION
+                        with CAPTURE_LOCK:
+                            if CAPTURE_SESSION == capture:
+                                CAPTURE_SESSION = None
+                        self.respond(200, result)
+                elif self.path == '/api/capture/drain':
+                    capture = body.get('capture')
+                    try:
+                        drain = DRAIN.start_drain(capture, body.get('windows'))
+                    except (LeaseConflict, InvalidWindow, TypeError) as err:
+                        self.respond(409, {'error': str(err)})
+                    else:
+                        with CAPTURE_LOCK:
+                            CAPTURE_SESSION = drain
+                        self.respond(200, {'capture': drain, 'deadlineSeconds': DRAIN.DRAIN_TTL_SECONDS})
                 else:
                     if body.get('confirm') is not True:
                         self.respond(403, {'error': 'Explicit erase confirmation required'})
@@ -676,6 +887,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
             if not STT_LOCK.acquire(blocking=False):
                 self.respond(429, {'error': 'Local speech recognizer is busy'})
                 return
+            started = time.monotonic()
+            outcome = 'error'
+            admission = None
             try:
                 size = int(self.headers.get('Content-Length', '-1'))
                 if not 500 <= size <= MAX_AUDIO_BODY:
@@ -691,18 +905,63 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 else:
                     auto_names = (self.headers.get('X-Lens-Auto-Names') == 'enabled' and
                                   self.headers.get('X-Lens-Voice-Consent') == 'confirmed')
+                    capture = self.headers.get('X-Lens-Capture-Session')
+                    if not capture:
+                        self.respond(422, {'error': 'Capture session inactive; restart listening'})
+                        return
+                    window_id = self.headers.get('X-Lens-Window-ID') or ('w' + secrets.token_hex(12))
+                    force_mixed = self.headers.get('X-Lens-Force-Mixed') == 'true'
+                    try:
+                        admission = DRAIN.admit(capture, window_id, raw, force_mixed=force_mixed)
+                    except LeaseConflict as err:
+                        self.respond(409, {'error': str(err)})
+                        return
+                    except InvalidWindow as err:
+                        self.respond(422, {'error': str(err)})
+                        return
                     result = transcribe_audio(raw, self.headers['Content-Type'],
                                               self.headers.get('X-Lens-Language', 'en'), auto_names=auto_names,
-                                              capture_session=self.headers.get('X-Lens-Capture-Session'))
+                                              capture_session=capture, admission=admission,
+                                              force_mixed=force_mixed)
+                    if not result.get('discarded') and not DRAIN.complete(admission):
+                        result = {'text': '', 'discarded': True, 'speaker': {'label': 'Unknown'}, 'engine': 'whisper-cpp'}
+                outcome = 'ok'
+                if isinstance(result, dict): result.setdefault('protocol', PROTOCOL_VERSION)
                 self.respond(200, result)
             except subprocess.TimeoutExpired:
+                outcome = 'timeout'
+                if admission is not None: DRAIN.reject(admission)
                 self.respond(504, {'error': 'Local transcription timed out'})
             except (ValueError, UnicodeDecodeError) as err:
+                if admission is not None: DRAIN.reject(admission)
                 self.respond(422, {'error': str(err)})
             except (RuntimeError, OSError) as err:
+                if admission is not None: DRAIN.reject(admission)
                 self.respond(503, {'error': str(err)})
             finally:
+                event_record('audio', outcome, time.monotonic() - started)
                 STT_LOCK.release()
+            return
+        if self.path == '/api/speakers/boost':
+            try:
+                count = int(self.headers.get('Content-Length','-1'))
+                if not 2 <= count <= 350:
+                    raise ValueError('Invalid boost request')
+                body = json.loads(self.rfile.read(count))
+                name = body.get('name') if isinstance(body, dict) else None
+                seconds = body.get('seconds') if isinstance(body, dict) else None
+                if not isinstance(name, str) or not SPEAKER_NAME_RE.fullmatch(name) or seconds not in (0, 120):
+                    raise ValueError('Invalid boost request')
+                with SPEAKERS_LOCK:
+                    if name not in SPEAKERS:
+                        raise ValueError('Speaker not enrolled')
+                    if seconds == 0:
+                        SPEAKER_BOOST_UNTIL.pop(name,None)
+                    else:
+                        SPEAKER_BOOST_UNTIL[name] = time.monotonic() + 120
+                self.respond(200, {'speakers': speaker_status()})
+            except (ValueError, TypeError, KeyError, json.JSONDecodeError):
+                self.respond(422, {'error':'Invalid speaker boost request'})
             return
         if self.path == '/api/speakers/forget':
             try:
@@ -735,12 +994,27 @@ class Handler(http.server.BaseHTTPRequestHandler):
         except (ValueError, json.JSONDecodeError):
             self.respond(400, {'error': 'Invalid request'})
             return
+        if self.path == '/api/ollama/check':
+            try:
+                options = ollama_options(body)
+                with urllib.request.urlopen(options['url'] + '/api/tags', timeout=3) as response:
+                    tags = json.load(response)
+                available = options['model'] in {m.get('name') for m in tags.get('models', [])}
+                self.respond(200, {'ready': available, 'model': options['model'],
+                                   'reason': 'Model available' if available else 'Model not installed'})
+            except (ValueError, OSError, TimeoutError, urllib.error.HTTPError):
+                self.respond(200, {'ready': False, 'reason': 'Local model or tunnel unavailable'})
+            return
         if not MODEL_LOCK.acquire(blocking=False):
             self.respond(429, {'error': 'Analysis already running'})
             return
+        started = time.monotonic()
+        outcome = 'error'
         try:
             result = call_ollama(body)
-            self.respond(200, {'engine': 'ollama', 'model': MODEL, 'insight': result})
+            model_used = result.pop('model_used', MODEL)
+            outcome = 'ok'
+            self.respond(200, {'engine': 'ollama', 'model': model_used, 'insight': result})
         except urllib.error.HTTPError as exc:
             self.respond(502, {'error': 'Local model refused the request (%d)' % exc.code})
         except (OSError, TimeoutError):
@@ -748,6 +1022,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         except (ValueError, TypeError, KeyError, UnicodeDecodeError) as exc:
             self.respond(422, {'error': 'Model did not return valid coaching JSON'})
         finally:
+            event_record('ai', outcome, time.monotonic() - started)
             MODEL_LOCK.release()
 
 
