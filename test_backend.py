@@ -70,6 +70,8 @@ pathlib.Path(args[args.index('-of')+1]+'.txt').write_text(pathlib.Path(os.enviro
     code,body=req(base+'/api/transcribe',clip,{**audio_h,'X-Lens-Capture-Session':lease})
     assert code==200 and body['speaker']['label']=='Dale' and body['introduction']['state']=='candidate',body
     assert len(backend.SPEAKERS['Dale'])==1
+    stage_kinds={event['kind'] for event in backend.EVENTS}
+    assert {'decode','vad','asr','embedding','speaker_match','audio'}<=stage_kinds,stage_kinds
     assert req(base+'/api/capture/close',json.dumps({'capture':'wrong'}).encode(),h)[1]['closed'] is False
     assert backend.CAPTURE_SESSION==lease
     # Now simulate an STT worker blocked mid-transcription. STOP must revoke immediately,

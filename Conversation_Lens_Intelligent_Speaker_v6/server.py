@@ -696,17 +696,33 @@ def transcribe_audio(payload, media_type, lang, auto_names=False, capture_sessio
         raise RuntimeError('Local Whisper engine is not ready')
     lang = lang if lang in ('en', 'es', 'de') else 'en'
     with tempfile.TemporaryDirectory(prefix='lens-stt-') as tmp:
-        wav = decode_audio(payload, media_type, tmp)
+        stage_started=time.monotonic()
+        try:wav = decode_audio(payload, media_type, tmp)
+        except (OSError,RuntimeError,ValueError):
+            event_record('decode','error',time.monotonic()-stage_started);raise
+        event_record('decode','ok',time.monotonic()-stage_started)
         output = Path(tmp) / 'words'
-        if not is_speech(wav):
+        stage_started=time.monotonic()
+        try:speech_present=is_speech(wav)
+        except (OSError,RuntimeError,ValueError):
+            event_record('vad','error',time.monotonic()-stage_started);raise
+        event_record('vad','speech' if speech_present else 'silent',time.monotonic()-stage_started)
+        if not speech_present:
             return {'text': '', 'engine': 'whisper-cpp', 'speaker': {'label': 'Unknown', 'reason': 'No speech detected', 'possible': []}}
         cmd = [
             WHISPER_BIN, '-m', str(WHISPER_MODEL), '-f', str(wav), '-l', lang,
             '-t', '4', '-bs', '1', '-bo', '1', '-nt', '-np', '-sns',
             '-otxt', '-of', str(output),
         ]
-        result = subprocess.run(cmd, stdout=subprocess.DEVNULL,
-                                stderr=subprocess.PIPE, timeout=35, check=False)
+        stage_started=time.monotonic()
+        try:
+            result = subprocess.run(cmd, stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.PIPE, timeout=35, check=False)
+        except subprocess.TimeoutExpired:
+            event_record('asr','timeout',time.monotonic()-stage_started);raise
+        except OSError:
+            event_record('asr','error',time.monotonic()-stage_started);raise
+        event_record('asr','ok' if result.returncode==0 else 'error',time.monotonic()-stage_started)
         final_text = Path(str(output) + '.txt')
         if result.returncode or not final_text.is_file():
             raise RuntimeError('Local Whisper transcription failed')
@@ -727,8 +743,14 @@ def transcribe_audio(payload, media_type, lang, auto_names=False, capture_sessio
                 has_profiles = bool(SPEAKERS)
             if has_profiles or auto_names:
                 try:
-                    vectors = speaker_vectors(wav)
+                    stage_started=time.monotonic()
+                    try:vectors = speaker_vectors(wav)
+                    except (RuntimeError,subprocess.TimeoutExpired,OSError):
+                        event_record('embedding','error',time.monotonic()-stage_started);raise
+                    event_record('embedding','ok',time.monotonic()-stage_started)
+                    stage_started=time.monotonic()
                     evidence = speaker_evidence(vectors)
+                    event_record('speaker_match','ok',time.monotonic()-stage_started)
                     with CAPTURE_LOCK:
                         if not capture_is_active(capture_session):
                             return {'text': '', 'discarded': True, 'speaker': {'label': 'Unknown'}, 'engine': 'whisper-cpp'}

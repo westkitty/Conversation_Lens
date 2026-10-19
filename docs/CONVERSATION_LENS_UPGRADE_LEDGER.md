@@ -189,7 +189,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 11 | Sticky optional context | Read-only sticky context/private-note summary mirrors owner-entered fields; `test_frontend.py` checks visibility and scroll pin at 1200px/375px | PASS | Sticky summary truncates each displayed field at 500 characters |
 | 12 | Custom prompt fragment presets | Live HTML presets and custom field; `test_live_upgrade.py` request assertion | PASS | None observed in current tests |
 | 13 | Transcript filters | Live HTML speaker/keyword/coaching filters; `test_frontend.py` | PASS | None observed in current browser checks |
-| 14 | Reduced motion/contrast/mono | Live HTML preference controls and CSS | PARTIAL | Runtime accessibility contrast and motion audit not done |
+| 14 | Reduced motion/contrast/mono | `test_frontend.py` toggles all three modes at both widths, checks mono font, verifies motion animation removal, and measures primary/muted text contrast on background at ≥7:1 | PASS | Contrast calculation covers theme text tokens, not every hard-coded component/state |
 | 15 | Precise empty coaching ingredients | Live HTML missing-input status; `test_frontend.py` | PASS | None observed in current browser checks |
 | 16 | Sliding plus priority AI context | `server.py` `chosen_turns`; `test_live_upgrade.py` older-priority retention | PASS | No long-session capacity trial |
 | 17 | Exact/Fuzzy/Free grounding dial | `server.py` evidence validation; `test_live_upgrade.py` exact/fuzzy/free | PASS | None observed in current tests |
@@ -218,12 +218,12 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 40 | Adjustable pre-roll/post-roll | Live HTML PCM controls; production PCM rendering uses `WindowTimeline.render` | PARTIAL | No production sample-boundary edit UI or physical roll-content proof |
 | 41 | Overlap Mixed + no name learning | `server.py` force-Mixed veto; backend regression and drain hash tests | PASS | Natural two-speaker overlap not tested |
 | 42 | Speaker embedding RAM/compact | Server RAM estimate is displayed | PARTIAL | Explicit compact action is absent |
-| 43 | Structured performance and lease logs | Bounded diagnostics/health; `test_live_upgrade.py` verifies lease owner/age telemetry | PARTIAL | Detailed per-stage timing and error/queue event coverage remain incomplete |
+| 43 | Structured performance and lease logs | Metadata-only bounded events for decode, VAD, ASR, embedding, speaker match, audio request and Ollama; relative stage graph; lease owner/age; backend and browser tests | PASS | Event log is a 120-entry RAM ring; per-window timestamps and exhaustive failure injection remain untested |
 | 44 | Health endpoint and UI status | `/api/health`, UI health indicator; `test_frontend.py` | PASS | None observed in current browser checks |
 | 45 | Fallback when speaker worker times out | Existing transcript fallback path; backend tests | PASS | No forced timeout run in this turn |
 | 46 | Live Ollama endpoint/model/timeout/temp | `server.py` localhost validation and options; tests plus local stack | PASS | User-facing live settings not all independently exercised |
 | 47 | Capture lease rotation and stale notice | `lens_stop_drain.py`, v3 capture protocol; backend/live-upgrade tests | PASS | Physical tab takeover not exercised this turn |
-| 48 | Queue dashboard and pause intake | Live queue status and pause-intake control | PARTIAL | Full worker-stage graph is absent |
+| 48 | Queue dashboard and pause intake | Live outstanding/skip status and pause-intake control; on-demand recent worker-stage graph in local diagnostics | PARTIAL | Graph reports latest stage event by type, not a per-window live queue state; pressure/backoff transitions lack full UI coverage |
 | 49 | Explicit disk speaker-profile save/load | Not implemented; RAM-only remains default | PARTIAL | Explicit opt-in export/import is still required |
 | 50 | Rate limit and backpressure | Bounded queue/retry in app; Packet A 429 retention test | PASS | Main app saturation not stress-tested |
 | 51 | Finish/drop in-flight shutdown | Freeze, exact-hash drain lease, per-window Keep/Drop; backend tests | PASS | No physical multi-pending-window race test |
@@ -312,3 +312,12 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 
 - Added a six-profile soft cap before the existing eight-profile hard cap. The server computes up to three bidirectional average-best cosine candidate pairs from the latest four vectors per enrolled profile. The UI labels the raw score as a review hint, states it is not identity proof, and does not merge profiles.
 - `test_live_upgrade.py` verifies synthetic normalized vectors produce the expected candidate; QA-venv `test_frontend.py` verifies the soft-cap text and non-automatic behavior at 1200px and 375px. Requirement 37 is PASS for that suggestion path; real voice-profile similarity calibration is not established.
+
+## Processing-stage telemetry — 2026-10-19
+
+- Added metadata-only timings for decode, speech gate, Whisper ASR, speaker embedding, speaker match, full audio request, and Ollama. The on-demand diagnostics panel renders the latest duration per stage as a relative bar and clearly labels that bars are not performance targets. Event fields exclude transcript text and embeddings.
+- `test_backend.py` checks stage events on a synthetic ASR/speaker path; `test_frontend.py` checks the rendered ASR and embedding stages at 1200px and 375px; `test_live_upgrade.py` checks the bounded 120-event metadata ring and lease owner/age. Requirement 43 is PASS for these measured stages; row 48 remains partial because the graph is not a per-window live queue view.
+
+## Accessibility preference checks — 2026-10-19
+
+- QA-venv `test_frontend.py` toggled high contrast, mono font, and reduced motion at 1200px and 375px. It verified the high-contrast `--ink` and `--muted` tokens against `--bg` exceed 7:1 and the status pulse animation is disabled in reduced-motion mode. Requirement 14 is PASS for these theme and control paths; every hard-coded UI color/state was not audited.

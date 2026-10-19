@@ -47,7 +47,7 @@ window.fetch=async(path,opts={})=>{
  }
  if(path==='/api/ollama/check')return ok({ready:true,model:'gemma3:4b',reason:'Model available'});
  if(path==='/api/health')return ok({ok:true,protocol:3,speakerRamBytes:2048,captureActive:!!window.fake.capture,captureOwner:window.fake.capture?'tab-a1b2c3d4':null,captureAgeSeconds:window.fake.capture?12:null});
- if(path==='/api/diagnostics')return ok({protocol:3,events:[{at:0,kind:'audio',state:'ok',elapsedMs:120}]});
+ if(path==='/api/diagnostics')return ok({protocol:3,events:[{at:0,kind:'decode',state:'ok',elapsedMs:20},{at:1,kind:'vad',state:'speech',elapsedMs:8},{at:2,kind:'asr',state:'ok',elapsedMs:140},{at:3,kind:'embedding',state:'ok',elapsedMs:210},{at:4,kind:'speaker_match',state:'ok',elapsedMs:1},{at:5,kind:'audio',state:'ok',elapsedMs:380}]});
  if(path==='/api/speakers/forget'){
   const name=JSON.parse(opts.body).name;
   window.fake.profiles=window.fake.profiles.filter(x=>name&&x.name!==name);
@@ -109,6 +109,13 @@ with sync_playwright() as p:
         assert page.locator('#manualSpeaker').input_value()=='shared'
         assert 'not assuming a topic' in page.locator('#northStar').inner_text().lower() or 'without assuming a topic' in page.locator('#northStar').inner_text().lower()
         assert 'Waiting for conversation' in page.locator('#cueTitle').inner_text()
+        page.locator('#contrastMode').check()
+        assert page.locator('html').get_attribute('data-contrast')=='high'
+        contrast=page.evaluate("""()=>{const rgb=s=>{let v=getComputedStyle(document.documentElement).getPropertyValue(s).trim().replace('#','');if(v.length===3)v=[...v].map(x=>x+x).join('');const a=[0,2,4].map(i=>parseInt(v.slice(i,i+2),16)/255).map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4);return .2126*a[0]+.7152*a[1]+.0722*a[2]};const bg=rgb('--bg');return [rgb('--ink'),rgb('--muted')].map(x=>(Math.max(x,bg)+.05)/(Math.min(x,bg)+.05))}""")
+        assert min(contrast)>=7.0,contrast
+        page.locator('#contrastMode').uncheck()
+        page.locator('#monoMode').check();assert 'monospace' in page.evaluate("getComputedStyle(document.body).fontFamily");page.locator('#monoMode').uncheck()
+        page.locator('#motionMode').check();assert page.locator('html').get_attribute('data-low-motion')=='on';assert page.evaluate("getComputedStyle(document.querySelector('#status .led')).animationName")=='none';page.locator('#motionMode').uncheck()
         if width<810:
             expected=['setupTitle','listenTitle','cueTitle','transcriptTitle','signalTitle','aiTitle','speakerTitle','anchorTitle']
             dom_order=lambda:page.evaluate("() => [...document.querySelectorAll('.grid > section')].map(e => e.querySelector('h2')?.id)")
@@ -234,7 +241,9 @@ with sync_playwright() as p:
         page.locator('#loadDiagnostics').evaluate("e=>e.closest('details').open=true")
         page.locator('#loadDiagnostics').click()
         page.wait_for_function("document.querySelector('#healthPill').textContent.includes('LOCAL HEALTH OK')")
-        assert 'audio ok 120ms' in page.locator('#diagnosticLog').inner_text()
+        assert 'audio ok 380ms' in page.locator('#diagnosticLog').inner_text()
+        assert 'Whisper ASR · ok' in page.locator('#workerStageGraph').inner_text()
+        assert 'Speaker embedding · ok' in page.locator('#workerStageGraph').inner_text()
         page.locator('#checkModelBtn').evaluate("e=>e.closest('details').open=true")
         page.locator('#checkModelBtn').click()
         page.locator('#aiToggle').check()
