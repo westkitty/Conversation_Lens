@@ -274,6 +274,13 @@ with sync_playwright() as p:
         with page.expect_download() as download_event:
             page.locator('#exportTranscriptBtn').click()
         assert download_event.value.suggested_filename=='conversation-lens-session.md'
+        exported=Path(download_event.value.path()).read_text()
+        assert '★ [highlight]' in exported
+        with page.expect_download() as plain_event:
+            page.locator('#exportPlainBtn').click()
+        assert plain_event.value.suggested_filename=='conversation-lens-transcript.md'
+        plain_export=Path(plain_event.value.path()).read_text()
+        assert '★ [highlight]' in plain_export and 'I want to clarify the precise delivery date.' in plain_export
         # The keyboard layer works only outside form controls.
         page.evaluate('document.activeElement.blur()')
         page.keyboard.press('m')

@@ -198,8 +198,8 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 20 | Mid-session coaching presets | Live HTML current settings flow to Ollama; `test_frontend.py` request payload | PASS | No provider/model switching during active request test |
 | 21 | Full/half speaker confidence strip | Evidence drawer renders accessible native meters for full, first/second half, and half-window consistency; frontend asserts values and probability caveat | PASS | Measures raw cosine only, not a calibrated confidence probability |
 | 22 | Speaker lock N windows/unpin | Live HTML lock control; `test_frontend.py` one-window pin and expiry | PASS | None observed in current browser checks |
-| 23 | One-click Markdown/plain exports | Live HTML export actions; `test_frontend.py` download assertion | PASS | Plain export not independently checked in the current run |
-| 24 | Bookmarks/highlights in export | Live HTML marker actions and exporter; `test_frontend.py` bookmark/highlight actions | PARTIAL | Current export assertion does not verify marker contents |
+| 23 | One-click Markdown/plain exports | `test_frontend.py` downloads and inspects both Markdown session and plain transcript outputs | PASS | None observed in current browser checks |
+| 24 | Bookmarks/highlights in export | `test_frontend.py` verifies `★ [highlight]` markers and transcript text in both exports | PASS | None observed in current browser checks |
 | 25 | Coaching pause, hot ASR | Live HTML pause and capture lifecycle | PARTIAL | Hot ASR action is not separately measured in this run |
 | 26 | Smart debounce/manual immediate cue | Live HTML scheduling and manual cue action | PARTIAL | Debounce latency and cancellation races lack focused timing tests |
 | 27 | Coaching timeline and per-card regenerate | Per-card action regenerates only the selected history card through opted-in local Ollama; frontend asserts the selected card's result | PASS | Requires user-enabled Ollama; source uses the current transcript context |
@@ -218,7 +218,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 40 | Adjustable pre-roll/post-roll | Live HTML PCM controls; production PCM rendering uses `WindowTimeline.render` | PARTIAL | No production sample-boundary edit UI or physical roll-content proof |
 | 41 | Overlap Mixed + no name learning | `server.py` force-Mixed veto; backend regression and drain hash tests | PASS | Natural two-speaker overlap not tested |
 | 42 | Speaker embedding RAM/compact | Server RAM estimate is displayed | PARTIAL | Explicit compact action is absent |
-| 43 | Structured performance and lease logs | Bounded diagnostics/health; `test_live_upgrade.py` | PARTIAL | Per-stage timing and lease owner/age telemetry are incomplete |
+| 43 | Structured performance and lease logs | Bounded diagnostics/health; `test_live_upgrade.py` verifies lease owner/age telemetry | PARTIAL | Detailed per-stage timing and error/queue event coverage remain incomplete |
 | 44 | Health endpoint and UI status | `/api/health`, UI health indicator; `test_frontend.py` | PASS | None observed in current browser checks |
 | 45 | Fallback when speaker worker times out | Existing transcript fallback path; backend tests | PASS | No forced timeout run in this turn |
 | 46 | Live Ollama endpoint/model/timeout/temp | `server.py` localhost validation and options; tests plus local stack | PASS | User-facing live settings not all independently exercised |
@@ -230,7 +230,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 52 | Versioned server-client messages | Protocol v3 required on protected requests; 426 mismatch regression | PASS | No older client compatibility matrix |
 | 53 | Recent-window replay/debug | Skipped live clips can be reprocessed while lease remains active | PARTIAL | Processed-window debug replay is absent |
 | 54 | Snapshot/restore | Version-1 JSON snapshot with SHA-256 validation, bounded validation, atomic transcript/coaching/private-field restore; frontend checksum and rollback test | PARTIAL | Snapshot records how many private audio notes were omitted, but does not restore note annotations or speaker profiles; no long-session size trial |
-| 55 | Multi-tab lease visibility/transfer | Explicit takeover/invalidation; `/api/health` exposes opaque tab owner and lease age; `test_live_upgrade.py` verifies both | PARTIAL | Physical two-tab takeover and live UI owner/age presentation remain unverified |
+| 55 | Multi-tab lease visibility/transfer | Explicit takeover/invalidation; `/api/health` exposes opaque tab owner and age; backend and mocked browser tests verify data and UI | PARTIAL | Physical two-tab takeover remains unverified |
 | 56 | Custom local cue rules | New session-only rule editor with max 8 literal phrase matches, bounded observation/question text, priority and source link; `test_frontend.py` asserts a live match and cleanup on Erase | PASS | Rules are literal substrings, not semantic conditions; no persistence |
 | 57 | Running action-item/decision extraction | New local source-linked candidate ledger; `test_frontend.py` asserts decision/action extraction and passage navigation | PASS | Phrase-based candidates only; no semantic deduplication or persistence |
 | 58 | Hotkey voice-note annotation | `A` toggles a private local MediaRecorder note attached to selected/latest passage; RAM-only bounded playback list is outside transcript; browser test checks audio node and transcript isolation | PASS | Mocked browser capture tested; physical note recording and snapshot export are not tested, audio is deliberately excluded from snapshots |
@@ -303,3 +303,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 
 - Added `A` hotkey and button for a private voice note attached to the selected/latest passage. Notes require conversation capture to be stopped, use local MediaRecorder only, cap each note at 15 seconds/2 MB, cap the session at eight notes/8 MB, and provide playback/delete controls. Notes remain separate from transcript and exports, stay in memory only, and are cleared on Erase/page exit. Session snapshots disclose and exclude note audio.
 - QA-venv `test_frontend.py` passed at 1200px and 375px; synthetic capture verifies the audio playback element appears without transcript mutation. Physical audio-note recording and cross-browser playback remain unverified. Requirement 58 is PASS for the exercised mocked path.
+
+## Export evidence follow-up — 2026-10-19
+
+- QA-venv `test_frontend.py` downloaded and inspected the Markdown session export and plain transcript export. Both contain the selected passage text and `★ [highlight]` markers; the plain export uses its distinct filename and omits coaching sections. Rows 23 and 24 are PASS for these exercised exports.
