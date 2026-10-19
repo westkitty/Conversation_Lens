@@ -176,7 +176,7 @@ with sync_playwright() as p:
         page.get_by_role('button',name='Forget Temporary').click()
         page.wait_for_function("!document.querySelector('#speakerProfiles').textContent.includes('Temporary')")
         if width<810:
-            expected=['setupTitle','listenTitle','cueTitle','transcriptTitle','signalTitle','aiTitle','speakerTitle','anchorTitle']
+            expected=['listenTitle','cueTitle','transcriptTitle','signalTitle','aiTitle','speakerTitle','setupTitle','anchorTitle']
             dom_order=lambda:page.evaluate("() => [...document.querySelectorAll('.grid > section')].map(e => e.querySelector('h2')?.id)")
             assert dom_order()==expected,dom_order()
             # Resize twice: moving existing panels must preserve actual element identity and tab order.
@@ -284,6 +284,7 @@ with sync_playwright() as p:
         assert page.locator('.turn').last.locator('.who').inner_text()=='Dale'
         assert page.evaluate("window.fake.voiceEnabled.slice(-3)")==['disabled','disabled','disabled'],'Manual speaker locks must bypass name learning'
         assert 'No speaker label pinned.' in page.locator('#speakerLockStatus').inner_text()
+        page.evaluate('window.fake.quiet=true')
         page.locator('#speakerLockName').select_option('Dale')
         page.locator('#speakerLockCount').fill('5')
         page.locator('#speakerLockBtn').click()
@@ -620,9 +621,169 @@ with sync_playwright() as p:
         page.evaluate('window.fake.noiseRms=0')
         page.wait_for_function(f"parseFloat(document.querySelector('#vadNoiseStatus').textContent.split('effective cut: ')[1])<{raised_cut}",timeout=5000)
         page.locator('#stopBtn').click();page.wait_for_function("document.querySelector('#statusText').textContent==='NOT LISTENING'")
+        # --- OMNI ZERO-LOSS UX TRANSFORMATION VERIFICATION ---
+        # 01. Prevent accidental demo destruction on populated transcript
+        page.evaluate("window.confirm=()=>{window.fake.confirmCount++;return true}")
+        page.locator('#clearBtn').click()
+        assert page.locator('.turn').count()==0
+        # Empty session loads demo without confirm
+        c0=page.evaluate('window.fake.confirmCount')
+        page.locator('#sampleBtn').click()
+        assert page.evaluate('window.fake.confirmCount')==c0,'Empty session demo load should not require confirm'
+        assert page.locator('.turn').count()==3
+        # Populated session requires confirm; canceling preserves existing transcript
+        page.locator('#manualText').fill('Important live passage that must not be lost.')
+        page.get_by_role('button',name='Add line').click()
+        assert page.locator('.turn').count()==4
+        page.evaluate("window.confirm=()=>{window.fake.confirmCount++;return false}")
+        page.locator('#sampleBtn').click()
+        assert page.locator('.turn').count()==4 and 'Important live passage' in page.locator('#transcript').inner_text(),'Canceled demo load must preserve populated transcript'
+        page.evaluate("window.confirm=()=>{window.fake.confirmCount++;return true}")
+        page.locator('#sampleBtn').click()
+        assert page.locator('.turn').count()==3 and 'Important live passage' not in page.locator('#transcript').inner_text()
+        # 02. Follow live without scroll hijack + unread count + return to live
+        assert page.locator('#followLiveBtn').get_attribute('aria-pressed')=='true'
+        page.locator('#followLiveBtn').click()
+        assert page.locator('#followLiveBtn').get_attribute('aria-pressed')=='false'
+        page.locator('#manualText').fill('New passage while paused 1.')
+        page.get_by_role('button',name='Add line').click()
+        page.locator('#manualText').fill('New passage while paused 2.')
+        page.get_by_role('button',name='Add line').click()
+        assert '2 newer passages' in page.locator('#followLiveStatus').inner_text()
+        assert page.locator('#returnToLiveBtn').is_visible()
+        page.locator('#returnToLiveBtn').click()
+        assert page.locator('#followLiveBtn').get_attribute('aria-pressed')=='true'
+        assert page.locator('#returnToLiveBtn').is_hidden()
+        # 06. Chronological transcript gap marker on skipped window
+        page.evaluate('window.fake.quiet=false;window.fake.noiseRms=null')
+        page.locator('#consent').check();page.locator('#startBtn').click()
+        page.wait_for_function("document.querySelector('#statusText').textContent.includes('LOCAL MIC ACTIVE')")
+        assert page.locator('#headerStopBtn').is_visible(),'Header Stop button must remain accessible while recording'
+        page.wait_for_timeout(320)
+        page.locator('#pauseIntakeBtn').click()
+        page.evaluate('window.fake.recorders.at(-1).stop()')
+        page.wait_for_function("document.querySelectorAll('.transcript-gap').length>=1")
+        gap_text=page.locator('.transcript-gap').first.inner_text()
+        assert 'MISSING AUDIO COVERAGE' in gap_text and 'Speech during this gap was not transcribed' in gap_text,gap_text
+        page.locator('#pauseIntakeBtn').click()
+        page.locator('#headerStopBtn').click()
+        page.wait_for_function("document.querySelector('#statusText').textContent==='NOT LISTENING'")
+        # 08 & 09. Speaker uncertainty badges + Scoped bulk speaker correction
+        assert page.locator('.who-badge').count()>=3
+        page.locator('.turn-bulk-check').nth(0).check()
+        page.locator('.turn-bulk-check').nth(1).check()
+        assert page.locator('#bulkCorrectionBar').is_visible()
+        assert '2 passages selected' in page.locator('#bulkSelectedCount').inner_text()
+        page.locator('#bulkSpeakerSelect').select_option('other')
+        page.locator('#bulkApplySpeakerBtn').click()
+        assert page.locator('.turn').nth(0).locator('.who').inner_text()=='Other'
+        assert page.locator('.turn').nth(1).locator('.who').inner_text()=='Other'
+        assert page.locator('#bulkCorrectionBar').is_hidden()
+        # 10. Two-sample enrollment progress stepper states
+        page.locator('#enrollName').fill('Alex')
+        page.locator('#enrollConsent').check()
+        assert '0 of 2 samples' in page.locator('#enrollStageBadge').inner_text()
+        assert 'Two-sample enrollment · Alex' in page.locator('#enrollTargetLabel').inner_text()
+        assert 'two separate voice samples' in page.locator('#enrollStageDetail').inner_text()
+        # 11. Immediate Goal & Language controls sync with Setup
+        page.locator('#quickAim').select_option('repair')
+        assert page.locator('#aim').input_value()=='repair'
+        page.locator('#quickLanguage').select_option('es-MX')
+        assert page.locator('#language').input_value()=='es-MX'
+        page.locator('#quickLanguage').select_option('en-US')
+        page.locator('#quickAim').select_option('observe')
+        # 12 & 14. Evidence inspector return navigation + Coaching freshness/staleness
+        page.locator('#manualText').fill('I want to clarify the precise delivery date.')
+        page.get_by_role('button',name='Add line').click()
+        page.locator('#aiToggle').check()
+        page.locator('#getCueBtn').evaluate('e=>e.click()')
+        page.wait_for_function("document.querySelector('#cueSourceBadge').textContent.includes('Big Mac AI') && document.querySelector('#cueFreshnessBadge').textContent.includes('Current')",timeout=4000)
+        assert 'Current' in page.locator('#cueFreshnessBadge').text_content()
+        page.locator('#manualText').fill('Additional turn one after AI.')
+        page.get_by_role('button',name='Add line').click()
+        page.locator('#manualText').fill('Additional turn two after AI.')
+        page.get_by_role('button',name='Add line').click()
+        assert 'STALE' in page.locator('#aiFreshnessBadge').inner_text()
+        page.locator('#aiToggle').uncheck()
+        # 16. Contextual recovery banner on second-tab conflict decline
+        page.evaluate("window.fake.busy=true;window.confirm=()=>false")
+        page.locator('#consent').check();page.locator('#startBtn').click()
+        page.wait_for_function("!document.querySelector('#engineRecoveryBanner').hidden")
+        assert 'another tab holds the microphone session' in page.locator('#recoveryTitle').inner_text()
+        assert page.locator('#recoveryTakeoverBtn').is_visible()
+        page.evaluate("window.fake.busy=false;window.confirm=()=>{window.fake.confirmCount++;return true}")
+        page.locator('#recoveryManualBtn').click()
+        assert page.evaluate("document.activeElement.id==='manualText'")
+        # 17 & D. Keyboard shortcuts (F, S, W, T, L, ?) and Quiet density mode
+        if page.locator('#followLiveBtn').get_attribute('aria-pressed')=='false':
+            page.locator('#returnToLiveBtn').click()
+        assert page.locator('#followLiveBtn').get_attribute('aria-pressed')=='true'
+        page.evaluate('document.activeElement.blur()')
+        page.keyboard.press('?')
+        assert page.locator('#shortcutDialog').evaluate('e=>e.open')
+        page.keyboard.press('Escape')
+        assert page.locator('#shortcutDialog').evaluate('e=>!e.open')
+        page.evaluate('document.activeElement.blur()')
+        page.keyboard.press('f')
+        assert page.locator('#followLiveBtn').get_attribute('aria-pressed')=='false'
+        page.keyboard.press('f')
+        assert page.locator('#followLiveBtn').get_attribute('aria-pressed')=='true'
+        page.keyboard.press('s')
+        assert page.evaluate("document.activeElement.classList.contains('turn-speaker')")
+        page.evaluate('document.activeElement.blur()')
+        page.keyboard.press('w')
+        assert page.locator('#editDialog').evaluate('e=>e.open')
+        page.locator('#cancelEditBtn').click()
+        assert not page.locator('#editDialog').evaluate('e=>e.open')
+        page.locator('#densityMode').check()
+        assert page.locator('html').get_attribute('data-density')=='quiet'
+        page.locator('#densityMode').uncheck()
+        # Observatory telemetry strip & turn ribbon interaction + direct voiceNoteBtn click regression
+        assert page.locator('#observatoryStrip').is_visible()
+        assert 'passages' in page.locator('#obsCadenceValue').inner_text()
+        assert 'tentative' in page.locator('#obsCertaintyValue').inner_text()
+        assert page.locator('#obsTurnRibbon .obs-node').count()>=1
+        page.locator('#obsTurnRibbon .obs-node').first.click()
+        assert page.locator('#evidenceDrawer').is_visible()
+        page.locator('#evidenceReturnScrollBtn').click()
+        assert page.locator('#evidenceDrawer').is_hidden()
+        # Verify direct click on #voiceNoteBtn starts and stops cleanly without duplicate listener race
+        vn_before=page.locator('#voiceNoteList .voice-note-item').count()
+        page.locator('#voiceNoteBtn').click()
+        page.wait_for_function("document.querySelector('#voiceNoteBtn').textContent.includes('Stop voice note')")
+        page.wait_for_timeout(560)
+        page.locator('#voiceNoteBtn').click()
+        page.wait_for_function(f"document.querySelectorAll('#voiceNoteList .voice-note-item').length==={vn_before+1}")
+        # 18 & F. Long-session capacity banner at >=240 and rotation marker at >300 + Session review summary
+        page.evaluate('''() => {
+          const input=document.querySelector('#manualText'),form=document.querySelector('#manualForm');
+          for(let i=0;i<245;i++){input.value='Synthetic turn '+i;form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))}
+        }''')
+        assert page.locator('#capacityBanner').is_visible()
+        assert 'Approaching in-memory transcript limit' in page.locator('#capacityBannerText').inner_text()
+        page.evaluate('''() => {
+          const input=document.querySelector('#manualText'),form=document.querySelector('#manualForm');
+          for(let i=245;i<305;i++){input.value='Synthetic turn '+i;form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))}
+        }''')
+        assert 'rotated out of memory' in page.locator('#capacityBannerText').inner_text()
+        assert '300 passages (+' in page.locator('#summaryPassageCount').inner_text()
+        page.locator('#clearBtn').click()
+        assert page.locator('#capacityBanner').is_hidden()
         assert not errors,errors
         overflow=page.evaluate('document.documentElement.scrollWidth-innerWidth')
         assert overflow<=0,overflow
-        print('PASS Brave/Chromium',width,'simulated voice, capture lease, meter, PCM split/move/merge WAV editing, replay, transcript, Stop, Erase, lifecycle, no overflow')
+        print('PASS Brave/Chromium',width,'simulated voice, capture lease, meter, PCM split/move/merge WAV editing, replay, transcript, Stop, Erase, lifecycle, UX 01-20 & A-F, observatory strip, no overflow')
+        page.close()
+    for extra_width in (1440,810):
+        page=browser.new_page(viewport={'width':extra_width,'height':900})
+        errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
+        page.route('http://localhost/**',lambda route:route.fulfill(status=200,content_type='text/html',body=html))
+        page.goto('http://localhost/')
+        page.wait_for_function("document.querySelector('#capability').textContent.includes('LOCAL WHISPER READY')")
+        overflow=page.evaluate('document.documentElement.scrollWidth-innerWidth')
+        assert overflow<=0,f'Overflow at {extra_width}: {overflow}'
+        assert not errors,errors
+        page.screenshot(path=str(root/f'qa_v6_{extra_width}.png'),full_page=True)
+        print('PASS Brave/Chromium',extra_width,'responsive layout and zero horizontal overflow')
         page.close()
     browser.close()

@@ -1,38 +1,39 @@
-Conversation Lens v6 — Privacy and Evidence Uplift QA
-Date: 2026-10-18 local on MacBook Air
+Conversation Lens v6 — Privacy, Evidence Uplift, and Omni Zero-Loss UX Transformation QA
+Date: 2026-10-19 local on MacBook Air
 Verdict: PASS WITH DECLARED LIMITATIONS (experimental, consenting-speaker tool)
 
 TARGET / SOURCE
-- MacBook Air M1 macOS; private westkitty/Conversation_Lens; branch main; revision verified separately after Git push.
-- Local Python HTTP server, FFmpeg, Whisper.cpp using DexDictate base model, sherpa-onnx speaker embeddings, Big Mac Ollama.
+- MacBook Air M1 macOS; GitHub API reports westkitty/Conversation_Lens as PUBLIC ("private": false, "visibility": "public"); active branch codex/conversation-lens-integration (baseline ddec23f, derived from main a74e2b0). Keep all repository fixtures synthetic and exclude private transcripts, recordings, embeddings, or tokens.
+- Local Python HTTP server, FFmpeg, Whisper.cpp using DexDictate base/small models, sherpa-onnx speaker embeddings, Big Mac Ollama.
 - Protected: fresh sessions with empty context and Observe neutrally, opt-in spoken introductions, Unknown/Mixed safeguards, manual entry.
 
 SYNTHETIC + ACTUAL INSTALLED MODELS
 - test_real_local_stack.py on the target MacBook: PASS.
-- macOS say generated a synthetic voice file; FFmpeg converted to WebM; actual Whisper transcribed 144 characters; actual speaker embedding worker produced tentative Dale labeling: 2.75 seconds for speech/speaker processing in this run.
-- Actual Big Mac Ollama gemma3:4b returned a grounded observation: 7.27 seconds for this run.
+- macOS say generated a synthetic voice file; FFmpeg converted to WebM; actual Whisper transcribed 144 characters; actual speaker embedding worker produced tentative Dale labeling: 2.56 seconds for speech/speaker processing in this run.
+- Synthetic overlapping Daniel/Samantha voices (9.53s) produced half-window cosine 0.7315, triggered the conservative Mixed veto, and blocked profile learning.
+- Actual Big Mac Ollama gemma3:4b returned a grounded observation: 8.48 seconds for this run.
 - Capture revoked; test-only in-memory voice profiles erased.
 - These are observed single-workload timings, NOT before/after gains or a general latency guarantee.
 
 AUTOMATED REGRESSIONS
-- test_backend.py: consent, host/token/origin; FFmpeg WebM; synthetic Whisper; capture lease conflict; deliberate takeover; stale session and STOP race; erased profiles and enrollment races; exact duplicate enrollment audio rejected, including across two names.
+- test_backend.py: consent, host/token/origin; FFmpeg WebM and PCM WAV; synthetic Whisper; capture lease conflict; deliberate takeover; stale session and STOP race; exact-hash Stop Keep drain; speaker worker timeout abstention; erased profiles and enrollment races; exact duplicate enrollment audio rejected, including across two names.
 - test_regressions.py: Unknown/Mixed speaker abstention, self-introduction safety, audio replay detection, AI exact quotation checks, neutral default, no browser speech fallback.
-- test_frontend.py: real headless Brave at 1200/375 viewports, simulated mic and HTTP; consent, Start/Stop/Erase; AI opt-in; correcting words; grounded cue and AI quote navigation; queue meter; explicit takeover; mobile DOM/tab order and resize recovery; no page exceptions or overflow.
-- test_e2e.py: real headless Brave and local HTTP with FFmpeg WebM conversion; fake Whisper/speaker vectors; both viewports; introduction learning, VAD segmentation, capture lease revocation, erase.
-- Python syntax, JavaScript node --check, launcher syntax and Git diff checks: run before finalization.
+- test_live_upgrade.py: speaker soft-cap hints, lossy RAM compaction, export/import integrity, half-window cosine/margin and forced Mixed veto, temporary boost, localhost Ollama config, priority context, grounding modes, Whisper model switcher, Stop freeze/drain, health and bounded diagnostics.
+- qa_backpressure.py & qa_stop_race.py: STT 429 saturation/retry, queue cap of 3, and 4 adversarial Stop/drain loopback HTTP races.
+- test_frontend.py: real headless Brave at 1440, 1200, 810, and 375 viewports, simulated mic and HTTP; consent, Start/Stop/Erase; AI opt-in; Omni Zero-Loss UX Transformation items 01-20 and Completions A-F (protected demo loading, Follow live without scroll hijack + unread count, persistent coaching rail + mobile bottom sheet, centralized capture header + status bar, 4-scope data deletion semantics, chronological transcript gap markers, task-centered workspace nav + progressive disclosure, speaker uncertainty badges, scoped bulk speaker correction, 2-sample enrollment stepper, top-level Goal/Language sync, evidence inspector return navigation, coaching freshness/staleness badges, contextual engine recovery banner, keyboard shortcut dialog + F/S/W/T/L/?, 240/300 long-session capacity warnings, Quiet density mode, Session Review Summary card, Acoustic & Linguistic Observatory Strip #observatoryStrip with interactive #obsTurnRibbon nodes, and duplicate #voiceNoteBtn listener regression fix); no page exceptions or horizontal overflow.
+- test_e2e.py: real headless Brave and local HTTP with FFmpeg WebM conversion; fake Whisper/speaker vectors; 1200 and 375 viewports; introduction learning, VAD segmentation, capture lease revocation, erase.
+- Python py_compile, JavaScript node --check, zsh -n launcher syntax and Git diff checks: PASS.
 
 VISUAL CHECK
-- Inspected desktop and mobile screenshots. Found mobile guidance preceded microphone setup. Physically reordered DOM for setup and listening first; reran viewport and resize assertions; no horizontal overflow detected.
+- Inspected desktop (1440px, 1200px), tablet (810px), and mobile (375px) screenshots. Mobile DOM order places Capture, Pinned Cue, and Transcript ahead of secondary panels while preserving desktop two-column sticky rail layout; zero horizontal overflow across all four viewports.
 
 UNVERIFIED / LIMITATIONS
-- Live physical microphone from Brave; long-duration natural conversation.
-- Voice-ID precision/recall with at least two real consenting people, noisy rooms, overlapping or similar voices.
+- Natural multi-speaker live conversation with consenting human participants, noisy rooms, overlapping or similar human voices.
+- Full 45-minute continuous resource soak (previously stopped at 14m49s per user direction; not fabricated).
 - Word-level speaker diarization, biometric authentication or forensic proof.
-- Matched before/after performance improvement (not measured); primary verified deltas are functional/UX.
-- Automated CI or external deployment (not part of a local Git push).
 
 PRIVACY
 - Big Mac transcript analysis requires explicit user opt-in; mere connectivity check sends no transcript.
 - Legacy browser SpeechRecognition path removed: local Whisper or manual entry only.
-- Voiceprints and enrollment duplicate-clip hashes are memory-only; capture/erase enforce revocation.
-- Private Git history can still include earlier confidential scenario in older commits. Do not make public without authorized history review.
+- Voiceprints and enrollment duplicate-clip hashes are memory-only by default; capture/erase enforce revocation.
+- Repository is currently PUBLIC on GitHub; never stage or push non-synthetic transcripts, audio, voiceprints, or tokens.

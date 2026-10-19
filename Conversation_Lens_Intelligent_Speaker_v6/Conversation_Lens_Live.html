@@ -7,7 +7,7 @@
 <title>Conversation Lens v6 — Adaptive Listening + Speaker Memory</title>
 <style>
 :root{--bg:#0a0c10;--surface:#12161d;--raised:#1a1f29;--edge:#2a303d;--ink:#eef0f6;--muted:#9ca5b7;--red:#ff6a66;--cyan:#93cfdd;--amber:#eccb91;--green:#a8dbc0;--radius:16px}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse 90% 55% at 90% -20%,#25313a88,transparent 70%),var(--bg);color:var(--ink);font:15px/1.48 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.45}a{color:var(--cyan)}:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+*{box-sizing:border-box}html{scroll-behavior:auto}body{margin:0;background:radial-gradient(ellipse 90% 55% at 90% -20%,#25313a88,transparent 70%),var(--bg);color:var(--ink);font:15px/1.48 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.45}a{color:var(--cyan)}:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
 .shell{max-width:1260px;margin:auto;padding:24px clamp(14px,3vw,36px) 56px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-bottom:21px;border-bottom:1px solid var(--edge)}.brand{display:flex;gap:15px;align-items:center}.logo{display:grid;place-items:center;width:47px;height:47px;border:1px solid #bc7972;border-radius:12px;background:linear-gradient(145deg,#522d35,#1a1e29);color:#ffe3de;font-size:27px;font-weight:400}.eyebrow,.caps{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700}h1,h2,h3,p{margin:0}h1{font-size:clamp(22px,3.2vw,32px);letter-spacing:-.04em;line-height:1.08;font-weight:700}h2{font-size:17px;letter-spacing:-.015em}h3{font-size:14px}p{line-height:1.55}.sub{color:var(--muted);max-width:62ch;margin-top:5px;font-size:13px}.status{display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid var(--edge);border-radius:999px;background:var(--surface);font-size:12px;font-weight:700;letter-spacing:.05em}.led{width:8px;height:8px;border-radius:50%;background:#7a8491;box-shadow:0 0 0 3px #747e8c20}.status.live .led{background:var(--red);box-shadow:0 0 0 5px #ff6a6624;animation:pulse 2s infinite}.status.live{border-color:#b0605b}.status.paused .led{background:var(--amber)}@keyframes pulse{50%{box-shadow:0 0 0 9px transparent}}
 .intro{display:flex;justify-content:space-between;align-items:flex-start;gap:22px;margin:23px 0 18px;flex-wrap:wrap}.intro strong{font-weight:650}.intro p{color:var(--muted);max-width:70ch}.info-label{color:var(--amber);font-weight:700}
 .context-pin{position:sticky;top:8px;z-index:15;margin:0 0 14px;padding:10px 13px;border:1px solid #43505f;border-left:3px solid var(--amber);border-radius:10px;background:#171b22f2;box-shadow:0 8px 22px #0006;display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;pointer-events:none}.context-pin[hidden]{display:none}.context-pin strong{font-size:11px;color:var(--amber);text-transform:uppercase;letter-spacing:.08em}.context-pin p{font-size:12px;color:#e1e5ec;max-width:90ch;overflow-wrap:anywhere}.context-pin .context-pin-item{display:grid;gap:2px;min-width:0;flex:1 1 260px}.context-pin .context-pin-item[hidden]{display:none}
@@ -100,6 +100,93 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
 .duration-plot{display:block;width:100%;height:42px;border:1px solid var(--edge);border-radius:8px;background:#0c1016;margin-top:6px}
 .skipped-marker{border:1px solid #765547;border-radius:8px;margin-top:6px;padding:8px;background:#241e20;font-size:11px;color:#ead1bb;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 #cutHistory,#durationDistribution{font-size:11px;color:var(--muted);margin-top:6px}
+/* Omni Zero-Loss UX Transformation styles */
+.session-status-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:14px 0 12px;padding:10px 14px;border:1px solid var(--edge);border-radius:12px;background:linear-gradient(165deg,#151b24,#0f141c)}
+.status-pills{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.state-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--edge);border-radius:999px;background:#101620;font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--ink)}
+.state-pill[data-state="active"],.state-pill[data-state="ready"]{border-color:#447668;color:var(--green);background:#11231f}
+.state-pill[data-state="paused"],.state-pill[data-state="warning"]{border-color:#9e7b46;color:var(--amber);background:#241e14}
+.state-pill[data-state="error"],.state-pill[data-state="stale"]{border-color:#9c4d4b;color:#ffb4ae;background:#291719}
+.quick-session-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.quick-session-controls label{display: inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);font-weight:650;margin:0}
+.quick-session-controls .field{width:auto;min-width:130px;padding:5px 8px;font-size:12px;min-height:34px}
+.workspace-nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 14px;padding:7px 10px;border:1px solid #232b38;border-radius:10px;background:#0e131b}
+.workspace-nav .nav-label{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700;margin-right:4px}
+.workspace-nav .btn.small{min-height:30px;padding:4px 9px;font-size:11px}
+.recovery-banner{margin:10px 0;padding:11px 13px;border:1px solid #9e6b47;border-left:3px solid var(--amber);border-radius:10px;background:#211a15;color:#f5dec3;font-size:12px;display:grid;gap:7px}
+.recovery-banner[data-severity="error"]{border-color:#a65250;border-left-color:var(--red);background:#251619;color:#ffd6d2}
+.recovery-banner[hidden]{display:none}
+.recovery-banner strong{font-size:12px;color:#fff;display:block}
+.recovery-actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.follow-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px;padding:6px 10px;border:1px solid #283342;border-radius:9px;background:#101620;font-size:11px;color:var(--muted)}
+.follow-bar[data-paused="true"]{border-color:#8c6e42;background:#1f1a12;color:#f0d6a8}
+.capacity-banner{margin:0 0 8px;padding:9px 11px;border:1px solid #9e6f44;border-left:3px solid var(--amber);border-radius:9px;background:#221b13;color:#f4ddba;font-size:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.capacity-banner[hidden]{display:none}
+.bulk-bar{margin:0 0 8px;padding:8px 10px;border:1px solid #456e7d;border-radius:9px;background:#122029;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px}
+.bulk-bar[hidden]{display:none}
+.bulk-bar .field{width:auto;min-width:135px;padding:4px 8px;font-size:12px;min-height:32px}
+.transcript-gap{margin:8px 0;padding:9px 11px;border:1px dashed #a86c4c;border-left:3px solid var(--amber);border-radius:8px;background:#211917;color:#f2d5bc;font-size:12px;line-height:1.45}
+.transcript-gap strong{color:#ffd8b0;display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+.transcript-retention-marker{margin:4px 0 8px;padding:7px 10px;border:1px dashed #4d6273;border-radius:7px;background:#121b24;color:#b8cad8;font-size:11px}
+.who-badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.03em;border:1px solid #384657;background:#141c26;color:#b8c4d4}
+.who-badge.manual{border-color:#4b7688;background:#142530;color:#bde8f8}
+.who-badge.pinned{border-color:#7d6b42;background:#241e12;color:#f3d89c}
+.who-badge.provisional{border-color:#9e7747;background:#281e13;color:#ffdca8}
+.who-badge.tentative{border-color:#3f756b;background:#122623;color:#b5eadf}
+.who-badge.mixed{border-color:#9c5f43;background:#2b1b15;color:#ffd2b8}
+.who-badge.unknown{border-color:#635c75;background:#1d1a26;color:#d7cef0}
+.who-badge.unassigned{border-color:#3b4554;background:#141922;color:#a8b3c4}
+.turn-select-wrap{display:inline-flex;align-items:center;gap:5px}
+.turn-bulk-check{width:15px;height:15px;accent-color:var(--cyan);cursor:pointer;margin:0}
+.enroll-stepper{margin:10px 0;padding:10px 12px;border:1px solid #354754;border-radius:10px;background:#0e161f;font-size:12px}
+.enroll-steps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:7px}
+.enroll-step{padding:7px 9px;border:1px solid var(--edge);border-radius:8px;background:#131b24;font-size:11px;color:var(--muted)}
+.enroll-step[data-state="active"]{border-color:var(--amber);color:#ffe2b5;background:#241d13}
+.enroll-step[data-state="done"]{border-color:#4a8775;color:#c0f0df;background:#11241f}
+.cue-meta-row{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.cue-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.cue-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:750;letter-spacing:.06em;text-transform:uppercase;border:1px solid #6c4c4f;background:#23181d;color:#ffd2cb}
+.cue-badge[data-source="ai"]{border-color:#477a85;background:#13262c;color:#bceef8}
+.cue-badge[data-stale="true"]{border-color:#a36e3e;background:#291d12;color:#ffdba6}
+.cue-evidence-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:8px;padding:7px 10px;border:1px solid #463842;border-radius:8px;background:#17151e;font-size:12px;color:#d6dce8}
+.ai-review[data-stale="true"]{border-color:#9e7442;background:linear-gradient(140deg,#241e15,#151b27)}
+.deletion-scope-card{margin-top:12px;padding:11px 13px;border:1px solid var(--edge);border-radius:10px;background:#0e131b;font-size:11px;color:var(--muted)}
+.deletion-scope-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:7px}
+.deletion-scope-item{padding:7px 9px;border:1px solid #252e3b;border-radius:8px;background:#131923}
+.deletion-scope-item strong{color:var(--ink);display:block;margin-bottom:2px;font-size:11px}
+.review-summary{margin-top:12px;border:1px solid var(--edge);border-radius:10px;padding:10px 12px;background:#0e141d;font-size:12px}
+.review-summary summary{cursor:pointer;font-weight:700;color:var(--cyan);font-size:12px}
+.review-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:9px}
+.review-cell{padding:8px;border:1px solid #252f3d;border-radius:8px;background:#131b26;font-size:11px}
+.review-cell strong{display:block;color:var(--ink);font-size:12px;margin-bottom:2px}
+.manual-fallback-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:10px;padding:7px 10px;border:1px solid #2c3949;border-radius:8px;background:#101722;font-size:11px;color:var(--muted)}
+.manual-fallback-bar[data-highlight="true"]{border-color:#8f6d43;background:#201a12;color:#f2d8ae}
+.shortcut-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0;font-size:12px}
+.shortcut-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;border:1px solid var(--edge);border-radius:7px;background:#0e141d}
+html[data-density="compact"] .panel{padding:13px}
+html[data-density="compact"] .turn{padding:6px 0}
+html[data-density="compact"] .transcript{height:340px}
+@media(max-width:810px){
+  .deletion-scope-grid,.review-grid,.shortcut-grid,.enroll-steps,.obs-grid{grid-template-columns:1fr}
+  .btn,.field,select.field{min-height:38px}
+  .turn-meta .btn{min-height:32px;padding:5px 9px}
+  .quick-session-controls{width:100%}
+  .quick-session-controls label{flex:1 1 140px}
+  .quick-session-controls .field{width:100%;min-width:0}
+}
+.observatory-strip{margin:0 0 14px;padding:10px 13px;border:1px solid #283546;border-radius:11px;background:linear-gradient(170deg,#111823,#0b1017);display:grid;gap:8px}
+.obs-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted)}
+.obs-head strong{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--cyan)}
+.obs-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.obs-metric{padding:7px 9px;border:1px solid #1f2b3a;border-radius:8px;background:#0e141d;font-size:11px;color:var(--muted)}
+.obs-metric b{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#8fa3ba;margin-bottom:2px}
+.obs-metric span{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:650}
+.obs-ribbon{display:flex;align-items:center;gap:4px;flex-wrap:wrap;min-height:20px;padding-top:2px}
+.obs-node{border:1px solid #334357;border-radius:4px;padding:2px 6px;background:#131c28;color:#c2d0e0;font-size:10px;font-family:var(--mono);cursor:pointer;line-height:1.2}
+.obs-node.tentative{border-color:#3f756b;background:#112522;color:#b5eadf}
+.obs-node.provisional,.obs-node.pinned{border-color:#9e7747;background:#261d12;color:#ffdca8}
+.obs-node.mixed,.obs-node.unknown{border-color:#9c5f43;background:#291a15;color:#ffd2b8}
+.obs-node.manual{border-color:#4b7688;background:#14242f;color:#bde8f8}
 @media(max-width:400px){.window-tuner .two{grid-template-columns:1fr}}
 </style>
 <script src="/packet-a/lens_pcm_core.js"></script>
@@ -109,14 +196,45 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
 <div class="shell">
 <header class="top">
   <div class="brand"><div class="logo" aria-hidden="true">◉</div><div><div class="eyebrow">Stinky Weasel Productions / Working tool</div><h1>CONVERSATION LENS<span style="color:var(--red)">.</span></h1><p class="sub">Adaptive local transcription, tentative speaker identity, and grounded live coaching.</p></div></div>
-  <div class="toolbar-strip"><label class="small-label" for="layoutMode">Layout</label><select id="layoutMode" class="field" aria-label="Screen layout"><option value="split">Split</option><option value="transcript">Transcript-heavy</option><option value="coaching">Coaching-heavy</option><option value="focus">Focus</option></select><label class="check"><input id="contrastMode" type="checkbox">High contrast</label><label class="check"><input id="monoMode" type="checkbox">Mono</label><label class="check"><input id="motionMode" type="checkbox">Reduce motion</label></div>
-  <div id="status" class="status" role="status" aria-live="polite"><span class="led"></span><span id="statusText">NOT LISTENING</span></div>
+  <div class="toolbar-strip"><label class="small-label" for="layoutMode">Layout</label><select id="layoutMode" class="field" aria-label="Screen layout"><option value="split">Split</option><option value="transcript">Transcript-heavy</option><option value="coaching">Coaching-heavy</option><option value="focus">Focus</option></select><label class="check"><input id="densityMode" type="checkbox">Compact</label><label class="check"><input id="contrastMode" type="checkbox">High contrast</label><label class="check"><input id="monoMode" type="checkbox">Mono</label><label class="check"><input id="motionMode" type="checkbox">Reduce motion</label><button id="shortcutHelpBtn" class="btn small ghost" type="button" aria-label="Keyboard shortcuts reference">Shortcuts (?)</button></div>
+  <div class="row"><button id="headerStopBtn" class="btn small stop" type="button" hidden>Stop microphone</button><div id="status" class="status" role="status" aria-live="polite"><span class="led"></span><span id="statusText">NOT LISTENING</span></div></div>
 </header>
-<div class="intro"><p>Listen for what matters. Surface a few useful observations. <strong>Keep the actual conversation between the people in it.</strong></p><p class="micro"><span class="info-label">First principle:</span> cues are hypotheses, not verdicts about what anyone thinks or feels.</p></div>
 <aside id="contextPin" class="context-pin" hidden aria-label="Owner supplied session context"><div id="contextPinItem" class="context-pin-item" hidden><strong>Optional context</strong><p id="contextPinText"></p></div><div id="privatePinItem" class="context-pin-item" hidden><strong>Private owner note</strong><p id="privatePinText"></p></div></aside>
+<section id="sessionStatusBar" class="session-status-bar" aria-label="Live session and engine status">
+  <div class="status-pills">
+    <span id="micStateBadge" class="state-pill" data-state="idle">Mic: Idle</span>
+    <span id="coachingStateBadge" class="state-pill" data-state="active">Coaching: Local rules active</span>
+    <span id="readinessSummaryBadge" class="state-pill" data-state="idle">Engines: Checking…</span>
+    <span id="topQueueBadge" class="state-pill" data-state="idle">Queue: Idle</span>
+  </div>
+  <div class="quick-session-controls">
+    <label for="quickAim">Goal<select id="quickAim" class="field" aria-label="Quick conversation goal"><option value="observe">Observe neutrally (default)</option><option value="understand">Clarify meaning</option><option value="resolve">Find decisions and next steps</option><option value="repair">Repair a misunderstanding</option><option value="boundary">Clarify boundaries or requirements</option></select></label>
+    <label for="quickLanguage">Language<select id="quickLanguage" class="field" aria-label="Quick speech language"><option value="en-US">English</option><option value="es-MX">Español (México)</option><option value="de-DE">Deutsch</option></select></label>
+  </div>
+</section>
+<nav id="workspaceNav" class="workspace-nav" aria-label="Workspace sections">
+  <span class="nav-label">Workspace</span>
+  <button type="button" class="btn small ghost" data-jump="listenPanel">1. Listen</button>
+  <button type="button" class="btn small ghost" data-jump="transcriptPanel">2. Transcript</button>
+  <button type="button" class="btn small ghost" data-jump="manualText">3. Manual entry</button>
+  <button type="button" class="btn small ghost" data-jump="heroCuePanel">4. Coaching</button>
+  <button type="button" class="btn small ghost" data-jump="speakerPanel">5. Speakers</button>
+  <button type="button" class="btn small ghost" data-jump="setupPanel">6. Setup</button>
+  <button type="button" class="btn small ghost" data-jump="sessionReviewSummary">7. Review &amp; export</button>
+</nav>
+<section id="observatoryStrip" class="observatory-strip" aria-label="Acoustic and linguistic observatory telemetry">
+  <div class="obs-head"><strong>Acoustic &amp; Linguistic Observatory</strong><span id="obsSummaryNote">Zero-fabrication structural telemetry · click any turn node to inspect passage evidence</span></div>
+  <div class="obs-grid">
+    <div class="obs-metric"><b>Turn cadence &amp; floor</b><span id="obsCadenceValue">0 passages · 0 transitions</span></div>
+    <div class="obs-metric"><b>Attribution epistemology</b><span id="obsCertaintyValue">0 tentative · 0 provisional/manual · 0 abstained</span></div>
+    <div class="obs-metric"><b>Linguistic structure</b><span id="obsSignalsValue">0 questions · 0 commitments · 0 grounded cues</span></div>
+  </div>
+  <div id="obsTurnRibbon" class="obs-ribbon" role="group" aria-label="Recent passage speaker alternation and uncertainty ribbon"></div>
+</section>
+<div class="intro"><p>Listen for what matters. Surface a few useful observations. <strong>Keep the actual conversation between the people in it.</strong></p><p class="micro"><span class="info-label">First principle:</span> cues are hypotheses, not verdicts about what anyone thinks or feels.</p></div>
 <main class="grid">
 <div class="stack left-col">
-  <section class="panel" aria-labelledby="setupTitle">
+  <section id="setupPanel" class="panel" aria-labelledby="setupTitle">
     <div class="panel-head"><h2 id="setupTitle">01 / Conversation setup</h2><small>Editable at any time</small></div>
     <label class="input-label" for="context">Optional conversation context</label>
     <textarea id="context" class="field" rows="4" autocomplete="off" spellcheck="true" placeholder="Optional: topic, background, participants, terminology, or constraints. Leave empty for neutral observation."></textarea>
@@ -135,8 +253,18 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
     <textarea id="customFragment" class="field" rows="2" maxlength="1200" placeholder="Only used when Custom fragment is selected."></textarea>
     <div class="north" id="northStar"  style="margin:13px 0 0">North star: notice what was actually said without assuming a topic or objective.</div>
   </section>
-  <section class="panel" aria-labelledby="listenTitle">
+  <section id="listenPanel" class="panel" aria-labelledby="listenTitle">
     <div class="panel-head"><h2 id="listenTitle">02 / Listen</h2><small id="capability">Checking LOCAL transcription…</small></div>
+    <div id="engineRecoveryBanner" class="recovery-banner" role="region" aria-label="Engine recovery and fallback actions" hidden>
+      <strong id="recoveryTitle">Engine status notice</strong>
+      <p id="recoveryDetail" class="micro" style="color:inherit;margin:0"></p>
+      <div class="recovery-actions">
+        <button id="recoveryRetryServerBtn" class="btn small ghost" type="button">Check local server</button>
+        <button id="recoveryRetryMicBtn" class="btn small ghost" type="button" hidden>Retry microphone</button>
+        <button id="recoveryTakeoverBtn" class="btn small primary" type="button" hidden>Take over capture here</button>
+        <button id="recoveryManualBtn" class="btn small ghost" type="button">Use manual entry</button>
+      </div>
+    </div>
     <label class="small-label" for="micSpeaker">Fallback label if identification is unavailable</label>
     <select id="micSpeaker" class="field"><option value="shared">Unassigned (recommended)</option><option value="me">Me</option><option value="other">Other person</option></select>
     <label class="check"><input id="consent" type="checkbox"><span>Everyone being transcribed knows and agrees. Microphone permission is requested only after I press Start.</span></label>
@@ -165,8 +293,9 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
      <div class="interim" id="interim"  data-empty="true" aria-live="off">Recognized speech appears here as you talk.</div>
     <p class="note">Whisper transcribes silence-guided recording windows on the MacBook; audio clips are temporary. Session voiceprints stay in server RAM and disappear on exit. With spoken-name learning OFF, normal speaker matching still works for explicitly enrolled voices. AI coaching runs through Big Mac.</p>
   </section>
-  <section class="panel" aria-labelledby="speakerTitle">
+  <section id="speakerPanel" class="panel" aria-labelledby="speakerTitle">
     <div class="panel-head"><h2 id="speakerTitle">03 / Identify speakers</h2><small id="speakerHealth" role="status">Checking model…</small></div>
+    <div id="speakerRecoveryNote" class="recovery-banner" hidden><strong id="speakerRecoveryTitle">Speaker identification offline</strong><p id="speakerRecoveryText" class="micro" style="color:inherit;margin:0">Local Whisper transcription and manual speaker assignment continue to work without the speaker embedding model.</p></div>
     <div class="intro-banner"><strong>“This is Dale.” → Dale? → learn the voice</strong>
       <p>Natural introductions create temporary voice candidates from actual microphone audio. Later speech can strengthen the acoustic match. No separate recording ceremony is required.</p></div>
     <label class="check"><input id="autoNames" type="checkbox"><span><strong>Enable names from spoken introductions.</strong> Everyone present knows that names and temporary voiceprints may be inferred from their speech, and consents. Off by default.</span></label>
@@ -175,6 +304,14 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
     <div class="row" style="margin-top:12px"><label class="input-label" style="flex:1 1 180px;margin:0" for="enrollName">Name on transcript<input id="enrollName" class="field" maxlength="30" pattern="[A-Za-z][A-Za-z0-9 '-]*" placeholder="e.g., Dale or Morgan" autocomplete="off" style="margin-top:6px"></label></div>
     <label class="check"><input id="enrollConsent" type="checkbox"><span>The person supplying this voice sample has agreed to be identified by this app.</span></label>
     <label class="small-label" for="enrollDuration">Enrollment sample duration<select class="field" id="enrollDuration"><option value="7">Standard · 7 seconds</option><option value="10">Longer follow-up · 10 seconds</option></select></label>
+    <div id="enrollProgressStepper" class="enroll-stepper" role="region" aria-label="Two-sample voice enrollment progress">
+      <div class="row" style="justify-content:space-between"><strong id="enrollTargetLabel">Two-sample enrollment progress</strong><span id="enrollStageBadge" class="state-pill" data-state="idle">0 of 2 samples</span></div>
+      <div class="enroll-steps">
+        <div id="enrollStep1" class="enroll-step" data-state="pending"><strong>Sample 1 (7s/10s)</strong><div id="enrollStep1Text">Not recorded yet</div></div>
+        <div id="enrollStep2" class="enroll-step" data-state="pending"><strong>Sample 2 (distinct clip)</strong><div id="enrollStep2Text">Requires Sample 1 first</div></div>
+      </div>
+      <p id="enrollStageDetail" class="micro" style="margin-top:6px">Enter a speaker name, confirm consent, and record two separate voice samples to enable tentative acoustic matching.</p>
+    </div>
     <div id="enrollQuality" class="enroll-quality" role="meter" aria-label="Enrollment audio signal quality preview" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span></span></div><div id="enrollQualityText" class="micro" role="status">Audio quality preview appears during an explicit seven-second enrollment sample. This checks signal level only, not identity or speaker quality.</div>
     <div class="action-row"><button class="btn primary" id="enrollBtn" type="button" disabled>Record a voice sample (7s)</button><button class="btn ghost" id="forgetBtn" type="button">Forget voice profiles</button></div>
     <div class="row" style="margin-top:10px;align-items:end"><label class="small-label" for="speakerLockName">Pin a speaker label<select class="field" id="speakerLockName"><option value="">No lock</option></select></label><label class="small-label" for="speakerLockCount">Eligible windows<input class="field" id="speakerLockCount" type="number" min="1" max="20" value="3"></label><button id="speakerLockBtn" class="btn small" type="button">Pin label</button></div><div id="speakerLockStatus" class="micro" role="status">No speaker label pinned. Mixed/overlap results stay Mixed and do not consume a pin.</div>
@@ -183,25 +320,78 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
     <p class="note" id="enrollMessage" role="status">Self-introductions are <strong>provisional claims</strong>, not identity proof. The acoustic model can confuse similar voices; a name can always be corrected. Audio with overlaps or weak matches remains Unknown/Mixed.</p>
     <div class="speaker-memory" id="speakerMemory">Voiceprint RAM: 0 bytes</div><p class="micro">Profiles stay in server RAM unless you explicitly export. Export files contain biometric voice embeddings; keep them private and local.</p><div class="row"><button id="exportProfiles" class="btn small ghost" type="button">Export profiles</button><label class="small-label" for="importProfiles">Import and replace RAM profiles<input id="importProfiles" class="field" type="file" accept="application/json,.json"></label></div><div id="profileFileStatus" class="micro" role="status"></div><div id="talkTimeStats" class="speaker-memory">Attributed speech spans: none measured yet.</div><div class="speaker-presence" id="speakerPresence">Possible voices this session: none yet</div>
   </section>
-  <section class="panel" aria-labelledby="transcriptTitle">
+  <section id="transcriptPanel" class="panel" aria-labelledby="transcriptTitle">
     <div class="panel-head"><h2 id="transcriptTitle">04 / Live transcript</h2><div class="tabrow"><button class="tab" id="sampleBtn" aria-label="Load a fictional demonstration">Try example</button></div></div>
     <div class="quick-filters"><select id="filterSpeaker" class="field" aria-label="Filter transcript speaker"><option value="all">All speakers</option></select><input id="filterKeyword" class="field" aria-label="Filter transcript keyword" placeholder="Filter words…"><label class="check" style="margin:0"><input id="filterCoached" type="checkbox">With coaching</label></div>
+    <div id="followLiveBar" class="follow-bar" data-paused="false" role="region" aria-label="Transcript live follow controls">
+      <span id="followLiveStatus">Auto-following newest passages</span>
+      <div class="row" style="gap:6px">
+        <button id="returnToLiveBtn" class="btn small primary" type="button" hidden>Return to live</button>
+        <button id="followLiveBtn" class="btn small ghost" type="button" aria-pressed="true">Follow live: ON</button>
+      </div>
+    </div>
+    <div id="capacityBanner" class="capacity-banner" role="status" aria-live="polite" hidden>
+      <span id="capacityBannerText">Approaching the 300-passage in-memory retention limit. Export or copy before older passages rotate out.</span>
+      <div class="row" style="gap:6px">
+        <button id="capacityCopyBtn" class="btn small ghost" type="button">Copy transcript</button>
+        <button id="capacityExportBtn" class="btn small ghost" type="button">Export Markdown</button>
+        <button id="capacitySnapshotBtn" class="btn small ghost" type="button">Download snapshot</button>
+      </div>
+    </div>
+    <div id="bulkCorrectionBar" class="bulk-bar" role="region" aria-label="Scoped bulk speaker correction" hidden>
+      <span id="bulkSelectedCount">0 passages selected</span>
+      <div class="row" style="gap:6px">
+        <label class="hide" for="bulkSpeakerSelect">Assign speaker to selected passages</label>
+        <select id="bulkSpeakerSelect" class="field" aria-label="Speaker for selected passages">
+          <option value="shared">Unassigned</option>
+          <option value="me">Me</option>
+          <option value="other">Other</option>
+          <option value="mixed">Mixed</option>
+        </select>
+        <button id="bulkApplySpeakerBtn" class="btn small primary" type="button">Apply to selected</button>
+        <button id="bulkSelectAllBtn" class="btn small ghost" type="button">Select visible</button>
+        <button id="bulkClearSelectionBtn" class="btn small ghost" type="button">Clear selection</button>
+      </div>
+    </div>
     <div class="transcript" id="transcript"  aria-label="Conversation transcript" tabindex="0"><div class="empty"><div><b>No conversation captured yet.</b>Start listening or add a line manually.</div></div></div>
     <aside id="evidenceDrawer" class="evidence-drawer" hidden aria-label="Selected passage evidence">
-      <div class="row" style="justify-content:space-between"><h3 id="evidenceTitle">Source passage</h3><button type="button" id="closeEvidence" class="btn small ghost">Close evidence</button></div>
+      <div class="row" style="justify-content:space-between"><h3 id="evidenceTitle">Source passage</h3><div class="row" style="gap:6px"><button type="button" id="evidenceJumpBtn" class="btn small ghost">Highlight in transcript</button><button type="button" id="evidenceReturnScrollBtn" class="btn small ghost" hidden>Return to review position</button><button type="button" id="evidenceReturnCueBtn" class="btn small ghost">Return to cue</button><button type="button" id="closeEvidence" class="btn small ghost">Close evidence</button></div></div>
+      <p id="evidenceMeta" class="micro" style="margin:4px 0"></p>
       <p id="evidenceSource"></p><div id="evidenceScores" class="evidence-score"></div><p id="evidenceReason" class="micro"></p>
     </aside>
+    <div id="manualFallbackBar" class="manual-fallback-bar" data-highlight="false">
+      <span id="manualFallbackText">Manual entry is always available alongside or instead of microphone capture.</span>
+      <button id="focusManualBtn" class="btn small ghost" type="button">Focus manual entry (T)</button>
+    </div>
     <form id="manualForm"  class="manual-row"><label class="hide" for="manualSpeaker">Speaker</label><select id="manualSpeaker" class="field" aria-label="Manual line speaker"><option value="shared">Unassigned (default)</option><option value="me">Me</option><option value="other">Other person</option></select><label class="hide" for="manualText">Conversation line</label><input id="manualText" class="field" placeholder="Type something said…" required maxlength="2000"><button class="btn" type="submit">Add line</button></form>
-    <div class="transcript-tools"><button class="btn small ghost" id="copyBtn">Copy transcript</button><button class="btn small ghost" id="copyBriefBtn">Copy GPT review prompt</button><button class="btn small ghost" id="exportTranscriptBtn">Export Markdown</button><button class="btn small ghost" id="exportPlainBtn">Export plain</button><button class="btn small ghost" id="snapshotBtn" type="button">Download session snapshot</button><label class="btn small ghost" for="restoreSnapshotFile">Restore snapshot</label><input id="restoreSnapshotFile" type="file" accept="application/json,.json" hidden><button class="btn small ghost" id="clearBtn">Clear transcript</button><button class="btn small stop" id="eraseAllBtn" type="button">Erase all session data</button><span id="snapshotStatus" class="micro" role="status" aria-live="polite"></span></div>
+    <div class="transcript-tools"><button class="btn small ghost" id="copyBtn">Copy transcript</button><button class="btn small ghost" id="copyBriefBtn">Copy GPT review prompt</button><button class="btn small ghost" id="exportTranscriptBtn">Export Markdown</button><button class="btn small ghost" id="exportPlainBtn">Export plain</button><button class="btn small ghost" id="snapshotBtn" type="button">Download session snapshot</button><label class="btn small ghost" for="restoreSnapshotFile">Restore snapshot</label><input id="restoreSnapshotFile" type="file" accept="application/json,.json" hidden><button class="btn small ghost" id="clearBtn">Clear transcript</button><button class="btn small ghost" id="forgetProfilesQuickBtn" type="button">Forget all voice profiles</button><button class="btn small stop" id="eraseAllBtn" type="button">Erase all session data</button><span id="snapshotStatus" class="micro" role="status" aria-live="polite"></span></div>
+    <div id="deletionScopeCard" class="deletion-scope-card" role="region" aria-label="Data deletion scope guide">
+      <strong>Data deletion semantics &amp; scope</strong>
+      <div class="deletion-scope-grid">
+        <div class="deletion-scope-item"><strong>Clear transcript</strong>Removes transcript passages, audio gap markers, coaching cards, bookmarks, highlights, and private voice notes. Keeps optional context, goal, and server RAM voice profiles.</div>
+        <div class="deletion-scope-item"><strong>Forget one speaker (Remove)</strong>Discards only that person's voiceprint from server RAM. Keeps transcript passages, other speaker profiles, and optional context.</div>
+        <div class="deletion-scope-item"><strong>Forget all voice profiles</strong>Discards every enrolled or self-introduced voiceprint from server RAM. Keeps transcript passages, optional context, and goal.</div>
+        <div class="deletion-scope-item"><strong>Erase all session data</strong>Stops capture, revokes leases, wipes all server RAM voiceprints, and clears transcript, optional context, private notes, custom rules, and resets goal to neutral.</div>
+      </div>
+    </div>
+    <details id="sessionReviewSummary" class="review-summary" open>
+      <summary>Session review &amp; wrap-up summary</summary>
+      <div class="review-grid">
+        <div class="review-cell"><strong>Transcript &amp; coverage</strong><span id="summaryPassageCount">0 passages · 0 audio gaps</span></div>
+        <div class="review-cell"><strong>Speaker attribution</strong><span id="summarySpeakerOverview">No speakers attributed yet</span></div>
+        <div class="review-cell"><strong>Bookmarks &amp; highlights</strong><span id="summaryMarkedList">0 bookmarked · 0 highlighted</span></div>
+        <div class="review-cell"><strong>Coaching &amp; action items</strong><span id="summaryCoachingCount">0 cues · 0 candidate decisions/actions</span></div>
+      </div>
+    </details>
     <section class="voice-notes" aria-label="Private voice-note annotations"><div class="row"><button id="voiceNoteBtn" class="btn small ghost" type="button">Record private voice note · A</button><span id="voiceNoteStatus" class="micro" role="status" aria-live="polite">Audio notes stay in memory and are excluded from transcript exports and snapshots.</span></div><div id="voiceNoteList"></div></section>
   </section>
 </div>
 <div class="stack right-col">
-  <section class="hero-cue" aria-live="polite" aria-atomic="true" data-collapsed="true"><button id="sheetToggle" class="btn small ghost" type="button" aria-expanded="false">Expand cue ↑</button><div class="caps">Latest grounded observation · pinned</div><h2 id="cueTitle">Waiting for conversation</h2><p id="cueText">Start listening or add a passage. Observations will be based on the words actually captured.</p><div class="coach-controls"><input id="nextLine" class="field" aria-label="Edit suggested next line" maxlength="350" placeholder="Your next line…"><button id="copyNextBtn" class="btn small ghost" type="button">Copy as my line</button><button id="getCueBtn" class="btn small primary" type="button">Get cue now</button><button id="continueThoughtBtn" class="btn small ghost" type="button" disabled>Continue last thought</button></div><p id="coachingNeeds" class="coaching-needs">Needs transcript · local cues work without AI</p><p id="continueThoughtStatus" class="micro" role="status"></p><p class="control-kbd">Space pause cues · C new cue · N/P navigate · E evidence · 1–9 assign · M Mixed</p></section>
-  <section class="panel" aria-labelledby="aiTitle">
+  <section id="heroCuePanel" class="hero-cue" aria-live="polite" aria-atomic="true" data-collapsed="true"><button id="sheetToggle" class="btn small ghost" type="button" aria-expanded="false">Expand cue ↑</button><div class="cue-meta-row"><div class="caps">Latest grounded observation · pinned</div><div class="cue-badges"><span id="cueSourceBadge" class="cue-badge" data-source="local">Local rule</span><span id="cueFreshnessBadge" class="cue-badge" data-stale="false">Waiting for speech</span></div></div><h2 id="cueTitle">Waiting for conversation</h2><p id="cueText">Start listening or add a passage. Observations will be based on the words actually captured.</p><div id="cueEvidenceBar" class="cue-evidence-bar"><span id="cueEvidenceText">Evidence: waiting for transcript passages.</span><button id="heroEvidenceBtn" class="btn small ghost" type="button" hidden>Inspect source passage</button></div><div class="coach-controls"><input id="nextLine" class="field" aria-label="Edit suggested next line" maxlength="350" placeholder="Your next line…"><button id="copyNextBtn" class="btn small ghost" type="button">Copy as my line</button><button id="getCueBtn" class="btn small primary" type="button">Get cue now</button><button id="continueThoughtBtn" class="btn small ghost" type="button" disabled>Continue last thought</button></div><p id="coachingNeeds" class="coaching-needs">Needs transcript · local cues work without AI</p><p id="continueThoughtStatus" class="micro" role="status"></p><p class="control-kbd">Space pause cues · C new cue · F follow live · N/P navigate · E evidence · S speaker · W words · 1–9 assign · M Mixed · ? shortcuts</p></section>
+  <section id="aiPanel" class="panel" aria-labelledby="aiTitle">
  <div class="panel-head"><h2 id="aiTitle">Local AI / Big Mac</h2><small id="aiHealth" role="status">Checking connection...</small></div>
  <label class="check"><input id="aiToggle" type="checkbox" disabled><span><strong>Enable Big Mac AI analysis (off by default).</strong> Send captured transcript text and any context you enter through the private local tunnel for additional suggestions. No microphone audio or voiceprints are sent.</span></label>
- <div id="aiReview" class="ai-review" hidden aria-live="polite"><div class="ai-label">AI observation</div><strong id="aiObservation"></strong><div class="ai-line"><span class="ai-label">Evidence · <span id="groundingBadge">EXACT</span></span><p class="ai-quote" id="aiEvidence"></p><button id="aiEvidenceJump" class="btn small ghost evidence-link" type="button" hidden>Review quoted passage</button></div><div class="ai-line"><span class="ai-label">Possible next words</span><p class="ai-text" id="aiNext"></p></div><p class="ai-note" id="aiCaution"></p></div>
+ <div id="aiReview" class="ai-review" hidden aria-live="polite"><div class="row" style="justify-content:space-between;margin-bottom:4px"><span class="ai-label">AI observation · Big Mac</span><span id="aiFreshnessBadge" class="cue-badge" data-source="ai" data-stale="false">Current</span></div><strong id="aiObservation"></strong><div class="ai-line"><span class="ai-label">Evidence · <span id="groundingBadge">EXACT</span> · <span id="aiMatchStatus">Matched</span></span><p class="ai-quote" id="aiEvidence"></p><button id="aiEvidenceJump" class="btn small ghost evidence-link" type="button" hidden>Review quoted passage</button></div><div class="ai-line"><span class="ai-label">Possible next words</span><p class="ai-text" id="aiNext"></p></div><p class="ai-note" id="aiCaution"></p></div>
  <button id="retryLoose" class="btn small ghost" type="button" hidden>Retry with looser grounding</button><p class="ai-note" id="aiMessage">While the Big Mac model is unavailable, instant local language cues remain active.</p>
  <div class="row" style="margin-top:10px"><button id="aiReconnect" class="btn small ghost" type="button">Check connection</button></div>
  <details style="margin-top:12px"><summary class="input-label">Live local Ollama tuning</summary><div class="two">
@@ -213,8 +403,8 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
     <details style="margin-top:10px"><summary class="input-label">Diagnostic panel</summary><div class="row"><button id="loadDiagnostics" type="button" class="btn small ghost">Refresh local timings</button><span id="healthPill" class="micro">Health not queried</span></div><p class="micro">Recent local processing stages · bars scale to the slowest stage shown, not a performance target.</p><div id="workerStageGraph" class="stage-graph" aria-label="Recent local processing stage timings"></div><pre id="diagnosticLog" class="micro" style="max-height:180px;overflow:auto;white-space:pre-wrap"></pre></details>
     <p class="note">AI requests go through the MacBook-to-Big Mac tunnel. Microphone audio and speaker embeddings remain on the MacBook. If Whisper is unavailable, manual transcript entry still works.</p>
  </section>
- <section class="panel" aria-labelledby="signalTitle"><div class="panel-head"><h2 id="signalTitle">What I'm noticing</h2><small id="analysisAge">Ready for conversation</small></div><div id="signals" aria-live="polite" aria-atomic="false"><div class="quiet">I will look for questions, important claims, decisions, action items, clarification requests, and changing priorities. I won't invent context or assign an unidentified speaker.</div></div><section class="action-ledger" aria-labelledby="actionLedgerTitle"><h3 id="actionLedgerTitle">Possible decisions and actions</h3><p class="micro">Local phrase matches only. Review the source passage; these are not verified commitments.</p><div id="actionLedger" aria-live="polite"><div class="quiet">No candidate actions or decisions yet.</div></div></section><details class="custom-rules" id="customRulesPanel"><summary>Owner-defined local cue rules · session only</summary><form id="customRuleForm"><label>Literal phrase to notice<input id="customRulePhrase" class="field" maxlength="80" required placeholder="e.g., outline deadline"></label><label>Observation shown when it appears<textarea id="customRuleObservation" class="field" rows="2" maxlength="220" required placeholder="Describe the words to notice, without diagnosing anyone."></textarea></label><label>Optional next question<input id="customRuleNext" class="field" maxlength="180" placeholder="A short question to consider"></label><label>Priority<select id="customRulePriority" class="field"><option value="1">Low</option><option value="3" selected>Normal</option><option value="5">High</option></select></label><button id="addCustomRule" class="btn small ghost" type="submit">Add local rule</button><p class="micro">Maximum 8 rules. Matching is literal and case-insensitive; rules never execute code or regular expressions.</p></form><div id="customRuleList"><div class="quiet">No owner-defined rules.</div></div></details><p class="lens-meta">Local cue engine · observes language patterns · no hidden model or mind-reading</p><div id="coachingTimeline" class="coaching-history" aria-label="Recent coaching cards"></div></section>
-  <section class="panel" aria-labelledby="anchorTitle"><div class="panel-head"><h2 id="anchorTitle">Conversation anchor</h2><small>Optional question, not a required response</small></div><p id="anchor" style="font-size:14px;color:#d9e0ea">“Which point would be useful to clarify next?”</p><p class="note">You can ignore every suggestion. The people in the room remain the authority on what they mean.</p></section>
+ <section id="signalPanel" class="panel" aria-labelledby="signalTitle"><div class="panel-head"><h2 id="signalTitle">What I'm noticing</h2><small id="analysisAge">Ready for conversation</small></div><div id="signals" aria-live="polite" aria-atomic="false"><div class="quiet">I will look for questions, important claims, decisions, action items, clarification requests, and changing priorities. I won't invent context or assign an unidentified speaker.</div></div><section class="action-ledger" aria-labelledby="actionLedgerTitle"><h3 id="actionLedgerTitle">Possible decisions and actions</h3><p class="micro">Local phrase matches only. Review the source passage; these are not verified commitments.</p><div id="actionLedger" aria-live="polite"><div class="quiet">No candidate actions or decisions yet.</div></div></section><details class="custom-rules" id="customRulesPanel"><summary>Owner-defined local cue rules · session only</summary><form id="customRuleForm"><label>Literal phrase to notice<input id="customRulePhrase" class="field" maxlength="80" required placeholder="e.g., outline deadline"></label><label>Observation shown when it appears<textarea id="customRuleObservation" class="field" rows="2" maxlength="220" required placeholder="Describe the words to notice, without diagnosing anyone."></textarea></label><label>Optional next question<input id="customRuleNext" class="field" maxlength="180" placeholder="A short question to consider"></label><label>Priority<select id="customRulePriority" class="field"><option value="1">Low</option><option value="3" selected>Normal</option><option value="5">High</option></select></label><button id="addCustomRule" class="btn small ghost" type="submit">Add local rule</button><p class="micro">Maximum 8 rules. Matching is literal and case-insensitive; rules never execute code or regular expressions.</p></form><div id="customRuleList"><div class="quiet">No owner-defined rules.</div></div></details><p class="lens-meta">Local cue engine · observes language patterns · no hidden model or mind-reading</p><div id="coachingTimeline" class="coaching-history" aria-label="Recent coaching cards"></div></section>
+  <section id="anchorPanel" class="panel" aria-labelledby="anchorTitle"><div class="panel-head"><h2 id="anchorTitle">Conversation anchor</h2><small>Optional question, not a required response</small></div><p id="anchor" style="font-size:14px;color:#d9e0ea">“Which point would be useful to clarify next?”</p><p class="note">You can ignore every suggestion. The people in the room remain the authority on what they mean.</p></section>
 </div>
 </main>
 <dialog id="editDialog" class="edit-dialog" aria-labelledby="editTitle">
@@ -225,6 +415,24 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
     <p id="editError" class="micro" role="status" aria-live="polite"></p>
     <div class="action-row"><button type="button" class="btn" id="cancelEditBtn">Cancel</button><button type="submit" class="btn primary">Save correction</button></div>
   </form>
+</dialog>
+<dialog id="shortcutDialog" class="edit-dialog" aria-labelledby="shortcutTitle">
+  <div class="panel-head"><h2 id="shortcutTitle">Keyboard shortcuts</h2><button type="button" id="closeShortcutBtn" class="btn small ghost">Close</button></div>
+  <p class="micro">Shortcuts work when focus is not inside a text field, select menu, button, or modal dialog. No unmodified shortcut ever starts microphone recording.</p>
+  <div class="shortcut-grid">
+    <div class="shortcut-item"><span>Pause / resume coaching</span><kbd class="kbd">Space</kbd></div>
+    <div class="shortcut-item"><span>Get cue now</span><kbd class="kbd">C</kbd></div>
+    <div class="shortcut-item"><span>Toggle Follow live / Return</span><kbd class="kbd">F</kbd></div>
+    <div class="shortcut-item"><span>Inspect passage evidence</span><kbd class="kbd">E</kbd></div>
+    <div class="shortcut-item"><span>Next / previous passage</span><span><kbd class="kbd">N</kbd> / <kbd class="kbd">P</kbd></span></div>
+    <div class="shortcut-item"><span>Focus speaker selector</span><kbd class="kbd">S</kbd></div>
+    <div class="shortcut-item"><span>Correct passage words</span><kbd class="kbd">W</kbd></div>
+    <div class="shortcut-item"><span>Assign speaker 1–9</span><kbd class="kbd">1–9</kbd></div>
+    <div class="shortcut-item"><span>Assign Mixed / overlap</span><kbd class="kbd">M</kbd></div>
+    <div class="shortcut-item"><span>Focus manual text entry</span><kbd class="kbd">T</kbd></div>
+    <div class="shortcut-item"><span>Focus Listen / Stop button</span><kbd class="kbd">L</kbd></div>
+    <div class="shortcut-item"><span>Private voice note</span><kbd class="kbd">A</kbd></div>
+  </div>
 </dialog>
 <footer class="foot"><span>Localhost only · No analytics · No automatic saved history</span><span>Keep Brave open and the app in the foreground. Silence-guided audio segments (9s maximum); slower transcription and AI coaching may follow.</span></footer>
 </div>
@@ -240,7 +448,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
    if(mobileQuery.matches){
      if(layoutGrid.classList.contains('mobile-layout'))return;
      layoutGrid.classList.add('mobile-layout');
-     for(const panel of [leftPanels[0],leftPanels[1],rightPanels[0],leftPanels[3],rightPanels[2],rightPanels[1],leftPanels[2],rightPanels[3]])layoutGrid.append(panel);
+     for(const panel of [leftPanels[1],rightPanels[0],leftPanels[3],rightPanels[2],rightPanels[1],leftPanels[2],leftPanels[0],rightPanels[3]])layoutGrid.append(panel);
    }else{
      if(!layoutGrid.classList.contains('mobile-layout'))return;
      for(const panel of leftPanels)leftWrap.append(panel);
@@ -251,7 +459,8 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
  mobileQuery.addEventListener('change',arrangePanels);arrangePanels();
  // A new page session starts without inherited scenario text or browser-restored context.
  $('context').value='';
- const state={turns:[],turnSerial:0,wantsListen:false,paused:false,lastFinalAt:0};
+ const TRANSCRIPT_WARN_LIMIT=240,TRANSCRIPT_MAX_LIMIT=300;
+ const state={turns:[],turnSerial:0,wantsListen:false,paused:false,lastFinalAt:0,gaps:[],evictedTurnsCount:0,statusKind:'off',statusCode:'NOT LISTENING',captureConflictPending:false};
  function renderContextPin(){const context=$('context').value.trim(),note=$('privateNote').value.trim();$('contextPinItem').hidden=!context;$('privatePinItem').hidden=!note;$('contextPinText').textContent=context.slice(0,500)+(context.length>500?'…':'');$('privatePinText').textContent=note.slice(0,500)+(note.length>500?'…':'');$('contextPin').hidden=!context&&!note}
  const voiceNotes={recording:false,recorder:null,stream:null,timer:null,bytes:0,chunks:[],items:[],passageId:null};
  const captureTabOwner=(()=>{try{let value=sessionStorage.getItem('lens-capture-tab-owner');if(!value){value='tab-'+Array.from(crypto.getRandomValues(new Uint8Array(4)),x=>x.toString(16).padStart(2,'0')).join('');sessionStorage.setItem('lens-capture-tab-owner',value)}return value}catch(e){return 'tab-00000000'}})();
@@ -269,9 +478,9 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
  const goals={observe:['notice what was actually said without assuming a topic or objective.','“Which point would be useful to clarify next?”'],understand:['clarify terms, questions, or differing interpretations.','“What does that mean in this conversation?”'],resolve:['identify decisions, owners, and practical next steps.','“What decision or next step, if any, was agreed?”'],repair:['check for misunderstandings and possible repair openings.','“What would help clarify what was meant?”'],boundary:['make requests, requirements, and preferences explicit.','“Is this a requirement, a preference, or a proposal?”']};
   const where={me:'Me',other:'Other',shared:'Unassigned',mixed:'Mixed'};
  const speakerLabel=k=>typeof k==='string'&&k.startsWith('name:')?k.slice(5):where[k]||'Unassigned';
- const speaker={ready:false,profiles:[],mergeSuggestions:[],detected:new Set(),enrolling:false,active:null,controller:null,stream:null,recorder:null,timer:null,qualityTimer:null,qualityContext:null,qualityLevels:[],generation:0,ramBytes:0,lockName:'',lockRemaining:0};
+ const speaker={ready:false,profiles:[],mergeSuggestions:[],detected:new Set(),enrolling:false,active:null,controller:null,stream:null,recorder:null,timer:null,qualityTimer:null,qualityContext:null,qualityLevels:[],generation:0,ramBytes:0,lockName:'',lockRemaining:0,lastEnrollTarget:'',enrollState:'idle',enrollError:''};
  const talkStats={byName:new Map(),attributedSeconds:0,mixedSeconds:0,overlapSeconds:0,unknownSeconds:0,unmeasuredWindows:0,mixedWindows:0,overlapWindows:0,unknownWindows:0};
-  const ui={selectedId:null,cues:[],lastCue:'',bookmarks:new Set(),highlights:new Set()};
+  const ui={selectedId:null,cues:[],lastCue:'',bookmarks:new Set(),highlights:new Set(),followLive:true,unseenCount:0,programmaticScroll:false,bulkSelectedIds:new Set(),priorScrollTop:null,lastEvidenceTrigger:null,lastEditTrigger:null,heroSourceId:null,heroKind:'local'};
   const savedSetting=(key,fallback)=>{try{return localStorage.getItem('lens-'+key)||fallback}catch(e){return fallback}};
   const setSetting=(key,value)=>{try{localStorage.setItem('lens-'+key,value)}catch(e){}};
 
@@ -282,15 +491,268 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
  // Concatenated-text matches with no single source remain unattributed.
  let signalEvidence=null;
  const has=(s,re)=>{const found=re.test(s);signalEvidence=found?state.turns.slice(-12).reverse().find(t=>re.test(t.text))||null:null;return found};
- function setStatus(name,msg){$('status').className='status'+(name==='live'?' live':name==='paused'?' paused':'');$('statusText').textContent=msg}
+ function setStatus(name,msg){state.statusKind=name;state.statusCode=msg;$('status').className='status'+(name==='live'?' live':name==='paused'?' paused':'');$('statusText').textContent=msg;updateSessionStatusBar();renderEngineRecovery()}
  function setMsg(msg){$('micMessage').textContent=msg}
- function syncButtons(){ $('enrollBtn').disabled=!speaker.enrolling&&(state.wantsListen||!speaker.ready||!$('enrollConsent').checked||!/^([A-Za-z][A-Za-z0-9 '-]{0,29})$/.test($('enrollName').value.trim())); $('enrollBtn').textContent=speaker.enrolling?'Cancel voice sample':'Record a voice sample ('+$('enrollDuration').value+'s)'; $('startBtn').disabled=!$('consent').checked||state.wantsListen||!stt.ready; $('stopBtn').disabled=!state.wantsListen; $('pauseBtn').disabled=state.turns.length===0 && !state.wantsListen; $('pauseBtn').textContent=state.paused?'Resume cues':'Pause cues';$('switchWhisperModel').disabled=state.wantsListen||!ai.token||!$('whisperModel').value||$('whisperModel').selectedOptions[0]?.dataset.active==='true';$('counter').textContent=state.turns.length+' passage'+(state.turns.length===1?'':'s') }
+ function updateSessionStatusBar(){
+   const micBadge=$('micStateBadge'),coachBadge=$('coachingStateBadge'),readyBadge=$('readinessSummaryBadge'),qBadge=$('topQueueBadge');
+   if(micBadge){
+     if(state.wantsListen){micBadge.textContent='Mic: Listening ('+($('pcmMode').checked&&stt.pcmState?'PCM':'Live')+')';micBadge.dataset.state='active'}
+     else if(stt.stopping||/STOP DRAIN/i.test(state.statusCode)){micBadge.textContent='Mic: Stop drain';micBadge.dataset.state='paused'}
+     else if(/ERROR|FAILED|DISCONNECTED/i.test(state.statusCode)){micBadge.textContent='Mic: '+state.statusCode;micBadge.dataset.state='error'}
+     else{micBadge.textContent='Mic: Idle';micBadge.dataset.state='idle'}
+   }
+   if($('headerStopBtn'))$('headerStopBtn').hidden=!state.wantsListen;
+   if(coachBadge){
+     if(state.paused){coachBadge.textContent='Coaching: Suggestions paused';coachBadge.dataset.state='paused'}
+     else if(ai.enabled&&ai.ready){coachBadge.textContent='Coaching: Local + Big Mac AI';coachBadge.dataset.state='active'}
+     else{coachBadge.textContent='Coaching: Local rules active';coachBadge.dataset.state='active'}
+   }
+   if(readyBadge){
+     readyBadge.textContent='Whisper: '+(stt.ready?'Ready':'Offline')+' · Voice ID: '+(speaker.ready?'Ready':'Offline')+' · AI: '+(ai.ready?(ai.enabled?'On':'Ready (off)'):'Offline');
+     readyBadge.dataset.state=!ai.token?'error':(stt.ready?'ready':'warning');
+   }
+   if(qBadge){
+     const pending=stt.queue.length+(stt.sending?1:0);
+     qBadge.textContent='Queue: '+(pending?pending+' active':'Idle')+(stt.dropped?' · '+stt.dropped+' skipped':'');
+     qBadge.dataset.state=stt.dropped>0?'warning':(pending>0?'active':'idle');
+   }
+   const fallbackBar=$('manualFallbackBar'),fallbackText=$('manualFallbackText');
+   if(fallbackBar&&fallbackText){
+     const degraded=!stt.ready||/ERROR|FAILED|DISCONNECTED/i.test(state.statusCode);
+     fallbackBar.dataset.highlight=String(degraded);
+     fallbackText.textContent=degraded?'Manual fallback active: type lines below with speaker labels. Coaching, corrections, and exports work without microphone audio.':'Manual entry is always available alongside or instead of microphone capture.';
+   }
+ }
+ function renderEngineRecovery(){
+   const banner=$('engineRecoveryBanner'),title=$('recoveryTitle'),detail=$('recoveryDetail'),retryServer=$('recoveryRetryServerBtn'),retryMic=$('recoveryRetryMicBtn'),takeover=$('recoveryTakeoverBtn');
+   if(!banner)return;
+   const spkNote=$('speakerRecoveryNote');
+   if(spkNote)spkNote.hidden=!ai.token||speaker.ready;
+   retryMic.hidden=true;takeover.hidden=true;retryServer.hidden=false;
+   if(state.captureConflictPending){
+     banner.hidden=false;banner.dataset.severity='warning';
+     title.textContent='Capture conflict: another tab holds the microphone session';
+     detail.textContent='Only one Conversation Lens tab can record at a time. Stop the other tab or take over capture here (which invalidates the other tab’s lease).';
+     takeover.hidden=false;return;
+   }
+   if(state.statusCode==='MIC PERMISSION ERROR'){
+     banner.hidden=false;banner.dataset.severity='error';
+     title.textContent='Microphone permission denied';
+     detail.textContent='Allow microphone access for this localhost page in Brave site settings and macOS Privacy & Security, then retry. Manual entry works immediately.';
+     retryMic.hidden=false;return;
+   }
+   if(['MIC DISCONNECTED','AUDIO DEVICE FAILED','MIC FORMAT FAILED','MIC START FAILED','CAPTURE SETUP ERROR','LOCAL TRANSCRIPTION ERROR'].includes(state.statusCode)){
+     banner.hidden=false;banner.dataset.severity='error';
+     title.textContent='Capture or transcription interrupted ('+state.statusCode+')';
+     detail.textContent=$('micMessage').textContent||'Check the microphone device and local server connection, then retry or continue with manual entry.';
+     retryMic.hidden=!stt.ready;return;
+   }
+   if(ai.token&&!stt.ready){
+     banner.hidden=false;banner.dataset.severity='warning';
+     title.textContent='Local Whisper transcription is unavailable';
+     detail.textContent=(stt.reason||'Whisper CLI or model not ready')+'. Browser cloud speech services are never used. Use manual transcript entry or recheck the local server.';
+     return;
+   }
+   if(stt.dropped>0||stt.queue.length>=2){
+     banner.hidden=false;banner.dataset.severity='warning';
+     title.textContent=stt.dropped>0?'Missing audio coverage recorded ('+stt.dropped+' window'+(stt.dropped===1?'':'s')+' skipped)':'Local transcription backlog ('+stt.queue.length+' queued)';
+     detail.textContent=stt.dropped>0?'Skipped recording windows are marked chronologically in the transcript. Speech in skipped windows was not transcribed; no words were invented.':'Local Whisper is catching up with queued recording windows.';
+     retryServer.hidden=true;return;
+   }
+   banner.hidden=true;
+ }
+ function updateEnrollmentStepper(){
+   const badge=$('enrollStageBadge'),step1=$('enrollStep1'),step2=$('enrollStep2'),s1Text=$('enrollStep1Text'),s2Text=$('enrollStep2Text'),detail=$('enrollStageDetail'),label=$('enrollTargetLabel');
+   if(!badge)return;
+   const typed=$('enrollName').value.trim();
+   const targetName=typed||speaker.lastEnrollTarget||(speaker.profiles.at(-1)?.name||'');
+   const prof=targetName?speaker.profiles.find(p=>p.name.toLowerCase()===targetName.toLowerCase()):null;
+   const samples=prof?(prof.samples||0):0;
+   const active=prof?!!prof.active:false;
+   label.textContent=targetName?('Two-sample enrollment · '+targetName):'Two-sample enrollment progress';
+   if(speaker.enrolling){
+     const num=Math.min(2,samples+1);
+     badge.textContent='Recording sample '+num+' of 2';badge.dataset.state='active';
+     step1.dataset.state=samples>=1?'done':'active';s1Text.textContent=samples>=1?'Sample 1 saved in RAM':'Recording ('+$('enrollDuration').value+'s)…';
+     step2.dataset.state=samples>=1?'active':'pending';s2Text.textContent=samples>=1?'Recording ('+$('enrollDuration').value+'s)…':'Waiting for Sample 1';
+     detail.textContent='Speak naturally for '+$('enrollDuration').value+' seconds. Only '+targetName+' should speak.';
+     return;
+   }
+   if(prof&&active&&samples>=2){
+     badge.textContent='Ready · '+samples+'/2 samples';badge.dataset.state='ready';
+     step1.dataset.state='done';s1Text.textContent='Sample 1 saved in RAM';
+     step2.dataset.state='done';s2Text.textContent='Sample 2 saved · active';
+     detail.textContent=prof.name+' has '+samples+' voice samples in server RAM. Tentative acoustic matching is active for this session.';
+     return;
+   }
+   if(prof&&samples===1){
+     badge.textContent='1 of 2 samples · needs 2nd';badge.dataset.state='warning';
+     step1.dataset.state='done';s1Text.textContent='Sample 1 saved in RAM';
+     step2.dataset.state='active';s2Text.textContent='Record 1 more distinct sample';
+     detail.textContent='First sample complete for '+prof.name+'. Re-check consent and record a second separate voice sample (7s or 10s) to activate matching.';
+     return;
+   }
+   if(speaker.enrollState==='canceled'){
+     badge.textContent='Canceled ('+samples+'/2)';badge.dataset.state='warning';
+     step1.dataset.state=samples>=1?'done':'pending';s1Text.textContent=samples>=1?'Sample 1 saved in RAM':'Canceled';
+     step2.dataset.state='pending';s2Text.textContent='Not recorded';
+     detail.textContent='Voice sample recording was canceled; no new voiceprint was saved.';
+     return;
+   }
+   if(speaker.enrollState==='error'){
+     badge.textContent='Retry needed ('+samples+'/2)';badge.dataset.state='error';
+     step1.dataset.state=samples>=1?'done':'pending';
+     step2.dataset.state=samples>=1?'active':'pending';
+     detail.textContent=speaker.enrollError||'Enrollment sample was rejected. Check microphone signal or record a distinct voice sample.';
+     return;
+   }
+   badge.textContent='0 of 2 samples';badge.dataset.state='idle';
+   step1.dataset.state='pending';s1Text.textContent='Not recorded yet';
+   step2.dataset.state='pending';s2Text.textContent='Requires Sample 1 first';
+   detail.textContent='Enter a speaker name, confirm consent, and record two separate voice samples to enable tentative acoustic matching.';
+ }
+ function updateFollowLiveBar(){
+   const bar=$('followLiveBar'),status=$('followLiveStatus'),followBtn=$('followLiveBtn'),retBtn=$('returnToLiveBtn');
+   if(!bar)return;
+   bar.dataset.paused=String(!ui.followLive);
+   followBtn.setAttribute('aria-pressed',String(ui.followLive));
+   followBtn.textContent=ui.followLive?'Follow live: ON':'Follow live: PAUSED';
+   if(ui.followLive){
+     status.textContent='Auto-following newest passages';
+     retBtn.hidden=true;
+   }else{
+     status.textContent=ui.unseenCount>0?(ui.unseenCount+' newer passage'+(ui.unseenCount===1?'':'s')+' below current scroll position'):'Auto-follow paused while reviewing earlier history';
+     retBtn.hidden=false;
+     retBtn.textContent=ui.unseenCount>0?('↓ '+ui.unseenCount+' newer passage'+(ui.unseenCount===1?'':'s')+' · Return to live'):'Return to live';
+   }
+ }
+ function updateCapacityBanner(){
+   const banner=$('capacityBanner'),text=$('capacityBannerText');
+   if(!banner)return;
+   if(state.turns.length<TRANSCRIPT_WARN_LIMIT&&state.evictedTurnsCount===0){banner.hidden=true;return}
+   banner.hidden=false;
+   const remaining=Math.max(0,TRANSCRIPT_MAX_LIMIT-state.turns.length);
+   text.textContent=state.evictedTurnsCount>0
+     ?('In-memory transcript is at capacity ('+state.turns.length+'/'+TRANSCRIPT_MAX_LIMIT+'). '+state.evictedTurnsCount+' oldest passage'+(state.evictedTurnsCount===1?' was':'s were')+' rotated out of memory. Export or copy now to preserve history.')
+     :('Approaching in-memory transcript limit: '+state.turns.length+' of '+TRANSCRIPT_MAX_LIMIT+' passages used ('+remaining+' remaining before oldest passages rotate out). Copy or export to preserve full history.');
+ }
+ function updateBulkBar(){
+   const bar=$('bulkCorrectionBar'),countEl=$('bulkSelectedCount'),select=$('bulkSpeakerSelect');
+   if(!bar)return;
+   for(const id of [...ui.bulkSelectedIds])if(!state.turns.some(t=>t.id===id))ui.bulkSelectedIds.delete(id);
+   const count=ui.bulkSelectedIds.size;
+   bar.hidden=count===0;
+   countEl.textContent=count+' passage'+(count===1?'':'s')+' selected for speaker correction';
+   if(select){
+     const prior=select.value;select.replaceChildren();
+     for(const [val,lbl] of [['shared','Unassigned'],['me','Me'],['other','Other'],['mixed','Mixed'],...speaker.profiles.filter(p=>p.samples>0).map(p=>['name:'+p.name,p.name+' (manual)'])]){
+       const o=document.createElement('option');o.value=val;o.textContent=lbl;select.append(o);
+     }
+     if([...select.options].some(o=>o.value===prior))select.value=prior;
+   }
+ }
+ function updateObservatoryStrip(){
+   const cad=$('obsCadenceValue'),cert=$('obsCertaintyValue'),sig=$('obsSignalsValue'),ribbon=$('obsTurnRibbon');
+   if(!cad||!cert||!sig||!ribbon)return;
+   let transitions=0,prevSpk=null,tentative=0,provisionalOrManual=0,abstained=0,questions=0,commitments=0;
+   for(const t of state.turns){
+     if(prevSpk!==null&&prevSpk!==t.speaker)transitions++;
+     prevSpk=t.speaker;
+     const meta=speakerUncertaintyMeta(t);
+     if(meta.cls==='tentative')tentative++;
+     else if(meta.cls==='mixed'||meta.cls==='unknown'||meta.cls==='unassigned')abstained++;
+     else provisionalOrManual++;
+     if(/\?/.test(t.text))questions++;
+     if(/\b(i will|i'll|we will|we'll|i can|let's|by (monday|tuesday|wednesday|thursday|friday|tomorrow|noon|afternoon|evening)|next step|agreed)\b/i.test(t.text))commitments++;
+   }
+   const gaps=state.gaps.reduce((n,g)=>n+g.count,0);
+   cad.textContent=state.turns.length+' passage'+(state.turns.length===1?'':'s')+' · '+transitions+' speaker shift'+(transitions===1?'':'s')+(gaps?' · '+gaps+' gap window'+(gaps===1?'':'s'):'');
+   cert.textContent=tentative+' tentative · '+provisionalOrManual+' provisional/manual · '+abstained+' abstained';
+   const groundedCues=ui.cues.filter(c=>c.sourceId!=null).length;
+   sig.textContent=questions+' question'+(questions===1?'':'s')+' · '+commitments+' commitment'+(commitments===1?'':'s')+' · '+groundedCues+' grounded cue'+(groundedCues===1?'':'s');
+   ribbon.replaceChildren();
+   const recent=state.turns.slice(-24);
+   if(!recent.length){
+     const empty=document.createElement('span');empty.className='micro';empty.textContent='No passage nodes yet — capture speech or add a line to populate the live turn ribbon.';ribbon.append(empty);return;
+   }
+   for(const t of recent){
+     const meta=speakerUncertaintyMeta(t);
+     const btn=document.createElement('button');btn.type='button';btn.className='obs-node '+meta.cls;
+     const shortLbl=speakerLabel(t.speaker).slice(0,10);
+     btn.textContent='#'+t.id+' '+shortLbl+(/\?/.test(t.text)?' ?':'');
+     btn.setAttribute('aria-label','Inspect passage '+t.id+' by '+speakerLabel(t.speaker)+' ('+meta.text+')');
+     btn.addEventListener('click',ev=>{ui.lastEvidenceTrigger=ev.currentTarget;jumpToTurn(t.id);openEvidence(t.id)});
+     ribbon.append(btn);
+   }
+ }
+ function updateSessionReviewSummary(){
+   updateObservatoryStrip();
+   const pCount=$('summaryPassageCount'),sOverview=$('summarySpeakerOverview'),mList=$('summaryMarkedList'),cCount=$('summaryCoachingCount');
+   if(!pCount)return;
+   const gapWindows=state.gaps.reduce((n,g)=>n+g.count,0);
+   pCount.textContent=state.turns.length+' passage'+(state.turns.length===1?'':'s')+(state.evictedTurnsCount?' (+'+state.evictedTurnsCount+' rotated out)':'')+' · '+gapWindows+' skipped window'+(gapWindows===1?'':'s');
+   if(!state.turns.length){sOverview.textContent='No speakers attributed yet';}
+   else{
+     const bySpk=new Map();let uncertain=0;
+     for(const t of state.turns){
+       const lbl=speakerLabel(t.speaker);bySpk.set(lbl,(bySpk.get(lbl)||0)+1);
+       if(t.speaker==='mixed'||t.speaker==='shared'||/provisional|not verified|Unknown/i.test(t.voiceNote))uncertain++;
+     }
+     sOverview.textContent=[...bySpk.entries()].map(([k,v])=>k+': '+v).join(' · ')+' ('+uncertain+' uncertain/unverified)';
+   }
+   mList.textContent=ui.bookmarks.size+' bookmarked · '+ui.highlights.size+' highlighted';
+   const actionItems=$('actionLedger')?$('actionLedger').querySelectorAll('.action-item').length:0;
+   cCount.textContent=ui.cues.length+' coaching card'+(ui.cues.length===1?'':'s')+' · '+actionItems+' candidate decision/action'+(actionItems===1?'':'s');
+ }
+ function updateFreshnessBadges(){
+   const srcBadge=$('cueSourceBadge'),freshBadge=$('cueFreshnessBadge'),evText=$('cueEvidenceText'),evBtn=$('heroEvidenceBtn');
+   if(srcBadge&&freshBadge){
+     if(!state.turns.length){
+       srcBadge.textContent='Local rule';srcBadge.dataset.source='local';
+       freshBadge.textContent='Waiting for speech';freshBadge.dataset.stale='false';
+       if(evText)evText.textContent='Evidence: waiting for transcript passages.';
+       if(evBtn)evBtn.hidden=true;
+     }else{
+       if(ui.heroKind==='ai'&&ai.lastResult){
+         srcBadge.textContent='Big Mac AI';srcBadge.dataset.source='ai';
+         const newer=Math.max(0,state.turns.length-ai.lastResultTurns);
+         freshBadge.textContent=newer>0?('Stale · covers '+ai.lastResultTurns+'/'+state.turns.length+' (+'+newer+' newer)'):('Current · passage '+ai.lastResultTurns+'/'+state.turns.length);
+         freshBadge.dataset.stale=String(newer>0);
+       }else{
+         srcBadge.textContent='Local rule';srcBadge.dataset.source='local';
+         freshBadge.textContent=state.paused?'Paused':('Current · '+state.turns.length+' passage'+(state.turns.length===1?'':'s'));
+         freshBadge.dataset.stale=String(state.paused);
+       }
+       const srcTurn=ui.heroSourceId?state.turns.find(t=>t.id===ui.heroSourceId):null;
+       if(evText&&evBtn){
+         if(srcTurn){
+           evText.textContent='Grounded in passage #'+srcTurn.id+' ('+speakerLabel(srcTurn.speaker)+'): “'+srcTurn.text.slice(0,85)+(srcTurn.text.length>85?'…”':'”');
+           evBtn.hidden=false;evBtn.textContent='Inspect passage '+srcTurn.id;
+           evBtn.onclick=()=>{ui.lastEvidenceTrigger=evBtn;openEvidence(srcTurn.id)};
+         }else{
+           evText.textContent='Grounded in recent conversation pattern (no single-passage quote).';
+           evBtn.hidden=true;
+         }
+       }
+     }
+   }
+   const aiRev=$('aiReview'),aiFresh=$('aiFreshnessBadge');
+   if(aiRev&&aiFresh&&ai.lastResult&&!aiRev.hidden){
+     const newer=Math.max(0,state.turns.length-ai.lastResultTurns);
+     const stale=newer>0;
+     aiRev.dataset.stale=String(stale);aiFresh.dataset.stale=String(stale);
+     aiFresh.textContent=stale?('STALE · covers passage '+ai.lastResultTurns+' of '+state.turns.length+' (+'+newer+' newer)'):('Current · passage '+ai.lastResultTurns+' of '+state.turns.length);
+   }
+ }
+ function syncButtons(){ $('enrollBtn').disabled=!speaker.enrolling&&(state.wantsListen||!speaker.ready||!$('enrollConsent').checked||!/^([A-Za-z][A-Za-z0-9 '-]{0,29})$/.test($('enrollName').value.trim())); $('enrollBtn').textContent=speaker.enrolling?'Cancel voice sample':'Record a voice sample ('+$('enrollDuration').value+'s)'; $('startBtn').disabled=!$('consent').checked||state.wantsListen||!stt.ready; $('stopBtn').disabled=!state.wantsListen; $('pauseBtn').disabled=state.turns.length===0 && !state.wantsListen; $('pauseBtn').textContent=state.paused?'Resume cues':'Pause cues';$('switchWhisperModel').disabled=state.wantsListen||!ai.token||!$('whisperModel').value||$('whisperModel').selectedOptions[0]?.dataset.active==='true';$('counter').textContent=state.turns.length+' passage'+(state.turns.length===1?'':'s');if($('sampleBtn'))$('sampleBtn').dataset.hasTurns=String(state.turns.length>0);updateSessionStatusBar();renderEngineRecovery();updateEnrollmentStepper();updateCapacityBanner();updateSessionReviewSummary();updateFreshnessBadges() }
   function addTurn(text,speakerId='shared',origin='typed',voiceNote='',evidence=null,manualSpeaker=false){
     const t=clean(text);if(!t)return;
     let safe=where[speakerId]?speakerId:'shared';
     if(typeof speakerId==='string'&&speakerId.startsWith('name:')&&((origin==='speech'&&/introduction|acoustic match|voice candidate/i.test(voiceNote))||speaker.profiles.some(x=>x.name===speakerId.slice(5)&&x.samples>0)))safe=speakerId;
     const turn={id:++state.turnSerial,text:t,speaker:safe,time:now(),origin,edited:false,manualSpeaker:manualSpeaker===true,voiceNote:clean(voiceNote).slice(0,170),evidence};
-    state.turns.push(turn);if(state.turns.length>300)state.turns.splice(0,state.turns.length-300);
+    state.turns.push(turn);
+    if(state.turns.length>TRANSCRIPT_MAX_LIMIT){const overflow=state.turns.length-TRANSCRIPT_MAX_LIMIT;state.evictedTurnsCount+=overflow;state.turns.splice(0,overflow)}
+    if(!ui.followLive)ui.unseenCount++;
     renderTranscript();scheduleAnalysis();scheduleAI();syncButtons();
   }
  function renderTalkTime(){
@@ -308,29 +770,70 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
    }
    talkStats.byName.set(label,(talkStats.byName.get(label)||0)+seconds);talkStats.attributedSeconds+=seconds;renderTalkTime();
  }
+  function speakerUncertaintyMeta(t){
+    if(t.speaker==='mixed')return {cls:'mixed',text:'Overlap / Mixed · abstained'};
+    if(t.manualSpeaker&&/Owner-pinned/i.test(t.voiceNote))return {cls:'pinned',text:'Pinned label · unverified'};
+    if(t.manualSpeaker)return {cls:'manual',text:'Manual assignment'};
+    if(t.speaker.startsWith('name:')&&/Self-introduction|provisional|heard-only|not verified/i.test(t.voiceNote))return {cls:'provisional',text:'Provisional intro · unverified'};
+    if(t.speaker.startsWith('name:'))return {cls:'tentative',text:'Tentative acoustic match'};
+    if(t.origin==='speech'&&/Unknown|No match|low|below|short|veto/i.test(t.voiceNote))return {cls:'unknown',text:'Unknown voice · abstained'};
+    if(t.speaker==='shared')return {cls:'unassigned',text:'Unassigned fallback'};
+    return {cls:'manual',text:t.origin==='speech'?'Fallback label':'Manual entry'};
+  }
+  function createGapNode(gap){
+    const div=document.createElement('div');div.className='transcript-gap';div.setAttribute('role','note');div.dataset.afterTurn=String(gap.afterTurnId);
+    const strong=document.createElement('strong');strong.textContent='Missing audio coverage · '+gap.count+' recording window'+(gap.count===1?'':'s')+' skipped ('+gap.reason+')';
+    const span=document.createElement('span');span.textContent=gap.time+' — Speech during this gap was not transcribed. No replacement words were invented.';
+    div.append(strong,span);return div;
+  }
   function renderTranscript(){
-    const area=$('transcript');const wasNearEnd=area.scrollHeight-area.scrollTop-area.clientHeight<40;
+    const area=$('transcript');
+    const prevScrollTop=area.scrollTop;
+    const activeEl=document.activeElement;
+    const hadFocusInTranscript=area.contains(activeEl);
+    const focusedTurnId=hadFocusInTranscript?(activeEl.closest?.('.turn')?.id||null):null;
+    const focusedAria=hadFocusInTranscript?(activeEl.getAttribute?.('aria-label')||null):null;
+    ui.programmaticScroll=true;
     area.replaceChildren();
     const query=$('filterKeyword').value.trim().toLowerCase(), speakerFilter=$('filterSpeaker').value;
+    const unfiltered=speakerFilter==='all'&&!query&&!$('filterCoached').checked;
     const turns=state.turns.filter(t=>(speakerFilter==='all'||t.speaker===speakerFilter)&&
       (!query||t.text.toLowerCase().includes(query))&&(!$('filterCoached').checked||ui.cues.some(c=>c.sourceId===t.id)));
-    if(!turns.length){
+    if(!turns.length&&(!unfiltered||!state.gaps.length)){
       const e=document.createElement('div');e.className='empty';
       const b=document.createElement('b');b.textContent=state.turns.length?'No matching passages.':'No conversation captured yet.';
       e.append(b,document.createTextNode(state.turns.length?'Change the transcript filter.':'Start listening or add a line manually.'));
-      area.append(e);return;
+      area.append(e);updateFollowLiveBar();updateCapacityBanner();updateBulkBar();updateSessionReviewSummary();return;
     }
     const frag=document.createDocumentFragment();
+    if(state.evictedTurnsCount>0){
+      const marker=document.createElement('div');marker.className='transcript-retention-marker';marker.setAttribute('role','note');
+      marker.textContent='Earlier history rotated out: '+state.evictedTurnsCount+' oldest passage'+(state.evictedTurnsCount===1?'':'s')+' exceeded the '+TRANSCRIPT_MAX_LIMIT+'-passage in-memory retention limit.';
+      frag.append(marker);
+    }
+    const firstTurnId=state.turns[0]?.id||Infinity;
+    if(unfiltered){
+      for(const gap of state.gaps){if(gap.afterTurnId===0||gap.afterTurnId<firstTurnId)frag.append(createGapNode(gap))}
+    }
     for(const t of turns){
       const row=document.createElement('div');row.className='turn'+(ui.selectedId===t.id?' selected':'')+
         (ui.bookmarks.has(t.id)?' bookmarked':'')+(ui.highlights.has(t.id)?' highlighted':'');
       row.id='passage-'+t.id;row.tabIndex=-1;row.addEventListener('click',()=>selectTurn(t.id));
       const meta=document.createElement('div');meta.className='turn-meta';
+      const selectWrap=document.createElement('span');selectWrap.className='turn-select-wrap';
+      const bulkCheck=document.createElement('input');bulkCheck.type='checkbox';bulkCheck.className='turn-bulk-check';
+      bulkCheck.checked=ui.bulkSelectedIds.has(t.id);
+      bulkCheck.setAttribute('aria-label','Select passage '+t.id+' for bulk speaker correction');
+      bulkCheck.addEventListener('click',ev=>ev.stopPropagation());
+      bulkCheck.addEventListener('change',()=>{if(bulkCheck.checked)ui.bulkSelectedIds.add(t.id);else ui.bulkSelectedIds.delete(t.id);updateBulkBar()});
       const who=document.createElement('span');who.className='who '+(t.speaker==='other'?'other':t.speaker==='shared'?'shared':t.speaker==='mixed'?'mixed':t.speaker.startsWith('name:')?'named':'');
       who.textContent=speakerLabel(t.speaker)+(t.speaker.startsWith('name:')&&/provisional|heard-only|not verified/i.test(t.voiceNote)?' ?':'');
+      const uMeta=speakerUncertaintyMeta(t);
+      const uBadge=document.createElement('span');uBadge.className='who-badge '+uMeta.cls;uBadge.textContent=uMeta.text;
+      selectWrap.append(bulkCheck,who,uBadge);
       const time=document.createElement('span');time.textContent=t.time+(t.origin==='speech'?' · mic':'')+(t.edited?' · words corrected':'');
-      meta.append(who,time);
-      const correction=document.createElement('select');correction.className='field';
+      meta.append(selectWrap,time);
+      const correction=document.createElement('select');correction.className='field turn-speaker';
       correction.setAttribute('aria-label','Correct speaker for this passage');
       for(const [value,label] of [['shared','Unassigned'],['me','Me'],['other','Other'],['mixed','Mixed'],...speaker.profiles.filter(p=>p.samples>0).map(p=>['name:'+p.name,p.name+' (manual)'])]){
         const opt=document.createElement('option');opt.value=value;opt.textContent=label;opt.selected=t.speaker===value;correction.append(opt);
@@ -339,16 +842,34 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
       meta.append(correction);
       const actions=document.createElement('div');actions.className='turn-actions';
       const action=(text,label,cb)=>{const b=document.createElement('button');b.type='button';b.className='btn small ghost';b.textContent=text;b.setAttribute('aria-label',label);b.addEventListener('click',cb);actions.append(b)};
-      action('Evidence','Evidence for passage '+t.id,()=>openEvidence(t.id));
+      action('Evidence','Evidence for passage '+t.id,ev=>{ui.lastEvidenceTrigger=ev.currentTarget;openEvidence(t.id)});
       action(ui.bookmarks.has(t.id)?'★':'☆','Bookmark passage '+t.id,()=>{ui.bookmarks.has(t.id)?ui.bookmarks.delete(t.id):ui.bookmarks.add(t.id);renderTranscript()});
       action(ui.highlights.has(t.id)?'Unmark':'Highlight','Highlight passage '+t.id,()=>{ui.highlights.has(t.id)?ui.highlights.delete(t.id):ui.highlights.add(t.id);renderTranscript()});
-      action('Correct words','Correct words in passage '+t.id,()=>editTurn(t.id));
+      action('Correct words','Correct words in passage '+t.id,ev=>{ui.lastEditTrigger=ev.currentTarget;editTurn(t.id)});
       meta.append(actions);
       const body=document.createElement('p');body.className='turn-text';body.textContent=t.text;row.append(meta,body);
       if(t.voiceNote){const note=document.createElement('small');note.className='voice-note';note.textContent=t.voiceNote;row.append(note)}
       frag.append(row);
+      if(unfiltered){
+        for(const gap of state.gaps){if(gap.afterTurnId===t.id)frag.append(createGapNode(gap))}
+      }
     }
-    area.append(frag);if(wasNearEnd&&speakerFilter==='all'&&!query)area.scrollTop=area.scrollHeight;
+    area.append(frag);
+    if(ui.followLive&&speakerFilter==='all'&&!query){
+      ui.programmaticScroll=true;area.scrollTop=area.scrollHeight;ui.unseenCount=0;
+      setTimeout(()=>{ui.programmaticScroll=false},30);
+    }else{
+      ui.programmaticScroll=true;area.scrollTop=prevScrollTop;
+      setTimeout(()=>{ui.programmaticScroll=false},30);
+    }
+    if(focusedTurnId){
+      const restored=document.getElementById(focusedTurnId);
+      if(restored){
+        const ctrl=focusedAria?restored.querySelector('[aria-label="'+CSS.escape(focusedAria)+'"]'):restored;
+        if(ctrl)try{ctrl.focus({preventScroll:true})}catch(e){}
+      }
+    }
+    updateFollowLiveBar();updateCapacityBanner();updateBulkBar();updateSessionReviewSummary();updateFreshnessBadges();
   }
   function selectTurn(id){ui.selectedId=id;for(const row of $('transcript').querySelectorAll('.turn'))row.classList.toggle('selected',row.id==='passage-'+id)}
   function assignTurn(id,key){
@@ -356,9 +877,27 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
     t.speaker=key;t.manualSpeaker=true;t.voiceNote='Manually assigned by owner; acoustic identity not verified';
     selectTurn(id);invalidateAI(true);renderTranscript();scheduleAnalysis();scheduleAI();syncButtons();
   }
+  function applyBulkSpeakerCorrection(){
+    const key=$('bulkSpeakerSelect')?.value;
+    if(!key||!ui.bulkSelectedIds.size||!(where[key]||(key.startsWith('name:')&&speaker.profiles.some(p=>key==='name:'+p.name))))return;
+    let updated=0;
+    for(const t of state.turns){
+      if(ui.bulkSelectedIds.has(t.id)){
+        t.speaker=key;t.manualSpeaker=true;t.voiceNote='Manually assigned by owner (scoped bulk update); acoustic identity not verified';
+        updated++;
+      }
+    }
+    ui.bulkSelectedIds.clear();
+    if(updated>0){invalidateAI(true);renderTranscript();scheduleAnalysis();scheduleAI();syncButtons();setMsg('Updated speaker attribution to '+speakerLabel(key)+' for '+updated+' selected passage'+(updated===1?'':'s')+'. Voice profiles were not altered.')}
+  }
   function openEvidence(id,quote=''){
-    const t=state.turns.find(t=>t.id===id);if(!t)return;selectTurn(id);
+    const t=state.turns.find(t=>t.id===id);if(!t)return;
+    ui.priorScrollTop=$('transcript').scrollTop;
+    selectTurn(id);
+    const uMeta=speakerUncertaintyMeta(t);
     $('evidenceTitle').textContent='Passage '+id+' · '+speakerLabel(t.speaker);
+    if($('evidenceMeta'))$('evidenceMeta').textContent='Captured at '+t.time+' · '+(t.origin==='speech'?'Microphone window':'Manual / demo entry')+' · Attribution: '+uMeta.text+(t.edited?' · Words corrected by owner':'');
+    if($('evidenceReturnScrollBtn'))$('evidenceReturnScrollBtn').hidden=ui.priorScrollTop==null;
     const source=$('evidenceSource');source.replaceChildren();
     const pos=quote?t.text.toLowerCase().indexOf(quote.toLowerCase()):-1;
     if(pos>=0&&quote){source.append(document.createTextNode(t.text.slice(0,pos)));
@@ -379,8 +918,10 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
       (data.possibleOverlap?' · Possible overlap: auto-name learning blocked':'')+
       '. Cosine and margin are not identity probabilities.';
     $('evidenceDrawer').hidden=false;
+    if($('evidenceJumpBtn'))$('evidenceJumpBtn').onclick=()=>jumpToTurn(id);
   }
   function refreshHeroActions(sourceId=null,kind='local'){
+    ui.heroSourceId=sourceId;ui.heroKind=kind;
     $('nextLine').value=$('cueTitle').textContent==='Waiting for conversation'?'':$('cueTitle').textContent;
     const needs=[];
     if(!state.turns.length)needs.push('Transcript needs at least one passage');
@@ -388,13 +929,14 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
     if(!ai.enabled)needs.push('Big Mac coaching is off; local cards remain active');
     if(!ai.ready)needs.push('Ollama is unavailable');
     $('coachingNeeds').textContent=needs.length?'Missing: '+needs.join(' · '):'Grounded coaching active';
-    if(!state.turns.length)return;
+    updateFreshnessBadges();
+    if(!state.turns.length){updateSessionReviewSummary();return}
     const signature=kind+'|'+state.turns.length+'|'+$('cueTitle').textContent+'|'+$('cueText').textContent;
-    if(signature===ui.lastCue)return;
+    if(signature===ui.lastCue){updateSessionReviewSummary();return}
     ui.lastCue=signature;
     ui.cues.unshift({id:Date.now(),sourceId,kind,title:$('cueTitle').textContent,why:$('cueText').textContent,nextLine:$('nextLine').value});
     ui.cues.length=Math.min(30,ui.cues.length);
-    renderCueTimeline();if($('filterCoached').checked)renderTranscript();
+    renderCueTimeline();updateSessionReviewSummary();if($('filterCoached').checked)renderTranscript();
   }
   function renderCueTimeline(){
     const target=$('coachingTimeline');target.replaceChildren();
@@ -403,7 +945,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
       const card=document.createElement('div');card.className='history-card';
       const name=document.createElement('strong');name.textContent=c.kind.toUpperCase()+' · '+c.title;
       const desc=document.createElement('p');desc.textContent=c.why;card.append(name,desc);
-      if(c.sourceId){const b=document.createElement('button');b.className='btn small ghost';b.textContent='Jump to passage '+c.sourceId;b.addEventListener('click',()=>{jumpToTurn(c.sourceId);openEvidence(c.sourceId)});card.append(b)}
+      if(c.sourceId){const b=document.createElement('button');b.className='btn small ghost';b.textContent='Jump to passage '+c.sourceId;b.addEventListener('click',ev=>{ui.lastEvidenceTrigger=ev.currentTarget;jumpToTurn(c.sourceId);openEvidence(c.sourceId)});card.append(b)}
       const actions=document.createElement('div');actions.className='history-actions';const line=document.createElement('input');line.className='field';line.value=c.nextLine||'';line.maxLength=350;line.setAttribute('aria-label','Edit next line for coaching card '+c.id);line.addEventListener('input',()=>{c.nextLine=line.value});
       const copyLine=document.createElement('button');copyLine.className='btn small ghost';copyLine.type='button';copyLine.textContent='Copy line';copyLine.addEventListener('click',()=>copy(c.nextLine||'',copyLine));
       const regenerate=document.createElement('button');regenerate.className='btn small ghost regenerate-card';regenerate.type='button';regenerate.textContent='Regenerate';regenerate.disabled=!ai.enabled||!ai.ready;regenerate.setAttribute('aria-label','Regenerate coaching card '+c.id);regenerate.addEventListener('click',()=>regenerateCueCard(c.id));actions.append(line,copyLine,regenerate);card.append(actions);
@@ -423,11 +965,11 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
     document.body.append(anchor);anchor.click();anchor.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
  function editTurn(id){const turn=state.turns.find(t=>t.id===id);if(!turn)return;editingId=id;$('editText').value=turn.text;$('editError').textContent='';$('editDialog').showModal();$('editText').focus()}
-  function jumpToTurn(id){const row=document.getElementById('passage-'+id);if(!row)return;selectTurn(id);const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;row.scrollIntoView({block:'nearest',behavior:reduced?'auto':'smooth'});row.focus({preventScroll:true})}
+  function jumpToTurn(id){const row=document.getElementById('passage-'+id);if(!row)return;selectTurn(id);const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;ui.programmaticScroll=true;row.scrollIntoView({block:'nearest',behavior:reduced?'auto':'smooth'});setTimeout(()=>{ui.programmaticScroll=false},60);row.focus({preventScroll:true})}
  function scheduleAnalysis(){clearTimeout(updateTimer);updateTimer=setTimeout(analyze,120)}
- function setAIStatus(msg){$('aiHealth').textContent=msg}
+ function setAIStatus(msg){$('aiHealth').textContent=msg;updateSessionStatusBar()}
  function setAIMessage(msg){$('aiMessage').textContent=msg}
- function invalidateAI(erase){ai.session++;ai.pending=false;clearTimeout(ai.timer);if(ai.controller){ai.controller.abort();ai.controller=null}if(erase){ai.lastResult=null;ai.lastResultTurns=0;$('aiReview').hidden=true;$('aiEvidenceJump').hidden=true;$('aiEvidenceJump').onclick=null}}
+ function invalidateAI(erase){ai.session++;ai.pending=false;clearTimeout(ai.timer);if(ai.controller){ai.controller.abort();ai.controller=null}if(erase){ai.lastResult=null;ai.lastResultTurns=0;$('aiReview').hidden=true;$('aiEvidenceJump').hidden=true;$('aiEvidenceJump').onclick=null}updateFreshnessBadges()}
  async function loadWhisperModels(){const response=await fetch('/api/whisper/models',{cache:'no-store'});const data=await response.json();if(!response.ok)throw Error(data.error||'Could not read installed Whisper models');const select=$('whisperModel');select.replaceChildren();for(const model of data.models||[]){const option=document.createElement('option');option.value=model.id;option.textContent=model.name+' · '+(model.bytes/1048576).toFixed(0)+' MiB'+(model.active?' · active':'');option.dataset.active=String(!!model.active);select.append(option)}if(!select.options.length){const option=document.createElement('option');option.textContent='No verified installed models';select.append(option)}const active=(data.models||[]).find(model=>model.active);if(active)select.value=active.id;$('whisperModelStatus').textContent=data.switchAvailable?'Active model: '+(data.active||'unknown')+'. Only already installed local models at or below 600 MB are offered; switching validates with generated silence and is blocked during capture.':'Whisper CLI unavailable; model switching disabled.';select.disabled=!data.switchAvailable||!select.options.length;syncButtons()}
  async function switchWhisperModel(){const id=$('whisperModel').value;if(!id||state.wantsListen)return;const button=$('switchWhisperModel');button.disabled=true;$('whisperModelStatus').textContent='Validating selected installed model with generated silence. The current model remains active until validation succeeds.';try{const response=await fetch('/api/whisper/switch',{method:'POST',headers:{'X-Lens-Token':ai.token,'Content-Type':'application/json'},body:JSON.stringify({model:id})});const data=await response.json();if(!response.ok)throw Error(data.error||'Whisper model switch failed');stt.model=data.active;$('capability').textContent='LOCAL WHISPER READY · '+data.active;$('whisperModelStatus').textContent='Active model: '+data.active+'. Validation succeeded; audio is still processed locally.';await loadWhisperModels()}catch(error){$('whisperModelStatus').textContent=(error.message||'Model switch failed')+'. The previous model remains active.'}finally{syncButtons()}}
  async function checkAI(){
@@ -450,7 +992,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
     }
     renderSpeakers();
     $('capability').textContent=stt.ready?'LOCAL WHISPER READY':'Local Whisper unavailable';
-    refreshHeroActions();
+    refreshHeroActions(ui.heroSourceId,ui.heroKind);
    if(!state.wantsListen)setMsg(stt.ready?'Local speech ready. Confirm consent and press Start.':stt.reason+'; use manual entry until the local engine is ready.');
    if(ai.ready){setAIStatus('READY · '+ai.model);$('aiToggle').disabled=false;
     $('aiToggle').checked=ai.enabled;
@@ -500,7 +1042,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
  }
  $('snapshotBtn').addEventListener('click',()=>downloadSnapshot().catch(e=>$('snapshotStatus').textContent='Snapshot failed: '+e.message));
  $('restoreSnapshotFile').addEventListener('change',async ev=>{const file=ev.target.files?.[0];ev.target.value='';if(!file)return;try{if(file.size>1024*1024)throw Error('Snapshot exceeds 1 MB');const envelope=JSON.parse(await file.text()),payload=validateSnapshot(envelope);if(await snapshotDigest(payload)!==envelope.sha256)throw Error('Checksum mismatch; live session was not changed');if(state.wantsListen)throw Error('Stop microphone capture before restoring');
-   clearVoiceNotes();invalidateAI(true);state.turns=payload.turns.map(t=>({...t,origin:['speech','typed','demo'].includes(t.origin)?t.origin:'typed',voiceNote:String(t.voiceNote||'').slice(0,170),evidence:null}));state.turnSerial=Math.max(0,...state.turns.map(t=>t.id));ui.bookmarks=new Set(payload.bookmarks);ui.highlights=new Set(payload.highlights);ui.cues=payload.coaching.map(c=>({...c}));ui.lastCue='';$('context').value=payload.private.context;$('privateNote').value=payload.private.privateNote;$('aim').value=payload.private.aim;renderContextPin();renderTranscript();renderCueTimeline();analyze();syncButtons();$('snapshotStatus').textContent='Snapshot restored; '+payload.omittedVoiceNoteCount+' private voice note(s) were not imported. Audio and speaker profiles are excluded.';
+   clearVoiceNotes();invalidateAI(true);state.turns=payload.turns.map(t=>({...t,origin:['speech','typed','demo'].includes(t.origin)?t.origin:'typed',voiceNote:String(t.voiceNote||'').slice(0,170),evidence:null}));state.turnSerial=Math.max(0,...state.turns.map(t=>t.id));state.gaps=[];state.evictedTurnsCount=0;ui.bookmarks=new Set(payload.bookmarks);ui.highlights=new Set(payload.highlights);ui.cues=payload.coaching.map(c=>({...c}));ui.lastCue='';$('context').value=payload.private.context;$('privateNote').value=payload.private.privateNote;$('aim').value=payload.private.aim;if($('quickAim'))$('quickAim').value=payload.private.aim;renderContextPin();renderTranscript();renderCueTimeline();analyze();syncButtons();$('snapshotStatus').textContent='Snapshot restored; '+payload.omittedVoiceNoteCount+' private voice note(s) were not imported. Audio and speaker profiles are excluded.';
   }catch(e){$('snapshotStatus').textContent='Restore failed: '+e.message} });
  function scheduleAI(urgent=false){
    ai.revision++;
@@ -521,10 +1063,11 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
        timeout:Number($('ollamaTimeout').value),temperature:Number($('ollamaTemperature').value)};
      try{const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json','X-Lens-Token':ai.token,'X-Lens-Protocol':'3'},body:JSON.stringify({
        goal:$('aim').selectedOptions[0].text,context:$('context').value,turns,note:$('privateNote').value,continuation,
-       grounding:$('groundingMode').value,system_fragment:fragment,ollama}),signal:controller.signal});if(!res.ok){const error=await res.json().catch(()=>({}));throw new Error(error.error||'AI request failed ('+res.status+')')}const data=await res.json();if(gen!==ai.session||reqVersion!==ai.revision||!ai.enabled||state.paused)return;const i=data.insight;if(!i||typeof i.observation!=='string'||typeof i.next_step!=='string')throw new Error('Invalid AI response');ai.lastResult=i;ai.lastResultTurns=currentCount;$('aiObservation').textContent=i.observation;$('aiEvidence').textContent=i.evidence||'No exact quotation supplied';const norm=s=>String(s||'').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();const quote=norm(i.evidence);const source=quote.length>=6?state.turns.slice(-80).find(t=>norm(t.text).includes(quote)):null;const jump=$('aiEvidenceJump');jump.hidden=!source;if(source){jump.textContent='Review passage '+source.id;jump.onclick=()=>{jumpToTurn(source.id);openEvidence(source.id,i.evidence)}}else jump.onclick=null;$('aiNext').textContent=i.next_step;$('aiCaution').textContent=i.caution||'';
+       grounding:$('groundingMode').value,system_fragment:fragment,ollama}),signal:controller.signal});if(!res.ok){const error=await res.json().catch(()=>({}));throw new Error(error.error||'AI request failed ('+res.status+')')}const data=await res.json();if(gen!==ai.session||reqVersion!==ai.revision||!ai.enabled||state.paused)return;const i=data.insight;if(!i||typeof i.observation!=='string'||typeof i.next_step!=='string')throw new Error('Invalid AI response');ai.lastResult=i;ai.lastResultTurns=currentCount;$('aiObservation').textContent=i.observation;$('aiEvidence').textContent=i.evidence||'No exact quotation supplied';const norm=s=>String(s||'').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();const quote=norm(i.evidence);const source=quote.length>=6?state.turns.slice(-80).find(t=>norm(t.text).includes(quote)):null;const jump=$('aiEvidenceJump');jump.hidden=!source;if(source){jump.textContent='Review passage '+source.id;jump.onclick=ev=>{ui.lastEvidenceTrigger=ev.currentTarget;jumpToTurn(source.id);openEvidence(source.id,i.evidence)}}else jump.onclick=null;$('aiNext').textContent=i.next_step;$('aiCaution').textContent=i.caution||'';
      $('groundingBadge').textContent=(i.evidence_status||'unknown').toUpperCase();
+     if($('aiMatchStatus'))$('aiMatchStatus').textContent=source?('Matched passage #'+source.id):'No direct passage match';
      $('retryLoose').hidden=!['rejected','approximate','ungrounded'].includes(i.evidence_status||'');
-     $('aiReview').hidden=false;setAIStatus('LIVE · '+ai.model);setAIMessage('Model observation covers passage '+currentCount+(state.turns.length>currentCount?' ('+(state.turns.length-currentCount)+' newer)':'' )+'. It is a suggestion, not a verdict.');if(continuation)$('continueThoughtStatus').textContent='Generated from the selected prior thought and current transcript.';if(state.turns.length<=currentCount+1){$('cueTitle').textContent=i.next_step;$('cueText').textContent=i.observation;refreshHeroActions(source?source.id:null,'ai')}}catch(e){if(e.name!=='AbortError'&&gen===ai.session){setAIStatus('AI ERROR');setAIMessage((e.message||'AI request failed')+'. Local cues still work.');if(continuation)$('continueThoughtStatus').textContent='Continuation failed; the previous thought remains available.';}}finally{ai.inFlight=false;if(ai.controller===controller)ai.controller=null;if(ai.pending&&ai.ready&&ai.enabled&&!state.paused) scheduleAI();}}
+     $('aiReview').hidden=false;setAIStatus('LIVE · '+ai.model);setAIMessage('Model observation covers passage '+currentCount+(state.turns.length>currentCount?' ('+(state.turns.length-currentCount)+' newer)':'' )+'. It is a suggestion, not a verdict.');if(continuation)$('continueThoughtStatus').textContent='Generated from the selected prior thought and current transcript.';if(state.turns.length<=currentCount+1){$('cueTitle').textContent=i.next_step;$('cueText').textContent=i.observation;refreshHeroActions(source?source.id:null,'ai')}else updateFreshnessBadges()}catch(e){if(e.name!=='AbortError'&&gen===ai.session){setAIStatus('AI ERROR');setAIMessage((e.message||'AI request failed')+'. Local cues still work.');if(continuation)$('continueThoughtStatus').textContent='Continuation failed; the previous thought remains available.';}}finally{ai.inFlight=false;if(ai.controller===controller)ai.controller=null;if(ai.pending&&ai.ready&&ai.enabled&&!state.paused) scheduleAI();}}
 
  async function regenerateCueCard(cardID){
    const card=ui.cues.find(item=>item.id===cardID);if(!card||!ai.enabled||!ai.ready){setAIMessage('Enable optional local AI coaching before regenerating a historical card.');return}
@@ -557,8 +1100,9 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
      if(/\b(i|we|you)\s+(will|can|should|need to|must)\b/i.test(turn.text))matches.push('Possible action');
      for(const kind of matches){const key=kind+'|'+turn.text.toLowerCase().replace(/\s+/g,' ').trim();if(seen.has(key))continue;seen.add(key);found.push({kind,turn})}
    }
-   if(!found.length){const empty=document.createElement('div');empty.className='quiet';empty.textContent='No candidate actions or decisions yet.';host.append(empty);return}
+   if(!found.length){const empty=document.createElement('div');empty.className='quiet';empty.textContent='No candidate actions or decisions yet.';host.append(empty);updateSessionReviewSummary();return}
    for(const {kind,turn} of found.slice(-16).reverse()){const item=document.createElement('article');item.className='action-item';const label=document.createElement('strong');label.textContent=kind;const quote=document.createElement('p');quote.textContent=turn.text;const source=document.createElement('button');source.type='button';source.className='btn small ghost';source.textContent='Review passage '+turn.id;source.addEventListener('click',()=>jumpToTurn(turn.id));item.append(label,quote,source);host.append(item)}
+   updateSessionReviewSummary();
  }
  function renderCustomRules(){
    const host=$('customRuleList');if(!host)return;host.replaceChildren();
@@ -566,7 +1110,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
    for(const rule of customRules){const row=document.createElement('div');row.className='custom-rule-row';const label=document.createElement('span');label.textContent='“'+rule.phrase+'” · '+['Low','', '', 'Normal','', 'High'][rule.priority]+' priority';const remove=document.createElement('button');remove.type='button';remove.className='btn small ghost';remove.textContent='Remove';remove.setAttribute('aria-label','Remove local rule '+rule.phrase);remove.addEventListener('click',()=>{const index=customRules.indexOf(rule);if(index>=0)customRules.splice(index,1);renderCustomRules();scheduleAnalysis()});row.append(label,remove);host.append(row)}
    $('addCustomRule').disabled=customRules.length>=8;
  }
- function analyze(){const turns=state.turns;renderActionLedger();if(state.paused){$('analysisAge').textContent='Cues paused';return}const full=turns.map(t=>t.text).join(' ');const recent=turns.slice(-12).map(t=>t.text).join(' ');const low=recent.toLowerCase();const rules=[];const goal=$('aim').value;const g=goals[goal]||goals.observe;$('northStar').textContent='North star: '+g[0];$('anchor').textContent=g[1];if(!recent){$('cueTitle').textContent='Waiting for conversation';$('cueText').textContent='Start listening or add a passage. Observations will be based on the words actually captured.';$('analysisAge').textContent='Ready for conversation';$('signals').replaceChildren();const q=document.createElement('div');q.className='quiet';q.textContent='I will look for questions, important claims, decisions, action items, clarification requests, and changing priorities. I won’t invent context or assign an unidentified speaker.';$('signals').append(q);refreshHeroActions(null);return}
+ function analyze(){const turns=state.turns;renderActionLedger();if(state.paused){$('analysisAge').textContent='Cues paused';updateFreshnessBadges();return}const full=turns.map(t=>t.text).join(' ');const recent=turns.slice(-12).map(t=>t.text).join(' ');const low=recent.toLowerCase();const rules=[];const goal=$('aim').value;const g=goals[goal]||goals.observe;$('northStar').textContent='North star: '+g[0];$('anchor').textContent=g[1];if(!recent){$('cueTitle').textContent='Waiting for conversation';$('cueText').textContent='Start listening or add a passage. Observations will be based on the words actually captured.';$('analysisAge').textContent='Ready for conversation';$('signals').replaceChildren();const q=document.createElement('div');q.className='quiet';q.textContent='I will look for questions, important claims, decisions, action items, clarification requests, and changing priorities. I won’t invent context or assign an unidentified speaker.';$('signals').append(q);refreshHeroActions(null,'local');return}
  // Evidence-backed, explicitly tentative micro-observations; no probabilistic diagnosis.
  // General-purpose cues come before specialized repair cues. Never assume a domain.
  if(has(low,/\b(what is the deadline|when is it due|by (?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|next week)|i(?:'ll| will) send|we(?:'ll| will) send|action item|follow[- ]?up|assigned to|due date)\b/i))rules.push(make('Next steps','A time or task commitment may be emerging','A possible timing or task commitment was spoken. Check the owner, timing, and dependencies before treating it as settled.','“Is there an agreed action, owner, and deadline?”','Spoken task or timing language',8));
@@ -598,7 +1142,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
  }
  if(!rules.length)rules.push(make('Listening','The shape of the discussion is still emerging','There is not enough grounded evidence yet for a stronger observation. Avoid forcing an interpretation.','“Which point would be useful to clarify next?”','Conversation is still developing',1));
  for(const rule of customRules){const needle=rule.phrase.toLocaleLowerCase();const match=state.turns.slice(-12).reverse().find(turn=>turn.text.toLocaleLowerCase().includes(needle));if(match){signalEvidence=match;rules.push(make('Owner rule','Custom cue matched: '+rule.phrase,rule.observation,rule.nextLine||'Would it help to clarify this point?','Literal phrase matched: '+rule.phrase,5+rule.priority))}}
- rules.sort((a,b)=>b.score-a.score);const shown=rules.slice(0,3);const chosen=shown[0];$('cueTitle').textContent=chosen.tryLine;$('cueText').textContent=chosen.why;$('analysisAge').textContent='Updated from '+turns.length+' passage'+(turns.length===1?'':'s');if(ai.lastResult&&!state.paused&&ai.enabled&&state.turns.length<=ai.lastResultTurns+1){$('cueTitle').textContent=ai.lastResult.next_step;$('cueText').textContent=ai.lastResult.observation}const root=$('signals');root.replaceChildren();for(const i of shown){const card=document.createElement('article');card.className='insight';const tag=document.createElement('div');tag.className='tag';tag.textContent=i.kind;const title=document.createElement('h3');title.textContent=i.title;const p=document.createElement('p');p.textContent=i.why;const quote=document.createElement('blockquote');quote.textContent=i.tryLine;const source=document.createElement('span');source.className='source';source.textContent='Trigger: '+i.evidence;card.append(tag,title,p,quote,source);if(i.sourceId){const heard=document.createElement('div');heard.className='heard-source';heard.textContent='Captured passage '+i.sourceId+': “'+i.sourceText.slice(0,190)+(i.sourceText.length>190?'…':'')+'”';const jump=document.createElement('button');jump.className='btn small ghost evidence-link';jump.type='button';jump.textContent='Review passage '+i.sourceId;jump.addEventListener('click',()=>jumpToTurn(i.sourceId));heard.append(document.createElement('br'),jump);card.append(heard)}else{const note=document.createElement('small');note.className='source';note.textContent='Aggregate pattern or early observation; no exact single-passage quotation.';card.append(note)}root.append(card)}refreshHeroActions(chosen.sourceId,'local') }
+ rules.sort((a,b)=>b.score-a.score);const shown=rules.slice(0,3);const chosen=shown[0];$('cueTitle').textContent=chosen.tryLine;$('cueText').textContent=chosen.why;$('analysisAge').textContent='Updated from '+turns.length+' passage'+(turns.length===1?'':'s');let heroKind='local',heroSource=chosen.sourceId;if(ai.lastResult&&!state.paused&&ai.enabled&&state.turns.length<=ai.lastResultTurns+1){$('cueTitle').textContent=ai.lastResult.next_step;$('cueText').textContent=ai.lastResult.observation;heroKind='ai'}const root=$('signals');root.replaceChildren();for(const i of shown){const card=document.createElement('article');card.className='insight';const tag=document.createElement('div');tag.className='tag';tag.textContent=i.kind;const title=document.createElement('h3');title.textContent=i.title;const p=document.createElement('p');p.textContent=i.why;const quote=document.createElement('blockquote');quote.textContent=i.tryLine;const source=document.createElement('span');source.className='source';source.textContent='Trigger: '+i.evidence;card.append(tag,title,p,quote,source);if(i.sourceId){const heard=document.createElement('div');heard.className='heard-source';heard.textContent='Captured passage '+i.sourceId+': “'+i.sourceText.slice(0,190)+(i.sourceText.length>190?'…':'')+'”';const jump=document.createElement('button');jump.className='btn small ghost evidence-link';jump.type='button';jump.textContent='Review passage '+i.sourceId;jump.addEventListener('click',()=>jumpToTurn(i.sourceId));heard.append(document.createElement('br'),jump);card.append(heard)}else{const note=document.createElement('small');note.className='source';note.textContent='Aggregate pattern or early observation; no exact single-passage quotation.';card.append(note)}root.append(card)}refreshHeroActions(heroSource,heroKind) }
  function clearRestart(){clearTimeout(micProofTimer);micProofTimer=null}
  function postCapture(path,body,{keepalive=false}={}){
    if(!ai.token)return Promise.reject(Error('Local server is unavailable'));
@@ -621,7 +1165,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
    $('levelText').textContent='Input meter idle';$('windowText').textContent='Silence-guided segments';
  }
  function renderQueueDashboard(){const host=$('workerQueue'),entries=[];if(stt.inFlight)entries.push({item:stt.inFlight,state:'transcribing locally'});for(const item of stt.queue)entries.push({item,state:stt.pcmEditHold&&item.pcmWindow?'held for PCM edit':(item.retries?'queued for retry '+item.retries:'queued for local transcription')});host.replaceChildren();if(!entries.length){host.textContent=state.wantsListen?'No queued or in-flight audio windows.':'No active audio windows.';return}for(const entry of entries.slice(0,4)){const row=document.createElement('div');row.textContent=entry.item.id+' · '+entry.state;host.append(row)}}
- function updateQueueStatus(){const indicator=$('queueText');const pending=stt.queue.length+(stt.sending?1:0);const dropped=stt.dropped;indicator.dataset.loss=String(dropped>0);renderSkipped();renderQueueDashboard();$('pauseIntakeBtn').textContent=stt.pausedIntake?'Resume intake':'Pause new-window intake';indicator.textContent=!state.wantsListen?(dropped?dropped+' recording window(s) skipped · stopped':'Queue idle'):(pending?'Processing '+pending+' window(s)'+(dropped?' · '+dropped+' skipped':''):(dropped?dropped+' window(s) skipped':'Up to date'))}
+ function updateQueueStatus(){const indicator=$('queueText');const pending=stt.queue.length+(stt.sending?1:0);const dropped=stt.dropped;indicator.dataset.loss=String(dropped>0);renderSkipped();renderQueueDashboard();$('pauseIntakeBtn').textContent=stt.pausedIntake?'Resume intake':'Pause new-window intake';indicator.textContent=!state.wantsListen?(dropped?dropped+' recording window(s) skipped · stopped':'Queue idle'):(pending?'Processing '+pending+' window(s)'+(dropped?' · '+dropped+' skipped':''):(dropped?dropped+' window(s) skipped':'Up to date'));updateSessionStatusBar();renderEngineRecovery()}
  function updateNoiseStatus(){const effective=Math.max(stt.vad.threshold,stt.noiseFloor*2.6);$('vadNoiseStatus').textContent='Adaptive RMS floor: '+stt.noiseFloor.toFixed(4)+' · effective cut: '+effective.toFixed(4)}
  function drawEnergy(){
    const canvas=$('energyCanvas'),ctx=canvas.getContext('2d');if(!ctx)return;
@@ -682,10 +1226,19 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
      host.append(row);
    }
  }
+ function recordGapEvent(reason,skipId=null){
+   const afterTurnId=state.turns.at(-1)?.id||0,time=now(),prev=state.gaps.at(-1);
+   if(prev&&prev.afterTurnId===afterTurnId&&prev.reason===reason){
+     prev.count++;prev.time=time;if(skipId)prev.windowIds.push(skipId);
+   }else{
+     state.gaps.push({id:skipId||Date.now(),afterTurnId,time,count:1,reason,windowIds:skipId?[skipId]:[]});
+   }
+   renderTranscript();updateSessionReviewSummary();
+ }
  function skipWindow(item,reason){
-   stt.dropped++;stt.skipped.unshift({id:++stt.skipSerial,reason,time:now(),item});
+   stt.dropped++;const id=++stt.skipSerial;stt.skipped.unshift({id,reason,time:now(),item});
    while(stt.skipped.length>4){const old=stt.skipped.pop();old.item=null}
-   renderSkipped();
+   renderSkipped();recordGapEvent(reason,id);
  }
  function selectReplayWindow(){const item=stt.replayHistory.find(entry=>entry.id===$('pcmReplaySelect').value);if(!item)return;if(stt.pcmReplayUrl)URL.revokeObjectURL(stt.pcmReplayUrl);stt.pcmReplayUrl=URL.createObjectURL(item.clip);$('pcmReplayAudio').src=stt.pcmReplayUrl;$('pcmReplayAudio').hidden=false}
  function renderReplayHistory(selectId=null){const select=$('pcmReplaySelect');select.replaceChildren();for(const item of stt.replayHistory){const option=document.createElement('option');option.value=item.id;option.textContent=item.id+' · '+item.kind+' · '+Math.ceil(item.clip.size/1024)+' KB';select.append(option)}const visible=stt.replayHistory.length>0;select.hidden=!visible;$('replayPCM').hidden=!visible;$('clearPCMReplay').hidden=!visible;if(!visible){if(stt.pcmReplayUrl)URL.revokeObjectURL(stt.pcmReplayUrl);stt.pcmReplayUrl='';$('pcmReplayAudio').pause();$('pcmReplayAudio').removeAttribute('src');$('pcmReplayAudio').hidden=true;return}select.value=selectId&&stt.replayHistory.some(item=>item.id===selectId)?selectId:stt.replayHistory.at(-1).id;selectReplayWindow()}
@@ -868,7 +1421,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
         throw Error(out.error||'Whisper returned '+rsp.status);
       }
      if(item.generation!==stt.generation||!state.wantsListen)break;
-     if(out.discarded){stt.dropped++;setMsg('Stale result dropped after capture revocation.');updateQueueStatus();continue}
+     if(out.discarded){stt.dropped++;recordGapEvent('Stale result dropped after capture revocation',++stt.skipSerial);setMsg('Stale result dropped after capture revocation.');updateQueueStatus();continue}
      showPCMReplay(item);
      const text=clean(out.text);
      let voice=out.speaker&&typeof out.speaker.label==='string'?out.speaker:{label:'Unknown',reason:'No match'};
@@ -909,6 +1462,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
   if(!ai.token){setMsg('Local server token unavailable. Check connection first.');return}
   if(!$('consent').checked){setMsg('Confirm everyone knows and agrees first.');return}
   if(state.wantsListen)return;
+  state.captureConflictPending=false;
   state.wantsListen=true;state.lastFinalAt=0;stt.dropped=0;stt.pausedIntake=false;stt.skipped=[];stt.cuts=[];stt.durations=[];updateDurationHistory();updateQueueStatus();const generation=++stt.generation;
   setStatus('paused','REQUESTING MIC');setMsg('Brave will request microphone permission for LOCAL Whisper.');syncButtons();
   try{
@@ -920,25 +1474,29 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
    let lease;
    try{lease=await postCapture('/api/capture/open',{consent:true,owner:captureTabOwner})}
    catch(error){
-     if(!/capture already active in another tab/i.test(error.message||'')||
-        !window.confirm('Another Conversation Lens tab has the microphone session. Stop it there, or take over here and invalidate its next audio upload?'))throw error;
+     const isConflict=/capture already active in another tab/i.test(error.message||'');
+     if(!isConflict||
+        !window.confirm('Another Conversation Lens tab has the microphone session. Stop it there, or take over here and invalidate its next audio upload?')){
+       if(isConflict)state.captureConflictPending=true;
+       throw error;
+     }
      lease=await postCapture('/api/capture/open',{consent:true,takeover:true,owner:captureTabOwner});
    }
    if(generation!==stt.generation||!state.wantsListen){closeCapture(lease.capture,true);return}
    if(typeof lease.capture!=='string'||lease.capture.length<12)throw Error('Invalid server capture session');
-   stt.capture=lease.capture;
+   stt.capture=lease.capture;state.captureConflictPending=false;
    startMeter(stream,generation);
    setStatus('live','LOCAL MIC ACTIVE / UNVERIFIED');
    setMsg('Local Whisper listens in silence-guided windows (9 seconds maximum). Speak naturally; results follow shortly.');
    if($('pcmMode').checked){
      try{const active=await startPCMCapture(stream,generation);if(active){$('captureModeStatus').textContent='Capture mode: AudioWorklet PCM · bounded in-memory ring · local WAV';setMsg('Sample-accurate local PCM capture is active. Audio remains in a bounded memory ring until each window is submitted or erased.')}}
-     catch(error){if(generation!==stt.generation||!state.wantsListen)return;stt.pcmState?.ring?.erase();stt.pcmState=null;$('pcmMode').checked=false;$('captureModeStatus').textContent='Capture mode: MediaRecorder fallback (AudioWorklet unavailable).';setMsg('PCM capture could not start; continuing with MediaRecorder fallback: '+error.message);createLocalWindow(generation)}
+     catch(error){if(generation!==stt.generation||!state.wantsListen)return;stt.pcmState?.ring?.erase();stt.pcmState=null;$('pcmMode').checked=false;$('captureModeStatus').textContent='Capture mode: AudioWorklet PCM failed; MediaRecorder fallback (AudioWorklet unavailable).';setMsg('PCM capture could not start; continuing with MediaRecorder fallback: '+error.message);createLocalWindow(generation)}
    }else createLocalWindow(generation);
    micProofTimer=setTimeout(()=>{if(state.wantsListen&&generation===stt.generation&&!state.lastFinalAt)setMsg('Microphone is active, but no words are verified yet. Check input device and speak a test sentence.')},25000);
   }catch(e){
    if(generation!==stt.generation)return;
    const hadStream=!!stt.stream;state.wantsListen=false;stopLocal();setStatus('off',hadStream?'CAPTURE SETUP ERROR':'MIC PERMISSION ERROR');
-   setMsg(hadStream?'Private capture setup failed: '+(e.message||'server error')+'. Check the local server and retry.':'Brave microphone permission failed: '+(e.name||'error')+'. Allow microphone for this local page in Brave.');syncButtons();
+   setMsg(hadStream?'Private capture setup failed: '+(e.message||'server error')+'. Check the local server and retry.':'Brave microphone permission failed: '+(e.name||'error')+'. Allow microphone for this local page in Brave.');syncButtons();renderEngineRecovery();
   }
  }
  async function stop(){
@@ -1014,11 +1572,12 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
  function reset(){
    stop();clearVoiceNotes();if($('editDialog').open)$('editDialog').close();
    editingId=null;invalidateAI(true);clearTimeout(updateTimer);
-   state.turns=[];ui.bookmarks.clear();ui.highlights.clear();ui.cues.length=0;ui.lastCue='';
+   state.turns=[];state.gaps=[];state.evictedTurnsCount=0;ui.bulkSelectedIds.clear();ui.followLive=true;ui.unseenCount=0;
+   ui.bookmarks.clear();ui.highlights.clear();ui.cues.length=0;ui.lastCue='';
    talkStats.byName.clear();talkStats.attributedSeconds=0;talkStats.mixedSeconds=0;talkStats.overlapSeconds=0;talkStats.unknownSeconds=0;talkStats.unmeasuredWindows=0;talkStats.mixedWindows=0;talkStats.overlapWindows=0;talkStats.unknownWindows=0;renderTalkTime();
    ui.selectedId=null;$('evidenceDrawer').hidden=true;renderCueTimeline();
    speaker.detected.clear();$('speakerPresence').textContent='Possible voices this session: none yet';
-   state.paused=false;renderTranscript();analyze();syncButtons();
+   state.paused=false;renderTranscript();analyze();syncButtons();updateCapacityBanner();updateSessionReviewSummary();
    setMsg('Transcript cleared. Context and goal were retained; use Forget voice profiles to clear voiceprints as well.');
  }
  function renderSpeakers(){
@@ -1045,7 +1604,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
      const opt=document.createElement('option');opt.value=value;opt.textContent=label;filter.append(opt);
    }
    filter.value=[...filter.options].some(o=>o.value===prior)?prior:'all';
-   syncButtons();
+   syncButtons();updateBulkBar();updateEnrollmentStepper();updateSessionReviewSummary();
   }
  function updateSpeakerLockStatus(){
   const exists=speaker.profiles.some(p=>p.name===speaker.lockName&&p.samples>0);
@@ -1054,13 +1613,14 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
   $('speakerLockName').value=speaker.lockName||'';
  }
   function stopEnrollmentMeter(){clearInterval(speaker.qualityTimer);speaker.qualityTimer=null;const ctx=speaker.qualityContext;speaker.qualityContext=null;if(ctx)ctx.close().catch(()=>{});}
-  function cancelEnroll(){speaker.generation++;clearTimeout(speaker.timer);speaker.timer=null;stopEnrollmentMeter();speaker.qualityLevels=[];try{speaker.controller?.abort()}catch(e){}speaker.controller=null;const rec=speaker.recorder;speaker.recorder=null;if(rec&&rec.state!=='inactive'){try{rec.stop()}catch(e){}}const stream=speaker.stream;speaker.stream=null;if(stream)for(const t of stream.getTracks())t.stop();speaker.enrolling=false;syncButtons()}
+  function cancelEnroll(){speaker.generation++;clearTimeout(speaker.timer);speaker.timer=null;stopEnrollmentMeter();speaker.qualityLevels=[];try{speaker.controller?.abort()}catch(e){}speaker.controller=null;const rec=speaker.recorder;speaker.recorder=null;if(rec&&rec.state!=='inactive'){try{rec.stop()}catch(e){}}const stream=speaker.stream;speaker.stream=null;if(stream)for(const t of stream.getTracks())t.stop();speaker.enrolling=false;speaker.enrollState='canceled';syncButtons();updateEnrollmentStepper()}
  async function beginEnroll(){
   if(speaker.enrolling){cancelEnroll();$('enrollMessage').textContent='Sample canceled; no voiceprint saved.';return}
-  if(state.wantsListen||!speaker.ready||!ai.token){$('enrollMessage').textContent='Stop listening and check the local speaker model first.';return}
-  const name=$('enrollName').value.trim(),durationSeconds=Number($('enrollDuration').value);if(!/^[A-Za-z][A-Za-z0-9 '-]{0,29}$/.test(name)||!$('enrollConsent').checked||![7,10].includes(durationSeconds)){$('enrollMessage').textContent='Enter a name, choose a supported duration, and confirm the speaker personally consented.';return}
-  if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder!=='function'){$('enrollMessage').textContent='Brave cannot access the recording API. Check microphone permissions.';return}
-  speaker.enrolling=true;const gen=++speaker.generation;syncButtons();$('enrollMessage').textContent='Requesting microphone. Only '+name+' should speak for '+durationSeconds+' seconds.';
+  if(state.wantsListen||!speaker.ready||!ai.token){speaker.enrollState='error';speaker.enrollError='Stop listening and check the local speaker model first.';updateEnrollmentStepper();$('enrollMessage').textContent='Stop listening and check the local speaker model first.';return}
+  const name=$('enrollName').value.trim(),durationSeconds=Number($('enrollDuration').value);if(!/^[A-Za-z][A-Za-z0-9 '-]{0,29}$/.test(name)||!$('enrollConsent').checked||![7,10].includes(durationSeconds)){speaker.enrollState='error';speaker.enrollError='Enter a name, choose a supported duration, and confirm consent.';updateEnrollmentStepper();$('enrollMessage').textContent='Enter a name, choose a supported duration, and confirm the speaker personally consented.';return}
+  if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder!=='function'){speaker.enrollState='error';speaker.enrollError='Brave cannot access the recording API.';updateEnrollmentStepper();$('enrollMessage').textContent='Brave cannot access the recording API. Check microphone permissions.';return}
+  speaker.lastEnrollTarget=name;speaker.enrollState='recording';speaker.enrollError='';
+  speaker.enrolling=true;const gen=++speaker.generation;syncButtons();updateEnrollmentStepper();$('enrollMessage').textContent='Requesting microphone. Only '+name+' should speak for '+durationSeconds+' seconds.';
   let stream;
   try{stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:true,autoGainControl:true}});if(gen!==speaker.generation){stream.getTracks().forEach(x=>x.stop());return}speaker.stream=stream;
     speaker.qualityLevels=[];$('enrollQuality').setAttribute('aria-valuenow','0');$('enrollQuality').firstElementChild.style.width='0%';
@@ -1068,22 +1628,23 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
     const mime=['audio/webm;codecs=opus','audio/webm','audio/mp4'].find(t=>MediaRecorder.isTypeSupported(t));
     const rec=new MediaRecorder(stream,mime?{mimeType:mime,audioBitsPerSecond:32000}:{audioBitsPerSecond:32000});speaker.recorder=rec;const parts=[];
     rec.ondataavailable=e=>{if(e.data&&e.data.size)parts.push(e.data)};
-    rec.onerror=()=>{if(gen!==speaker.generation)return;cancelEnroll();$('enrollMessage').textContent='Enrollment microphone error. No sample saved.'};
+    rec.onerror=()=>{if(gen!==speaker.generation)return;cancelEnroll();speaker.enrollState='error';speaker.enrollError='Enrollment microphone error.';updateEnrollmentStepper();$('enrollMessage').textContent='Enrollment microphone error. No sample saved.'};
     rec.onstop=async ()=>{if(gen!==speaker.generation)return;
       clearTimeout(speaker.timer);speaker.timer=null;stopEnrollmentMeter();const levels=speaker.qualityLevels.slice();speaker.qualityLevels=[];stream.getTracks().forEach(x=>x.stop());speaker.stream=null;speaker.recorder=null;
-      if(!parts.length){cancelEnroll();$('enrollMessage').textContent='No audio captured; retry.';return}
+      if(!parts.length){cancelEnroll();speaker.enrollState='error';speaker.enrollError='No audio captured; retry.';updateEnrollmentStepper();$('enrollMessage').textContent='No audio captured; retry.';return}
       const voicedFrames=levels.filter(x=>x.rms>=.012).length,clippedFrames=levels.filter(x=>x.clipped).length,voicedPercent=levels.length?Math.round(voicedFrames/levels.length*100):0,clippedPercent=levels.length?Math.round(clippedFrames/levels.length*100):0;$('enrollQuality').setAttribute('aria-valuenow',String(voicedPercent));$('enrollQualityText').textContent='Sample preview: signal present in '+voicedPercent+'% of frames; clipping in '+clippedPercent+'%. This is not an identity score.';
-      if(levels.length&&voicedFrames<3){speaker.enrolling=false;syncButtons();$('enrollMessage').textContent='Very little microphone signal was measured. No voice profile was changed; check the selected microphone and retry.';return}
+      if(levels.length&&voicedFrames<3){speaker.enrolling=false;speaker.enrollState='error';speaker.enrollError='Very little microphone signal was measured.';syncButtons();updateEnrollmentStepper();$('enrollMessage').textContent='Very little microphone signal was measured. No voice profile was changed; check the selected microphone and retry.';return}
       $('enrollMessage').textContent='Analyzing local voice sample…';const controller=new AbortController();speaker.controller=controller;
       try{const clip=new Blob(parts,{type:rec.mimeType||mime||'audio/webm'});const response=await fetch('/api/speakers/enroll',{method:'POST',headers:{'Content-Type':clip.type,'X-Lens-Token':ai.token,'X-Lens-Protocol':'3','X-Lens-Speaker':name,'X-Lens-Voice-Consent':'confirmed'},body:clip,signal:controller.signal});const data=await response.json().catch(()=>({}));if(!response.ok)throw Error(data.error||'Enrollment failed');if(gen!==speaker.generation)return;
+        speaker.enrollState='done';speaker.enrollError='';
         $('enrollMessage').textContent=data.message+'. '+name+': '+data.samples+' sample(s).';$('enrollConsent').checked=false;
         const status=await fetch('/api/speakers',{cache:'no-store'}).then(x=>x.json());if(gen!==speaker.generation)return;speaker.profiles=status.speakers.profiles;speaker.mergeSuggestions=status.speakers.mergeSuggestions||[];speaker.ramBytes=status.speakers.ramBytes||0;renderSpeakers();
-      }catch(e){if(e.name!=='AbortError'&&gen===speaker.generation)$('enrollMessage').textContent=e.message||'Enrollment failed';}
-      finally{if(gen===speaker.generation){speaker.enrolling=false;speaker.controller=null;syncButtons()}}
+      }catch(e){if(e.name!=='AbortError'&&gen===speaker.generation){speaker.enrollState='error';speaker.enrollError=e.message||'Enrollment failed';$('enrollMessage').textContent=e.message||'Enrollment failed'}}
+      finally{if(gen===speaker.generation){speaker.enrolling=false;speaker.controller=null;syncButtons();updateEnrollmentStepper()}}
     };
     rec.start();$('enrollMessage').textContent='Recording '+name+' for '+durationSeconds+' seconds. Speak naturally; no other voices.';
     speaker.timer=setTimeout(()=>{if(gen===speaker.generation&&rec.state==='recording'){try{rec.stop()}catch(e){cancelEnroll()}}},durationSeconds*1000);
-  }catch(e){if(gen!==speaker.generation)return;cancelEnroll();$('enrollMessage').textContent='Could not record voice: '+(e.name||'microphone permission denied')}
+  }catch(e){if(gen!==speaker.generation)return;cancelEnroll();speaker.enrollState='error';speaker.enrollError='Could not record voice: '+(e.name||'microphone permission denied');updateEnrollmentStepper();$('enrollMessage').textContent='Could not record voice: '+(e.name||'microphone permission denied')}
  }
  async function boostSpeaker(name,seconds){
    if(!ai.token||!speaker.profiles.some(p=>p.name===name))return;
@@ -1118,14 +1679,22 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
    try{const bundle=JSON.parse(await file.text()),response=await fetch('/api/speakers/import',{method:'POST',headers:{'X-Lens-Token':ai.token,'Content-Type':'application/json'},body:JSON.stringify(bundle)}),data=await response.json();if(!response.ok)throw Error(data.error||'Profile import failed');speaker.profiles=data.speakers.profiles||[];speaker.mergeSuggestions=data.speakers.mergeSuggestions||[];speaker.ramBytes=data.speakers.ramBytes||0;speaker.detected.clear();renderSpeakers();$('profileFileStatus').textContent='Imported '+speaker.profiles.length+' profile(s) into RAM. File integrity verified; no file is retained.'}catch(error){$('profileFileStatus').textContent=error.message||'Profile import failed'}finally{$('importProfiles').value=''}
  }
  async function forgetSpeakers(name){if(speaker.enrolling)return;if(!ai.token)return;if(!name&&!window.confirm('Forget every enrolled session voiceprint?'))return;
-  try{const res=await fetch('/api/speakers/forget',{method:'POST',headers:{'X-Lens-Token':ai.token,'Content-Type':'application/json'},body:JSON.stringify(name?{name}:{all:true})});const obj=await res.json();if(!res.ok)throw Error(obj.error||'Forget failed');speaker.profiles=obj.speakers.profiles;speaker.mergeSuggestions=obj.speakers.mergeSuggestions||[];speaker.ramBytes=obj.speakers.ramBytes||0;speaker.detected.clear();$('speakerPresence').textContent='Possible voices this session: none yet';renderSpeakers();$('enrollMessage').textContent='Voiceprints discarded from server RAM. Existing transcript text is not changed.'}catch(e){$('enrollMessage').textContent=e.message||'Could not clear profiles'}
+  try{const res=await fetch('/api/speakers/forget',{method:'POST',headers:{'X-Lens-Token':ai.token,'Content-Type':'application/json'},body:JSON.stringify(name?{name}:{all:true})});const obj=await res.json();if(!res.ok)throw Error(obj.error||'Forget failed');speaker.profiles=obj.speakers.profiles;speaker.mergeSuggestions=obj.speakers.mergeSuggestions||[];speaker.ramBytes=obj.speakers.ramBytes||0;if(name){speaker.detected.delete(name);speaker.detected.delete(name+'?')}else{speaker.detected.clear()}$('speakerPresence').textContent='Possible voices this session: '+([...speaker.detected].join(' · ')||'none yet');renderSpeakers();$('enrollMessage').textContent='Voiceprints discarded from server RAM. Existing transcript text is not changed.'}catch(e){$('enrollMessage').textContent=e.message||'Could not clear profiles'}
  }
  $('editForm').addEventListener('submit',event=>{event.preventDefault();const turn=state.turns.find(t=>t.id===editingId);const value=clean($('editText').value);if(!turn||!value){$('editError').textContent='Enter the corrected words before saving.';return}if(value!==turn.text){turn.text=value;turn.edited=true;invalidateAI(true);renderTranscript();analyze();scheduleAI()}$('editDialog').close();editingId=null;syncButtons()});
  $('cancelEditBtn').addEventListener('click',()=>$('editDialog').close());
- $('editDialog').addEventListener('close',()=>{editingId=null});
+ $('editDialog').addEventListener('close',()=>{
+   const editedTurnId=editingId;
+   editingId=null;
+   if(editedTurnId){
+     const row=document.getElementById('passage-'+editedTurnId);
+     const btn=row?.querySelector('.turn-actions button');
+     if(btn)try{btn.focus()}catch(e){}
+   }
+ });
  $('speakerLockBtn').addEventListener('click',()=>{const name=$('speakerLockName').value;if(!name){speaker.lockName='';speaker.lockRemaining=0;updateSpeakerLockStatus();return}const profile=speaker.profiles.find(p=>p.name===name&&p.samples>0),count=Number($('speakerLockCount').value);if(!profile||!Number.isInteger(count)||count<1||count>20){$('speakerLockStatus').textContent='Choose an enrolled speaker and a window count from 1 to 20.';return}speaker.lockName=name;speaker.lockRemaining=count;updateSpeakerLockStatus()});
  $('autoNames').addEventListener('change',()=>{if(state.wantsListen&&!$('autoNames').checked){stop();setMsg('Speaker-name learning revoked; capture stopped to discard pending audio. Press Start to continue without it.')}const box=$('introductionStatus');if($('autoNames').checked){box.dataset.state='idle';box.textContent='Natural introductions enabled for this session, with everyone’s consent. Speak a name and continue with a sentence.'}else{box.dataset.state='idle';box.textContent='Spoken-name learning OFF. Voiceprints already enrolled for this session remain until you choose Forget profiles or close the server.'}});
- $('enrollName').addEventListener('input',syncButtons);$('enrollConsent').addEventListener('change',syncButtons);$('enrollDuration').addEventListener('change',syncButtons);$('enrollBtn').addEventListener('click',beginEnroll);$('forgetBtn').addEventListener('click',()=>forgetSpeakers());
+ $('enrollName').addEventListener('input',()=>{speaker.enrollState='idle';speaker.enrollError='';syncButtons();updateEnrollmentStepper()});$('enrollConsent').addEventListener('change',()=>{syncButtons();updateEnrollmentStepper()});$('enrollDuration').addEventListener('change',syncButtons);$('enrollBtn').addEventListener('click',beginEnroll);$('forgetBtn').addEventListener('click',()=>forgetSpeakers());$('forgetProfilesQuickBtn')?.addEventListener('click',()=>forgetSpeakers());
  $('whisperModel').addEventListener('change',syncButtons);$('refreshWhisperModels').addEventListener('click',()=>loadWhisperModels().catch(error=>{$('whisperModelStatus').textContent=error.message||'Model inventory unavailable'}));$('switchWhisperModel').addEventListener('click',switchWhisperModel);
  $('exportProfiles').addEventListener('click',exportSpeakerProfiles);$('importProfiles').addEventListener('change',()=>importSpeakerProfiles($('importProfiles').files?.[0]));
  $('replayPCM').addEventListener('click',()=>{const audio=$('pcmReplayAudio');audio.play().catch(()=>setMsg('Audio replay could not start. Use the audio controls to retry.'))});$('pcmReplaySelect').addEventListener('change',selectReplayWindow);$('clearPCMReplay').addEventListener('click',clearPCMReplay);
@@ -1135,21 +1704,72 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
  $('pcmMode').addEventListener('change',()=>{$('captureModeStatus').textContent=$('pcmMode').checked?'Capture mode: AudioWorklet PCM requested; MediaRecorder fallback remains available.':'Capture mode: MediaRecorder fallback.'});
  for(const [id,out] of [['pcmPreRoll','pcmPreRollValue'],['pcmPostRoll','pcmPostRollValue']])$(id).addEventListener('input',()=>$(out).textContent=$(id).value+'ms');
  $('customRuleForm').addEventListener('submit',event=>{event.preventDefault();const phrase=$('customRulePhrase').value.trim(),observation=$('customRuleObservation').value.trim(),nextLine=$('customRuleNext').value.trim(),priority=Number($('customRulePriority').value);if(phrase.length<3||observation.length<10||observation.length>220||nextLine.length>180||!Number.isInteger(priority)||![1,3,5].includes(priority)||customRules.length>=8){setMsg('Rule not added. Use a 3–80 character phrase, 10–220 character observation, and no more than eight rules.');return}if(customRules.some(rule=>rule.phrase.toLocaleLowerCase()===phrase.toLocaleLowerCase())){setMsg('That literal phrase already has a rule.');return}customRules.push({phrase,observation,nextLine,priority});$('customRuleForm').reset();renderCustomRules();scheduleAnalysis();setMsg('Owner-defined literal cue rule added for this session.')});renderCustomRules();
- $('manualForm').addEventListener('submit',e=>{e.preventDefault();addTurn($('manualText').value,$('manualSpeaker').value,'typed');$('manualText').value='';$('manualText').focus()});$('startBtn').addEventListener('click',start);$('stopBtn').addEventListener('click',stop);$('pauseBtn').addEventListener('click',()=>{state.paused=!state.paused;if(!state.paused){analyze();scheduleAI()}else{invalidateAI(false);$('analysisAge').textContent='Cues paused'}syncButtons()});$('consent').addEventListener('change',()=>{if(!$('consent').checked && state.wantsListen)stop();syncButtons()});$('context').addEventListener('input',()=>{renderContextPin();invalidateAI(true);scheduleAnalysis();scheduleAI()});$('privateNote').addEventListener('input',renderContextPin);$('aim').addEventListener('change',()=>{invalidateAI(true);analyze();scheduleAI()});$('aiReconnect').addEventListener('click',checkAI);$('aiToggle').addEventListener('change',()=>{ai.enabled=ai.ready&&$('aiToggle').checked;if(ai.enabled){scheduleAI()}else{invalidateAI(true);setAIStatus(ai.ready?'PAUSED':'OFFLINE');setAIMessage('AI coaching is off; instant local cues still work.');analyze()}});$('voiceNoteBtn').addEventListener('click',startPrivateVoiceNote);$('eraseAllBtn').addEventListener('click',async()=>{
+ $('manualForm').addEventListener('submit',e=>{e.preventDefault();addTurn($('manualText').value,$('manualSpeaker').value,'typed');$('manualText').value='';$('manualText').focus()});$('startBtn').addEventListener('click',start);$('stopBtn').addEventListener('click',stop);$('headerStopBtn')?.addEventListener('click',stop);$('pauseBtn').addEventListener('click',()=>{state.paused=!state.paused;if(!state.paused){analyze();scheduleAI()}else{invalidateAI(false);$('analysisAge').textContent='Cues paused'}syncButtons()});$('consent').addEventListener('change',()=>{if(!$('consent').checked && state.wantsListen)stop();syncButtons()});$('context').addEventListener('input',()=>{renderContextPin();invalidateAI(true);scheduleAnalysis();scheduleAI()});$('privateNote').addEventListener('input',renderContextPin);$('aim').addEventListener('change',()=>{if($('quickAim'))$('quickAim').value=$('aim').value;invalidateAI(true);analyze();scheduleAI();updateSessionStatusBar()});$('quickAim')?.addEventListener('change',()=>{$('aim').value=$('quickAim').value;invalidateAI(true);analyze();scheduleAI();updateSessionStatusBar()});$('language')?.addEventListener('change',()=>{if($('quickLanguage'))$('quickLanguage').value=$('language').value;updateSessionStatusBar()});$('quickLanguage')?.addEventListener('change',()=>{$('language').value=$('quickLanguage').value;updateSessionStatusBar()});$('aiReconnect').addEventListener('click',checkAI);$('aiToggle').addEventListener('change',()=>{ai.enabled=ai.ready&&$('aiToggle').checked;if(ai.enabled){scheduleAI()}else{invalidateAI(true);setAIStatus(ai.ready?'PAUSED':'OFFLINE');setAIMessage('AI coaching is off; instant local cues still work.');analyze()}updateSessionStatusBar()});$('eraseAllBtn').addEventListener('click',async()=>{
    if(!window.confirm('Stop listening, clear transcript, optional context and names, reset the goal, and forget ALL in-memory speaker profiles?'))return;
    await stop();cancelEnroll();
    try{
      const data=await postCapture('/api/session/erase',{confirm:true});
      speaker.profiles=data.speakers?.profiles||[];speaker.mergeSuggestions=data.speakers?.mergeSuggestions||[];
      $('enrollConsent').checked=false;$('autoNames').checked=false;
-     clearVoiceNotes();$('context').value='';$('privateNote').value='';renderContextPin();$('customFragment').value='';$('coachPreset').value='';$('groundingMode').value='exact';$('aim').value='observe';$('manualSpeaker').value='shared';customRules.length=0;renderCustomRules();
+     clearVoiceNotes();$('context').value='';$('privateNote').value='';renderContextPin();$('customFragment').value='';$('coachPreset').value='';$('groundingMode').value='exact';$('aim').value='observe';if($('quickAim'))$('quickAim').value='observe';$('manualSpeaker').value='shared';customRules.length=0;renderCustomRules();
      $('enrollName').value='';$('consent').checked=false;
      $('introductionStatus').dataset.state='idle';$('introductionStatus').textContent='Spoken-name learning OFF. Enable only with everyone’s permission.';
      reset();renderSpeakers();$('enrollMessage').textContent='Server voiceprints, transcript, and optional context cleared. Neutral defaults restored.';
      setMsg('Local session erased. Audio capture is off.');
    }catch(e){setMsg('Erase was not confirmed by the server: '+(e.message||'unknown error')+'. Stop the Terminal server to discard its RAM voiceprints.');}
  });
- $('copyBtn').addEventListener('click',()=>copy(transcriptText(),$('copyBtn')));$('copyBriefBtn').addEventListener('click',()=>copy(promptText(),$('copyBriefBtn')));$('clearBtn').addEventListener('click',()=>{if(state.turns.length && !window.confirm('Clear all captured passages in this session?'))return;reset()});$('sampleBtn').addEventListener('click',()=>{reset();for(const [s,t] of [['me','Could we review the options for the next meeting?'],['other','Thursday works, but I need the outline before Wednesday afternoon.'],['me','I can send the outline Tuesday. Does a Thursday review work for everyone?']])addTurn(t,s,'demo');setMsg('Fictional example loaded. Start or add your own lines when ready.')});
+ $('copyBtn').addEventListener('click',()=>copy(transcriptText(),$('copyBtn')));$('copyBriefBtn').addEventListener('click',()=>copy(promptText(),$('copyBriefBtn')));$('clearBtn').addEventListener('click',()=>{if(state.turns.length && !window.confirm('Clear all captured passages in this session?'))return;reset()});$('sampleBtn').addEventListener('click',()=>{if((state.wantsListen||state.turns.length)&&!window.confirm('Replace the current session transcript with the fictional example conversation? Choose Cancel to keep your current transcript.'))return;reset();for(const [s,t] of [['me','Could we review the options for the next meeting?'],['other','Thursday works, but I need the outline before Wednesday afternoon.'],['me','I can send the outline Tuesday. Does a Thursday review work for everyone?']])addTurn(t,s,'demo');setMsg('Fictional example loaded. Start or add your own lines when ready.')});
+ $('transcript').addEventListener('scroll',()=>{
+   if(ui.programmaticScroll)return;
+   const box=$('transcript');
+   const dist=box.scrollHeight-box.scrollTop-box.clientHeight;
+   if(dist>45){
+     if(ui.followLive){ui.followLive=false;updateFollowLiveBar()}
+   }else if(!ui.followLive){
+     ui.followLive=true;ui.unseenCount=0;updateFollowLiveBar();
+   }
+ });
+ $('followLiveBtn')?.addEventListener('click',()=>{
+   ui.followLive=!ui.followLive;
+   if(ui.followLive){ui.unseenCount=0;ui.programmaticScroll=true;const box=$('transcript');box.scrollTop=box.scrollHeight;setTimeout(()=>{ui.programmaticScroll=false},40)}
+   updateFollowLiveBar();
+ });
+ $('returnToLiveBtn')?.addEventListener('click',()=>{
+   ui.followLive=true;ui.unseenCount=0;
+   ui.programmaticScroll=true;const box=$('transcript');box.scrollTop=box.scrollHeight;setTimeout(()=>{ui.programmaticScroll=false},40);
+   updateFollowLiveBar();
+ });
+ const focusManualInput=()=>{
+   const input=$('manualText');
+   if(input){input.scrollIntoView({block:'nearest'});input.focus()}
+ };
+ $('recoveryRetryServerBtn')?.addEventListener('click',checkAI);
+ $('recoveryRetryMicBtn')?.addEventListener('click',start);
+ $('recoveryTakeoverBtn')?.addEventListener('click',async()=>{
+   try{
+     if(!ai.token)await checkAI();
+     state.captureConflictPending=false;
+     const lease=await postCapture('/api/capture/open',{consent:true,takeover:true,owner:captureTabOwner});
+     if(lease?.capture)await postCapture('/api/capture/close',{capture:lease.capture}).catch(()=>{});
+     setMsg('Previous tab capture lease was revoked. Press Start listening to begin in this tab.');
+     renderEngineRecovery();
+   }catch(e){setMsg('Takeover failed: '+(e.message||'error'))}
+ });
+ $('recoveryManualBtn')?.addEventListener('click',focusManualInput);
+ $('focusManualBtn')?.addEventListener('click',focusManualInput);
+ $('capacityCopyBtn')?.addEventListener('click',()=>copy(transcriptText(),$('capacityCopyBtn')));
+ $('capacityExportBtn')?.addEventListener('click',()=>exportSession(true));
+ $('capacitySnapshotBtn')?.addEventListener('click',()=>exportSession(false));
+ $('bulkApplySpeakerBtn')?.addEventListener('click',applyBulkSpeakerCorrection);
+ $('bulkSelectAllBtn')?.addEventListener('click',()=>{
+   const q=$('filterKeyword').value.trim().toLowerCase(),sf=$('filterSpeaker').value,coached=$('filterCoached').checked;
+   for(const t of state.turns.filter(x=>(sf==='all'||x.speaker===sf)&&(!q||x.text.toLowerCase().includes(q))&&(!coached||ui.cues.some(c=>c.sourceId===x.id))))ui.bulkSelectedIds.add(t.id);
+   renderTranscript();
+ });
+ $('bulkClearSelectionBtn')?.addEventListener('click',()=>{
+   ui.bulkSelectedIds.clear();
+   renderTranscript();
+ });
  document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.wantsListen){stop();setMsg('Microphone stopped when the tab became hidden. Restart explicitly when ready.')}});window.addEventListener('pagehide',()=>{cancelEnroll();if(voiceNotes.recording)stopPrivateVoiceNote(true);for(const item of voiceNotes.items)URL.revokeObjectURL(item.url);state.wantsListen=false;stopLocal();clearRestart()});
   for(const [id,field,suffix,format] of [
     ['vadThreshold','threshold','','rms'],['vadSilence','silenceMs','ms','time'],
@@ -1176,7 +1796,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
     $('aiToggle').disabled=!ai.ready;
     if(!ai.ready){$('aiToggle').checked=false;ai.enabled=false;invalidateAI(true)}
     setAIStatus(ai.ready?'READY · '+$('ollamaModel').value:'MODEL UNAVAILABLE');
-    setAIMessage(data.reason||'Check model settings');refreshHeroActions();
+    setAIMessage(data.reason||'Check model settings');refreshHeroActions();updateSessionStatusBar();
   }
   $('checkModelBtn').addEventListener('click',()=>checkCustomModel().catch(e=>setAIMessage(e.message||'Model check failed')));
   async function loadDiagnostics(){
@@ -1189,7 +1809,24 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
       new Date(e.at*1000).toLocaleTimeString()+' '+e.kind+' '+e.state+' '+e.elapsedMs+'ms').join('\n')||'No timing events yet.';
   }
   $('loadDiagnostics').addEventListener('click',()=>loadDiagnostics().catch(e=>{$('healthPill').textContent='Diagnostics unavailable';$('diagnosticLog').textContent=e.message||''}));
-  $('closeEvidence').addEventListener('click',()=>{$('evidenceDrawer').hidden=true});
+  const closeEvidenceAndRestore=(restoreScroll=false)=>{
+    $('evidenceDrawer').hidden=true;
+    if(restoreScroll&&typeof ui.priorScrollTop==='number'){
+      ui.programmaticScroll=true;
+      $('transcript').scrollTop=ui.priorScrollTop;
+      setTimeout(()=>{ui.programmaticScroll=false},40);
+    }
+    if(ui.lastEvidenceTrigger&&typeof ui.lastEvidenceTrigger.focus==='function'&&document.contains(ui.lastEvidenceTrigger)){
+      try{ui.lastEvidenceTrigger.focus()}catch(e){}
+    }
+  };
+  $('closeEvidence').addEventListener('click',()=>closeEvidenceAndRestore(false));
+  $('evidenceReturnScrollBtn')?.addEventListener('click',()=>closeEvidenceAndRestore(true));
+  $('evidenceReturnCueBtn')?.addEventListener('click',()=>{
+    $('evidenceDrawer').hidden=true;
+    const hero=$('heroEvidenceBtn')&&!$('heroEvidenceBtn').hidden?$('heroEvidenceBtn'):$('getCueBtn');
+    if(hero){hero.scrollIntoView({block:'nearest'});hero.focus()}
+  });
   for(const id of ['filterSpeaker','filterKeyword','filterCoached'])$(''+id).addEventListener(id==='filterKeyword'?'input':'change',renderTranscript);
   $('exportTranscriptBtn').addEventListener('click',()=>exportSession(true));
   $('exportPlainBtn').addEventListener('click',()=>exportSession(false));
@@ -1205,20 +1842,46 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
   const layout=savedSetting('layout','split');$('layoutMode').value=['split','transcript','coaching','focus'].includes(layout)?layout:'split';
   const setLayout=()=>{layoutGrid.dataset.layout=$('layoutMode').value;setSetting('layout',$('layoutMode').value)};
   $('layoutMode').addEventListener('change',setLayout);setLayout();
-  for(const [control,attr,value] of [['contrastMode','contrast','high'],['monoMode','mono','on'],['motionMode','low-motion','on']]){
-    const input=$(control);input.checked=savedSetting(control,'off')==='on';
+  for(const [control,attr,value] of [['contrastMode','contrast','high'],['monoMode','mono','on'],['motionMode','low-motion','on'],['densityMode','density','quiet']]){
+    const input=$(control);if(!input)continue;
+    input.checked=savedSetting(control,'off')==='on';
     const apply=()=>{document.documentElement.dataset[attr==='low-motion'?'lowMotion':attr]=input.checked?value:'off';setSetting(control,input.checked?'on':'off')};
     input.addEventListener('change',apply);apply();
   }
+  document.querySelectorAll('#workspaceNav [data-jump]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const targetId=btn.getAttribute('data-jump');
+      const target=$(targetId);
+      if(!target)return;
+      const details=target.closest('details');
+      if(details)details.open=true;
+      target.scrollIntoView({behavior:document.documentElement.dataset.lowMotion==='on'?'auto':'smooth',block:'start'});
+      if(typeof target.focus==='function'){target.setAttribute('tabindex','-1');try{target.focus({preventScroll:true})}catch(e){}}
+    });
+  });
+  $('shortcutHelpBtn')?.addEventListener('click',()=>{const d=$('shortcutDialog');if(d&&!d.open)d.showModal()});
+  $('closeShortcutBtn')?.addEventListener('click',()=>{const d=$('shortcutDialog');if(d?.open){d.close();document.activeElement?.blur()}});
   for(const id of ['privateNote','groundingMode','coachPreset','customFragment','ollamaUrl','ollamaModel','ollamaTimeout','ollamaTemperature']){
     $(id).addEventListener(id==='privateNote'||id==='customFragment'?'input':'change',()=>{if(id==='ollamaUrl')$('ollamaUrl').dataset.touched='true';invalidateAI(true);scheduleAI()});
   }
   document.addEventListener('keydown',e=>{
-    if(e.altKey||e.ctrlKey||e.metaKey||e.isComposing||$('editDialog').open||/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(document.activeElement?.tagName||''))return;
+    if(e.altKey||e.ctrlKey||e.metaKey||e.isComposing)return;
+    if($('shortcutDialog')?.open){
+      if(e.key==='?'||e.key==='Escape'){e.preventDefault();$('shortcutDialog').close();document.activeElement?.blur()}
+      return;
+    }
+    if(e.key==='Escape'&&!$('evidenceDrawer').hidden){e.preventDefault();closeEvidenceAndRestore(false);return}
+    if($('editDialog').open||/^(INPUT|SELECT|TEXTAREA|BUTTON)$/.test(document.activeElement?.tagName||''))return;
     const turn=state.turns.find(t=>t.id===ui.selectedId)||state.turns.at(-1);
     const key=e.key.toLowerCase();
+    if(e.key==='?'){e.preventDefault();const d=$('shortcutDialog');if(d&&!d.open)d.showModal();return}
     if(e.code==='Space'){e.preventDefault();$('pauseBtn').click();return}
     if(key==='c'){e.preventDefault();$('getCueBtn').click();return}
+    if(key==='f'){e.preventDefault();$('followLiveBtn')?.click();return}
+    if(key==='t'){e.preventDefault();focusManualInput();return}
+    if(key==='l'){e.preventDefault();const target=state.wantsListen?$('stopBtn'):$('startBtn');target?.focus();return}
+    if(key==='s'&&turn){e.preventDefault();const sel=document.getElementById('passage-'+turn.id)?.querySelector('select.turn-speaker');sel?.focus();return}
+    if(key==='w'&&turn){e.preventDefault();editTurn(turn.id);return}
     if(key==='a'&&state.turns.length){e.preventDefault();$('voiceNoteBtn').click();return}
     if(key==='e'&&turn){e.preventDefault();openEvidence(turn.id);return}
     if((key==='n'||key==='p')&&state.turns.length){e.preventDefault();const i=Math.max(0,state.turns.findIndex(t=>t.id===turn?.id));jumpToTurn(state.turns[Math.min(state.turns.length-1,Math.max(0,i+(key==='n'?1:-1)))].id);return}
