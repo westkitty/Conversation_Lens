@@ -15,9 +15,11 @@ for module in ('lens_pcm_core.js','lens_pcm_capture.js'):
     html=html.replace(f'<script src="/packet-a/{module}"></script>',f'<script>{source}</script>')
 stub='''<script>
 window.fake={recorders:[],stopped:0,quiet:false,meterReads:0,transcribe:0,confirmCount:0,pcmUploads:[],drains:[],token:'ready-token',capture:null,closed:[],frozen:[],profiles:[],mergeSuggestions:[],transcriptQueue:[],whisperActive:'base',
-             dataSize:950,errors:[],voiceEnabled:[],captureLeaseSequence:0,aiRequests:0,aiBodies:[],aiRequestTimes:[],aiActive:0,aiMaxActive:0,aiDelayMs:0,aiEchoLatest:false,busy:false,takeovers:0};
+             dataSize:950,errors:[],voiceEnabled:[],pcmRenderOptions:[],captureLeaseSequence:0,aiRequests:0,aiBodies:[],aiRequestTimes:[],aiActive:0,aiMaxActive:0,aiDelayMs:0,aiEchoLatest:false,busy:false,takeovers:0};
 const PCM16Ring=window.LensPCM.PCM16Ring;
 window.LensPCM.PCM16Ring=class extends PCM16Ring{constructor(options){super(options);window.fake.pcmRing=this}};
+const renderPCM=window.LensPCM.WindowTimeline.prototype.render;
+window.LensPCM.WindowTimeline.prototype.render=function(id,options){window.fake.pcmRenderOptions.push({...options});return renderPCM.call(this,id,options)};
 window.fetch=async(path,opts={})=>{
  const ok=(v)=>new Response(JSON.stringify(v),{status:200,headers:{'Content-Type':'application/json'}});
  if(path==='/api/status')return ok({app:'conversation-lens',protocol:3,token:window.fake.token,ready:true,model:'mock-local',stt:{ready:true},speakers:{ready:true,profiles:window.fake.profiles,mergeSuggestions:window.fake.mergeSuggestions}});
@@ -523,11 +525,13 @@ with sync_playwright() as p:
         }''')
         before_pcm=page.evaluate('window.fake.transcribe')
         page.locator('#pcmPreRoll').fill('100')
+        page.locator('#pcmPostRoll').fill('100')
         page.evaluate("window.fake.transcriptQueue.push({text:'Overlapping test speakers.',speaker:{label:'Mixed',evidence:{possibleOverlap:true,speechSeconds:1.2}}})")
         page.locator('#consent').check();page.locator('#pcmMode').check();page.locator('#pcmEditHold').check();page.locator('#startBtn').click()
         page.wait_for_function("document.querySelector('#captureModeStatus').textContent.includes('bounded in-memory ring')")
         page.wait_for_function("!document.querySelector('#pcmEditor').hidden && document.querySelector('#pcmEditWindow').options.length===1",timeout=7000)
         assert page.evaluate('window.fake.transcribe')==before_pcm,'Held PCM must remain unsubmitted during editing'
+        assert page.evaluate("window.fake.pcmRenderOptions.some(o=>o.preRollMs===100&&o.postRollMs===100)"),'Production capture must pass both roll controls into PCM rendering'
         assert 'held for PCM edit' in page.locator('#workerQueue').inner_text() and 'pcm_' in page.locator('#workerQueue').inner_text()
         page.locator('#pcmEditApply').click()
         page.wait_for_function("document.querySelector('#pcmEditWindow').options.length===2")

@@ -129,6 +129,13 @@ test('pre-roll and post-roll yield real samples without mutating primary boundar
  assert.equal(pad.forceMixed,true,'overlapping context cannot be used to learn names');
  assert.deepEqual(pad.pcm,r.slice(pad.start,pad.end));
  assert.deepEqual(t.render(first.id).pcm,r.slice(0,64000));
+ const trailing=t.render(first.id,{preRollMs:0,postRollMs:200});
+ assert.equal(trailing.start,0);
+ assert.equal(trailing.primaryEnd,64000);
+ assert.equal(trailing.end,67200);
+ assert.equal(trailing.pcm.length,67200);
+ assert.deepEqual(trailing.pcm,r.slice(0,67200),'post-roll must append the exact following PCM frames');
+ assert.ok(trailing.forceMixed,'post-roll context cannot be used to learn a voice identity');
  assert.throws(()=>t.render(last.id,{preRollMs:1000}),/Context roll/);
  t.setStatus(last.id,'processing');
  assert.throws(()=>t.render(last.id),/Cannot edit/);
