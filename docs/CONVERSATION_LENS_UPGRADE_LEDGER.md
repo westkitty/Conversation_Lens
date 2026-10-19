@@ -377,3 +377,8 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 
 - Expanded replay to the last four successfully processed audio clips from either PCM WAV or MediaRecorder, with a two-megabyte total cap and a 512 KB per-clip cap. Native audio controls select and play a clip; Stop releases every clip and object URL. No audio is written to disk by this feature.
 - QA-venv `test_frontend.py` verifies MediaRecorder and PCM entries, selection, two-window split submissions, and Stop cleanup at 1200px and 375px. Requirement 53 is PASS for bounded in-memory replay; physical speaker output was not tested.
+
+## Brave physical microphone smoke — 2026-10-19
+
+- Launched the committed local app in Brave using the project launcher, granted microphone permission for `127.0.0.1`, observed a live input meter and local transcription passages, then pressed Stop. Stop returned the UI to `NOT LISTENING`, set the input meter to idle, and dropped the pending window. The local server process was then terminated, clearing its RAM session state.
+- This confirms permission, capture, local ASR activity and Stop/drop on this MacBook Air. The captured audio source was not controlled or attributable, so transcript accuracy is not accepted; no two-person/overlap, latency comparison, physical PCM editor, or long-session test was established. No audio or transcript was intentionally exported or saved by this smoke.
