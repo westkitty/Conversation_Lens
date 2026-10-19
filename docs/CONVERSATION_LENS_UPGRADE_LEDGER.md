@@ -231,7 +231,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 53 | Recent-window replay/debug | Skipped live clips can be reprocessed while lease remains active | PARTIAL | Processed-window debug replay is absent |
 | 54 | Snapshot/restore | No session snapshot/restore implementation | PARTIAL | Versioned checksum/atomic restore flow is not built |
 | 55 | Multi-tab lease visibility/transfer | Explicit takeover and invalidation; browser/backend tests | PARTIAL | Owner/age visibility is absent; physical multi-tab test remains |
-| 56 | Custom local cue rules | Existing built-in local rules | PARTIAL | Owner-defined bounded rule editor/execution is absent |
+| 56 | Custom local cue rules | New session-only rule editor with max 8 literal phrase matches, bounded observation/question text, priority and source link; `test_frontend.py` asserts a live match and cleanup on Erase | PASS | Rules are literal substrings, not semantic conditions; no persistence |
 | 57 | Running action-item/decision extraction | New local source-linked candidate ledger; `test_frontend.py` asserts decision/action extraction and passage navigation | PASS | Phrase-based candidates only; no semantic deduplication or persistence |
 | 58 | Hotkey voice-note annotation | Separate private typed note exists | PARTIAL | Hotkey voice-note capture is absent |
 | 59 | Speaker comparison/talk-time stats | UI reports only measured `speechSeconds` from enrolled, non-overlap acoustic matches; Mixed/overlap/unknown/pinned/unmeasured windows are separately excluded; `test_frontend.py` verifies denominator and overlap accounting | PASS | Depends on the worker returning eligible speech-span measurements; manual labels never add speaker time |
@@ -273,3 +273,8 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 
 - Added session-only per-speaker speech-span totals using `speechSeconds` supplied by the voice worker. The denominator includes only measured enrolled-speaker spans without overlap; Mixed, overlap, unknown, manually pinned, and missing measurements are called out separately. Transcript reassignment does not alter acoustic totals.
 - QA-venv `test_frontend.py` passed at 1200px and 375px, asserting a 2.5-second enrolled-speaker attribution and 1.2-second overlap exclusion. Row 59 is PASS for this measured-worker path; speech spans unavailable from the worker remain explicitly unmeasured.
+
+## Session-local owner cues — 2026-10-18
+
+- Added an owner-defined cue form capped at eight rules. Rules match literal case-insensitive phrases, use bounded text for the observation/question, provide low/normal/high priority, and link each cue to its matched passage. No regex, script, or code execution is accepted. Erase clears the rules; ordinary transcript clearing retains them for the session.
+- QA-venv `test_frontend.py` passed at 1200px and 375px, exercising a rule against an existing passage, verifying the source link, and verifying Erase cleanup. Requirement 56 is PASS for literal local phrase rules.

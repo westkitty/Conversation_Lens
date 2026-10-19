@@ -274,14 +274,22 @@ with sync_playwright() as p:
         page.wait_for_function("document.querySelectorAll('#actionLedger .action-item').length===2")
         assert 'possible decision' in page.locator('#actionLedger').inner_text().lower()
         assert 'possible action' in page.locator('#actionLedger').inner_text().lower()
-        page.get_by_role('button',name='Review passage 4').first.click()
-        assert page.evaluate('document.activeElement.id')=='passage-4'
         page.locator('#manualText').fill('Please let me finish.')
         page.get_by_role('button',name='Add line').click()
         page.wait_for_function("document.querySelector('#signals').textContent.includes('Turn-taking')")
         page.locator('#manualText').fill('On a different topic, I will send the updated file.')
         page.get_by_role('button',name='Add line').click()
         page.wait_for_function("document.querySelector('#signals').textContent.includes('Topic transition')")
+        page.locator('#customRulesPanel').evaluate('e=>e.open=true')
+        page.locator('#customRulePhrase').fill('outline')
+        page.locator('#customRuleObservation').fill('The owner asked to notice this outline phrase.')
+        page.locator('#customRuleNext').fill('Should we confirm the outline contents?')
+        page.locator('#customRulePriority').select_option('5')
+        page.locator('#addCustomRule').click()
+        page.wait_for_function("document.querySelector('#signals').textContent.includes('Custom cue matched: outline')")
+        assert 'Review passage 4' in page.locator('#signals').text_content()
+        page.get_by_role('button',name='Review passage 4').first.click()
+        assert page.evaluate('document.activeElement.id')=='passage-4'
         page.screenshot(path=str(root/('qa_v6_desktop.png' if width>800 else 'qa_v6_mobile.png')),full_page=True)
         page.locator('#stopBtn').click()
         page.wait_for_function("document.querySelector('#statusText').textContent==='NOT LISTENING'")
@@ -301,6 +309,7 @@ with sync_playwright() as p:
         assert not page.locator('#speakerProfiles').inner_text().startswith('Dale')
         assert page.locator('#context').input_value()==''
         assert page.locator('#aim').input_value()=='observe'
+        assert page.locator('#customRuleList').inner_text()=='No owner-defined rules.'
         assert page.locator('#manualSpeaker').input_value()=='shared'
         assert page.locator('#enrollName').input_value()==''
         assert not page.locator('#consent').is_checked()
