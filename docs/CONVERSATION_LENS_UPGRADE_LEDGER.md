@@ -183,7 +183,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 5 | Keyboard controls | Live HTML keyboard handlers; `test_frontend.py` M and numeric assignment | PASS | Full shortcut set not independently enumerated |
 | 6 | Layout modes with memory | Live HTML layout persistence; `test_frontend.py` mode switch and resize | PASS | None observed in current browser checks |
 | 7 | Skipped-window reasons and reprocess | Live HTML skipped queue and retry action | PARTIAL | Browser suite does not exercise every skip/reprocess transition |
-| 8 | Flick-up mobile coaching sheet | Live HTML collapsible mobile sheet; button tested at 375px | PARTIAL | Swipe gesture is absent |
+| 8 | Flick-up mobile coaching sheet | Live HTML collapsed/expanded sheet, touch up/down gesture; `test_frontend.py` dispatches upward and downward swipes at 375px | PASS | Physical touchscreen gesture not tested |
 | 9 | Per-window Stop keep/drop dialog | Live Stop freeze/drain in `server.py`; exact-hash drain backend test; Packet A chooser browser test | PASS | Physical microphone Stop/drain with multiple pending windows not exercised |
 | 10 | Speaker chips, last-seen, boost | Live HTML speaker profile chips; `test_frontend.py` last-seen and boost | PASS | Natural identity accuracy remains unverified |
 | 11 | Sticky optional context | Live HTML optional context and AI prompt | PARTIAL | Context is not visually sticky during scrolling |
@@ -196,7 +196,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 18 | Offline interruption/repetition/topic-shift cards | Existing local language rules in live HTML | PARTIAL | Requested interruption and topic-shift classification is incomplete |
 | 19 | In-place copyable next-step cards | Current next-line editor/copy control in live HTML | PARTIAL | Historical cards do not each have independent edit/copy controls |
 | 20 | Mid-session coaching presets | Live HTML current settings flow to Ollama; `test_frontend.py` request payload | PASS | No provider/model switching during active request test |
-| 21 | Full/half speaker confidence strip | Evidence drawer exposes numeric full/half scores | PARTIAL | Requested strip visualization is absent |
+| 21 | Full/half speaker confidence strip | Evidence drawer renders accessible native meters for full, first/second half, and half-window consistency; frontend asserts values and probability caveat | PASS | Measures raw cosine only, not a calibrated confidence probability |
 | 22 | Speaker lock N windows/unpin | Live HTML lock control; `test_frontend.py` one-window pin and expiry | PASS | None observed in current browser checks |
 | 23 | One-click Markdown/plain exports | Live HTML export actions; `test_frontend.py` download assertion | PASS | Plain export not independently checked in the current run |
 | 24 | Bookmarks/highlights in export | Live HTML marker actions and exporter; `test_frontend.py` bookmark/highlight actions | PARTIAL | Current export assertion does not verify marker contents |
@@ -209,11 +209,11 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 31 | Adaptive noise floor | Live HTML RMS noise estimate; browser meter regression | PARTIAL | No ambient-noise or changing-noise physical run |
 | 32 | Half-window overlap heat | `server.py` overlap/forced Mixed logic | PARTIAL | No heat visualization; natural overlap accuracy unverified |
 | 33 | Enrollment quality meter | Existing enrollment checks and rejection | PARTIAL | Pre-activation quality gauge is absent |
-| 34 | Instant speaker drop | Live HTML profile removal with confirmation | PARTIAL | Confirmation remains; instant action not implemented |
+| 34 | Instant speaker drop | Per-profile Remove immediately clears only that RAM voice profile; `test_frontend.py` verifies no confirmation and transcript label preservation | PASS | Forget All still requires confirmation |
 | 35 | Longer follow-up enrollment sample | Existing sample guidance | PARTIAL | Guided longer follow-up flow is absent |
 | 36 | Raw cosine/margin available | `server.py` evidence and evidence drawer; `test_frontend.py` values | PASS | None observed in current checks |
 | 37 | Soft cap/merge suggestion | Existing profile count cap | PARTIAL | No soft-cap merge suggestion workflow |
-| 38 | Window-length distribution | Live HTML rolling median/range | PARTIAL | Histogram is absent |
+| 38 | Window-length distribution | Live HTML rolling median/range and observed 1–9 s canvas histogram; `test_frontend.py` verifies histogram pixels after captured windows | PASS | No persisted history; distribution resets per session |
 | 39 | Whisper model switcher | No production model switcher | BLOCKED | Must inventory installed models and verify reload/rollback before exposing switch |
 | 40 | Adjustable pre-roll/post-roll | Live HTML PCM controls; production PCM rendering uses `WindowTimeline.render` | PARTIAL | No production sample-boundary edit UI or physical roll-content proof |
 | 41 | Overlap Mixed + no name learning | `server.py` force-Mixed veto; backend regression and drain hash tests | PASS | Natural two-speaker overlap not tested |
@@ -251,3 +251,9 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 - Final rerun passed `test_backend.py`, `test_regressions.py`, `test_live_upgrade.py`, QA-venv `test_frontend.py` at 1200px/375px including opt-in PCM synthetic-frame WAV ingestion and awaited Erase/Stop flow, QA-venv `test_e2e.py` at both widths, and `test_real_local_stack.py`. Latest single-run ASR was 2.91s and Ollama 5.45s. These are not a comparative benchmark.
 - Public-repository staged diff and new files passed Gitleaks (`no leaks found`); `git diff --cached --check` passed. The four Packet A and two v6 generated screenshot artifacts remain ignored and unstaged.
 - Physical AudioWorklet permission/capture did not resolve in Brave; the pending request was explicitly stopped, with no active capture lease or audio retained. Earlier physical MediaRecorder access does not prove this opt-in PCM path.
+
+## UI follow-up — 2026-10-18
+
+- Implemented the mobile coaching sheet's up/down touch gestures, visible raw cosine meters (full/halves and half-window consistency, with explicit non-probability labeling), immediate per-profile RAM removal, and a recent per-session duration histogram.
+- Focused QA-venv `test_frontend.py` passed at 1200px and 375px. It asserts swipe expansion/collapse, numeric meters and caveat, single-profile deletion without confirmation while preserving transcript assignment, and rendered histogram pixels.
+- Rows 8, 21, 34, and 38 move to PASS within that browser-test scope. Device touch hardware remains untested. The 60-item matrix remains substantially incomplete; rows marked PARTIAL/BLOCKED remain open.

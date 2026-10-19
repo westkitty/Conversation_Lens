@@ -12,7 +12,7 @@ for module in ('lens_pcm_core.js','lens_pcm_capture.js'):
     source=(root/'experiments'/'packet-a'/module).read_text()
     html=html.replace(f'<script src="/packet-a/{module}"></script>',f'<script>{source}</script>')
 stub='''<script>
-window.fake={recorders:[],stopped:0,quiet:false,meterReads:0,transcribe:0,pcmUploads:[],drains:[],token:'ready-token',capture:null,closed:[],frozen:[],profiles:[],transcriptQueue:[],
+window.fake={recorders:[],stopped:0,quiet:false,meterReads:0,transcribe:0,confirmCount:0,pcmUploads:[],drains:[],token:'ready-token',capture:null,closed:[],frozen:[],profiles:[],transcriptQueue:[],
              dataSize:950,errors:[],voiceEnabled:[],captureLeaseSequence:0,aiRequests:0,aiBodies:[],busy:false,takeovers:0};
 window.fetch=async(path,opts={})=>{
  const ok=(v)=>new Response(JSON.stringify(v),{status:200,headers:{'Content-Type':'application/json'}});
@@ -84,7 +84,7 @@ window.AudioContext=class{
  resume(){return Promise.resolve()}
  close(){return Promise.resolve()}
 };
-window.confirm=()=>true;
+window.confirm=()=>{window.fake.confirmCount++;return true};
 </script>'''
 assert html.count('<script>\n(()=>')==1
 html=html.replace('<script>\n(()=>',stub+'<script>\n(()=>')
@@ -151,12 +151,16 @@ with sync_playwright() as p:
         page.wait_for_function("document.querySelector('#speakerProfiles').textContent.includes('Boost 2m')")
         # The newest audio window's true meter samples and timing are visible, not a synthetic audio graphic.
         assert page.locator('#energyCanvas').count()==1
+        assert page.locator('#durationHistogram').count()==1
+        assert page.locator('#durationHistogram').evaluate("e=>{const d=e.getContext('2d').getImageData(0,0,e.width,e.height).data;return d.some((v,i)=>i%4===0&&v>50)}"),'The duration histogram must be drawn from observed windows'
         assert 'windows' in page.locator('#durationDistribution').inner_text()
         assert 'silence at' in page.locator('#cutHistory').inner_text()
         page.get_by_role('button',name='Evidence for passage 2').click()
         assert page.locator('#evidenceDrawer').is_visible()
         assert '0.9345' in page.locator('#evidenceScores').inner_text()
         assert '0.1456' in page.locator('#evidenceScores').inner_text()
+        assert page.locator('#evidenceScores meter').count()==4,'Full, half, and two half-window cosine strips should be visible'
+        assert 'not an identity probability' in page.locator('#evidenceScores meter').first.get_attribute('aria-label')
         page.locator('#closeEvidence').click()
         # Manual speaker assignment never changes the recorded acoustic score.
         speaker_choice=page.locator('#passage-2 select[aria-label="Correct speaker for this passage"]')
@@ -196,6 +200,10 @@ with sync_playwright() as p:
             page.locator('#sheetToggle').click()
             assert page.locator('.hero-cue').get_attribute('data-collapsed')=='false'
             page.locator('#sheetToggle').click()
+            page.evaluate('''() => {const sheet=document.querySelector('.hero-cue');const fire=(type,y,key)=>{const e=new Event(type,{bubbles:true});Object.defineProperty(e,key,{value:[{clientY:y}]});sheet.dispatchEvent(e)};fire('touchstart',250,'touches');fire('touchend',150,'changedTouches')}''')
+            assert page.locator('.hero-cue').get_attribute('data-collapsed')=='false','Upward flick should expand the mobile coaching sheet'
+            page.evaluate('''() => {const sheet=document.querySelector('.hero-cue');const fire=(type,y,key)=>{const e=new Event(type,{bubbles:true});Object.defineProperty(e,key,{value:[{clientY:y}]});sheet.dispatchEvent(e)};fire('touchstart',150,'touches');fire('touchend',250,'changedTouches')}''')
+            assert page.locator('.hero-cue').get_attribute('data-collapsed')=='true','Downward flick should collapse the mobile coaching sheet'
         page.locator('#signals .evidence-link').first.wait_for(timeout=4000)
         page.locator('#signals .evidence-link').first.click()
         assert page.evaluate('document.activeElement.id')=='passage-2','Grounded cue must focus its source passage'
@@ -243,6 +251,11 @@ with sync_playwright() as p:
         page.evaluate('document.activeElement.blur()')
         page.keyboard.press('1')
         assert page.locator('#passage-2 .who').inner_text()=='Me'
+        confirms_before=page.evaluate('window.fake.confirmCount')
+        page.get_by_role('button',name='Forget Dale').click()
+        page.wait_for_function("!document.querySelector('#speakerProfiles').textContent.includes('Dale')")
+        assert page.evaluate('window.fake.confirmCount')==confirms_before,'Removing one session speaker should be immediate'
+        assert page.locator('#passage-2 .who').inner_text()=='Me','Removing a voice profile must not rewrite transcript labels'
         page.screenshot(path=str(root/('qa_v6_desktop.png' if width>800 else 'qa_v6_mobile.png')),full_page=True)
         page.locator('#stopBtn').click()
         page.wait_for_function("document.querySelector('#statusText').textContent==='NOT LISTENING'")

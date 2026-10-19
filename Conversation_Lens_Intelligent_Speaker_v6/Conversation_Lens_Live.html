@@ -61,7 +61,7 @@
 .turn-meta .turn-actions{display:flex;gap:5px;flex-wrap:wrap}
 .evidence-drawer{margin:10px 0;padding:12px;border:1px solid #4b6679;background:#0c1822;border-radius:11px;font-size:12px}
 .evidence-drawer[hidden]{display:none}.evidence-drawer h3{font-size:14px;margin:0 0 5px}
-.evidence-drawer p{overflow-wrap:anywhere}.evidence-drawer .evidence-score{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:9px 0}
+.evidence-drawer p{overflow-wrap:anywhere}.evidence-drawer .evidence-score{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:9px 0}.evidence-score meter{width:100%;height:11px;display:block;margin-top:6px}
 .evidence-score>div{border:1px solid var(--edge);border-radius:7px;padding:7px;min-width:0;font-variant-numeric:tabular-nums}
 .evidence-quote{background:#2c433f;border-radius:3px;padding:1px 2px}
 .coaching-history{display:grid;gap:7px;margin-top:10px}.history-card{border:1px solid var(--edge);border-radius:8px;padding:9px;background:#0c141d;font-size:12px}
@@ -86,8 +86,10 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
 .window-tuner .two{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .window-tuner label{font-size:11px;color:var(--muted);min-width:0}
 .window-tuner output{color:var(--cyan);font-variant-numeric:tabular-nums}
+.overlap-heat{grid-column:1/-1;border:1px solid #bb7358;border-radius:7px;padding:7px;color:#ffd0aa;background:linear-gradient(90deg,#743d3d,#3a262a);font-size:11px;letter-spacing:.04em}
 .window-tuner input[type=range]{width:100%;accent-color:var(--red)}
 .energy-plot{display:block;width:100%;height:72px;border:1px solid var(--edge);border-radius:8px;background:#0c1016;margin-top:7px}
+.duration-plot{display:block;width:100%;height:42px;border:1px solid var(--edge);border-radius:8px;background:#0c1016;margin-top:6px}
 .skipped-marker{border:1px solid #765547;border-radius:8px;margin-top:6px;padding:8px;background:#241e20;font-size:11px;color:#ead1bb;display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 #cutHistory,#durationDistribution{font-size:11px;color:var(--muted);margin-top:6px}
 @media(max-width:400px){.window-tuner .two{grid-template-columns:1fr}}
@@ -136,7 +138,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
     <div class="level-row"><div class="level-rail" role="meter" aria-label="Microphone input level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="levelRail"><div id="levelFill" class="level-fill"></div></div><span id="levelText">Input meter idle</span><span id="windowText">Silence-guided segments</span><span id="queueText" role="status" aria-live="polite" data-loss="false">Queue idle</span></div>
     <div class="window-tuner"><div class="panel-head"><strong class="small-label">Live cuts &amp; recording windows</strong><small>Meter-based cut timing · 115 ms resolution</small></div>
        <canvas id="energyCanvas" class="energy-plot" width="600" height="72" role="img" aria-label="Current window energy and silence threshold timeline"></canvas>
-       <div id="cutHistory">No cut recorded.</div><div id="durationDistribution">Window history: none</div>
+       <div id="cutHistory">No cut recorded.</div><div id="durationDistribution">Window history: none</div><canvas id="durationHistogram" class="duration-plot" width="600" height="42" role="img" aria-label="Recent window duration histogram from one to nine seconds"></canvas>
        <div class="two" style="margin-top:10px">
          <label for="vadThreshold">Silence threshold / RMS <output id="vadThresholdValue">0.009</output><input type="range" id="vadThreshold" min="0.006" max="0.025" step="0.001" value="0.009"></label>
          <label for="vadSilence">Silence to cut <output id="vadSilenceValue">900ms</output><input type="range" id="vadSilence" min="400" max="1600" step="100" value="900"></label>
@@ -330,8 +332,11 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
       const item=data[key]||{},cell=document.createElement('div');
       const cosine=item.cosine==null?'n/a':Number(item.cosine).toFixed(4);
       const margin=item.margin==null?'n/a':Number(item.margin).toFixed(4);
-      cell.textContent=key.toUpperCase()+' · '+(item.best||'Unknown')+'\ncos '+cosine+' · margin '+margin;cell.style.whiteSpace='pre-line';target.append(cell);
+      const label=document.createElement('span');label.textContent=key.toUpperCase()+' · '+(item.best||'Unknown')+'\ncos '+cosine+' · margin '+margin;label.style.whiteSpace='pre-line';cell.append(label);
+      if(item.cosine!=null){const meter=document.createElement('meter');meter.min=-1;meter.max=1;meter.value=Math.max(-1,Math.min(1,Number(item.cosine)));meter.setAttribute('aria-label',key+' raw cosine similarity; not an identity probability');cell.append(meter)}target.append(cell);
     }
+    if(data.halfCosine!=null){const halves=document.createElement('div'),name=document.createElement('span'),meter=document.createElement('meter');name.textContent='HALF CONSISTENCY · '+Number(data.halfCosine).toFixed(4);meter.min=-1;meter.max=1;meter.value=Math.max(-1,Math.min(1,Number(data.halfCosine)));meter.setAttribute('aria-label','Half-window raw cosine consistency; not an identity probability');halves.append(name,meter);target.append(halves)}
+    if(data.possibleOverlap){const heat=document.createElement('div');heat.className='overlap-heat';heat.setAttribute('role','img');heat.setAttribute('aria-label','Possible overlap signal; automatic name learning blocked');heat.textContent='POSSIBLE OVERLAP · name learning blocked';target.append(heat)}
     $('evidenceReason').textContent=(t.voiceNote||'No speaker analysis available')+
       (data.halfCosine==null?'':' · Half-window cosine '+data.halfCosine)+
       (data.possibleOverlap?' · Possible overlap: auto-name learning blocked':'')+
@@ -505,9 +510,15 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
    $('cutHistory').textContent=stt.cuts.map(c=>c.at+' · '+c.reason+' at '+c.elapsed+'ms (meter ±115ms)').join(' | ');
  }
  function updateDurationHistory(){
-   if(!stt.durations.length){$('durationDistribution').textContent='Window history: none';return}
+   drawDurationHistogram();if(!stt.durations.length){$('durationDistribution').textContent='Window history: none';return}
    const sorted=[...stt.durations].sort((a,b)=>a-b);
    $('durationDistribution').textContent=stt.durations.length+' windows · median '+sorted[Math.floor(sorted.length/2)]+'ms · range '+sorted[0]+'–'+sorted.at(-1)+'ms';
+ }
+ function drawDurationHistogram(){
+   const canvas=$('durationHistogram'),ctx=canvas?.getContext('2d');if(!ctx)return;const w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#0c1016';ctx.fillRect(0,0,w,h);
+   const buckets=Array(9).fill(0);for(const ms of stt.durations)buckets[Math.max(0,Math.min(8,Math.floor(ms/1000)))]++;
+   const max=Math.max(1,...buckets),gap=8,bw=(w-gap*10)/9;ctx.fillStyle='#98d8d7';buckets.forEach((count,i)=>{const bh=(h-13)*count/max;ctx.fillRect(gap+i*(bw+gap),h-11-bh,bw,bh)});
+   ctx.fillStyle='#91a3ad';ctx.font='10px system-ui';ctx.textAlign='center';ctx.fillText('1s',gap+bw/2,h-1);ctx.fillText('5s',w/2,h-1);ctx.fillText('9s+',w-gap-bw/2,h-1);
  }
  function scheduleHardCap(recorder){
    clearTimeout(stt.chunkTimer);
@@ -911,7 +922,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
        name+' boost disabled. Normal threshold restored.';
    }catch(e){$('enrollMessage').textContent=e.message||'Boost request failed'}
  }
- async function forgetSpeakers(name){if(speaker.enrolling)return;if(!ai.token)return;if(!window.confirm(name?'Forget the session voiceprint for '+name+'?':'Forget every enrolled voiceprint?'))return;
+ async function forgetSpeakers(name){if(speaker.enrolling)return;if(!ai.token)return;if(!name&&!window.confirm('Forget every enrolled session voiceprint?'))return;
   try{const res=await fetch('/api/speakers/forget',{method:'POST',headers:{'X-Lens-Token':ai.token,'Content-Type':'application/json'},body:JSON.stringify(name?{name}:{all:true})});const obj=await res.json();if(!res.ok)throw Error(obj.error||'Forget failed');speaker.profiles=obj.speakers.profiles;speaker.ramBytes=obj.speakers.ramBytes||0;speaker.detected.clear();$('speakerPresence').textContent='Possible voices this session: none yet';renderSpeakers();$('enrollMessage').textContent='Voiceprints discarded from server RAM. Existing transcript text is not changed.'}catch(e){$('enrollMessage').textContent=e.message||'Could not clear profiles'}
  }
  $('editForm').addEventListener('submit',event=>{event.preventDefault();const turn=state.turns.find(t=>t.id===editingId);const value=clean($('editText').value);if(!turn||!value){$('editError').textContent='Enter the corrected words before saving.';return}if(value!==turn.text){turn.text=value;turn.edited=true;invalidateAI(true);renderTranscript();analyze();scheduleAI()}$('editDialog').close();editingId=null;syncButtons()});
@@ -979,7 +990,11 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
   $('exportPlainBtn').addEventListener('click',()=>exportSession(false));
   $('copyNextBtn').addEventListener('click',()=>copy($('nextLine').value,$('copyNextBtn')));
   $('getCueBtn').addEventListener('click',()=>{analyze();scheduleAI(true)});
-  $('sheetToggle').addEventListener('click',()=>{const sheet=document.querySelector('.hero-cue'),open=sheet.dataset.collapsed==='true';sheet.dataset.collapsed=String(!open);$('sheetToggle').textContent=open?'Collapse cue ↓':'Expand cue ↑';$('sheetToggle').setAttribute('aria-expanded',String(open))});
+ function setCueSheetOpen(open){const sheet=document.querySelector('.hero-cue');sheet.dataset.collapsed=String(!open);$('sheetToggle').textContent=open?'Collapse cue ↓':'Expand cue ↑';$('sheetToggle').setAttribute('aria-expanded',String(open))}
+ $('sheetToggle').addEventListener('click',()=>setCueSheetOpen(document.querySelector('.hero-cue').dataset.collapsed==='true'));
+ let cueTouchY=null;const cueSheet=document.querySelector('.hero-cue');
+ cueSheet.addEventListener('touchstart',event=>{if(!mobileQuery.matches||event.target.closest('button,input,textarea,select'))return;cueTouchY=event.touches?.[0]?.clientY??null},{passive:true});
+ cueSheet.addEventListener('touchend',event=>{if(cueTouchY==null)return;const end=event.changedTouches?.[0]?.clientY,delta=Number(end)-cueTouchY;cueTouchY=null;if(!Number.isFinite(delta)||Math.abs(delta)<65)return;if(delta<0&&cueSheet.dataset.collapsed==='true')setCueSheetOpen(true);else if(delta>0&&cueSheet.dataset.collapsed==='false')setCueSheetOpen(false)},{passive:true});
   const layout=savedSetting('layout','split');$('layoutMode').value=['split','transcript','coaching','focus'].includes(layout)?layout:'split';
   const setLayout=()=>{layoutGrid.dataset.layout=$('layoutMode').value;setSetting('layout',$('layoutMode').value)};
   $('layoutMode').addEventListener('change',setLayout);setLayout();
