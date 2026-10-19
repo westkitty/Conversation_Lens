@@ -210,7 +210,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 32 | Half-window overlap heat | Half-cosine divergence heat bar and possible Mixed/overlap veto are shown in evidence drawer; frontend checks a synthetic 0.0080 gap | PARTIAL | Divergence is explicitly diagnostic, not an overlap probability; natural overlap accuracy is unverified |
 | 33 | Enrollment quality meter | Explicit enrollment displays measured signal-present and clipping rates before updating the profile; mocked Brave test checks the live meter and cancel path | PARTIAL | Signal preview is not calibrated against speaker-model quality or natural voices; server enrollment checks remain authoritative |
 | 34 | Instant speaker drop | Per-profile Remove immediately clears only that RAM voice profile; `test_frontend.py` verifies no confirmation and transcript label preservation | PASS | Forget All still requires confirmation |
-| 35 | Longer follow-up enrollment sample | Existing sample guidance | PARTIAL | Guided longer follow-up flow is absent |
+| 35 | Longer follow-up enrollment sample | Explicit standard 7s / optional 10s duration selector changes the actual local recording timer; frontend test checks the selected duration label | PARTIAL | No natural microphone/model comparison verifies that the longer sample improves recognition |
 | 36 | Raw cosine/margin available | `server.py` evidence and evidence drawer; `test_frontend.py` values | PASS | None observed in current checks |
 | 37 | Soft cap/merge suggestion | At six of eight profiles, `speaker_status()` returns up to three cross-profile raw-cosine candidate pairs; frontend displays review hints and never merges automatically; backend and desktop/mobile tests | PASS | Cosine hints are uncalibrated, tested only with synthetic vectors, and require owner judgment |
 | 38 | Window-length distribution | Live HTML rolling median/range and observed 1–9 s canvas histogram; `test_frontend.py` verifies histogram pixels after captured windows | PASS | No persisted history; distribution resets per session |
@@ -336,3 +336,8 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 
 - During an explicit, consented seven-second enrollment recording, the UI samples microphone RMS and clipped-frame rate and updates a visible pre-activation meter. The label explicitly says this is a signal check, not identity or recognition quality. A near-silent capture is rejected locally without changing a voice profile; the local server's existing checks remain in force.
 - QA-venv `test_frontend.py` supplies deterministic synthetic microphone frames, verifies the meter reaches the expected value and that cancel stops the sample at 1200px and 375px. Requirement 33 remains PARTIAL until natural microphone quality is measured and tied to the actual speaker model's enrollment-quality behavior.
+
+## Longer enrollment follow-up — 2026-10-19
+
+- Added an explicit 7-second standard and 10-second longer follow-up selection. The chosen duration is used by the recorder timer; the existing server 10-second audio cap remains authoritative. `test_frontend.py` verifies that the control updates the record action at both target widths.
+- Requirement 35 remains PARTIAL because no natural voice comparison has measured enrollment quality or recognition improvement from a longer sample.
