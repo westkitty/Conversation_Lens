@@ -762,13 +762,16 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
  }
  function renderPCMEditor(){
    const panel=$('pcmEditor'),enabled=!!stt.pcmState&&$('pcmMode').checked&&stt.pcmEditHold;panel.hidden=!enabled;if(!enabled)return;
-   const select=$('pcmEditWindow'),prior=select.value,items=stt.queue.filter(item=>item.pcmWindow&&stt.pcmState.timeline.buffered().some(s=>s.id===item.pcmWindow));select.replaceChildren();
+   const held=stt.queue.filter(item=>item.pcmWindow),timeline=stt.pcmState.timeline,availableIDs=new Set(timeline.buffered().map(segment=>segment.id)),evicted=held.filter(item=>!availableIDs.has(item.pcmWindow));
+   const select=$('pcmEditWindow'),prior=select.value,items=held.filter(item=>availableIDs.has(item.pcmWindow));select.replaceChildren();
    for(const item of items){const seg=stt.pcmState.timeline.get(item.pcmWindow),option=document.createElement('option');option.value=seg.id;option.textContent=seg.id+' · '+((seg.end-seg.start)/16000).toFixed(2)+'s'+(seg.edited?' · edited':'');select.append(option)}
    if([...select.options].some(option=>option.value===prior))select.value=prior;
    const selected=items.find(item=>item.pcmWindow===select.value),canvas=$('pcmEditCanvas'),ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.strokeStyle='#66c8bc';ctx.beginPath();ctx.moveTo(0,canvas.height/2);ctx.lineTo(canvas.width,canvas.height/2);ctx.stroke();
-   $('pcmEditApply').disabled=!selected;$('pcmEditMerge').disabled=!selected;$('pcmEditRelease').disabled=!items.length;
-   if(!selected){$('pcmEditStatus').textContent='No buffered PCM windows to edit.';return}
-   const timeline=stt.pcmState.timeline,seg=timeline.get(selected.pcmWindow),samples=stt.pcmState.ring.slice(seg.start,seg.end),bins=Math.min(300,canvas.width),step=Math.max(1,Math.floor(samples.length/bins));ctx.strokeStyle='#7bc9b4';ctx.beginPath();
+   $('pcmEditApply').disabled=!selected;$('pcmEditMerge').disabled=!selected;$('pcmEditRelease').disabled=!held.length;
+   if(!selected){$('pcmEditStatus').textContent=evicted.length
+     ?evicted.length+' held PCM '+(evicted.length===1?'window is':'windows are')+' older than the 45-second ring and can no longer be edited. The original WAV '+(evicted.length===1?'is':'files are')+' still available; transcribe held windows or choose Keep/Drop at Stop.'
+     :'No buffered PCM windows to edit.';return}
+   const seg=timeline.get(selected.pcmWindow),samples=stt.pcmState.ring.slice(seg.start,seg.end),bins=Math.min(300,canvas.width),step=Math.max(1,Math.floor(samples.length/bins));ctx.strokeStyle='#7bc9b4';ctx.beginPath();
    for(let x=0;x<bins;x++){let peak=0;for(let j=x*step;j<Math.min(samples.length,(x+1)*step);j++)peak=Math.max(peak,Math.abs(samples[j]/32768));const y=peak*(canvas.height*.46);ctx.moveTo(x*canvas.width/bins,canvas.height/2-y);ctx.lineTo(x*canvas.width/bins,canvas.height/2+y)}ctx.stroke();
    const at=timeline.segments.findIndex(s=>s.id===seg.id),next=timeline.segments[at+1],nextQueued=next&&items.find(item=>item.pcmWindow===next.id);$('pcmEditMerge').disabled=!(nextQueued&&seg.end===next.start);$('pcmEditStatus').textContent='Selected '+seg.id+' · samples '+seg.start+'–'+seg.end+' · '+(seg.edited?'edited; speaker learning blocked':'unmodified');
  }

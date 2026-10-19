@@ -16,6 +16,8 @@ for module in ('lens_pcm_core.js','lens_pcm_capture.js'):
 stub='''<script>
 window.fake={recorders:[],stopped:0,quiet:false,meterReads:0,transcribe:0,confirmCount:0,pcmUploads:[],drains:[],token:'ready-token',capture:null,closed:[],frozen:[],profiles:[],mergeSuggestions:[],transcriptQueue:[],whisperActive:'base',
              dataSize:950,errors:[],voiceEnabled:[],captureLeaseSequence:0,aiRequests:0,aiBodies:[],aiRequestTimes:[],aiActive:0,aiMaxActive:0,aiDelayMs:0,aiEchoLatest:false,busy:false,takeovers:0};
+const PCM16Ring=window.LensPCM.PCM16Ring;
+window.LensPCM.PCM16Ring=class extends PCM16Ring{constructor(options){super(options);window.fake.pcmRing=this}};
 window.fetch=async(path,opts={})=>{
  const ok=(v)=>new Response(JSON.stringify(v),{status:200,headers:{'Content-Type':'application/json'}});
  if(path==='/api/status')return ok({app:'conversation-lens',protocol:3,token:window.fake.token,ready:true,model:'mock-local',stt:{ready:true},speakers:{ready:true,profiles:window.fake.profiles,mergeSuggestions:window.fake.mergeSuggestions}});
@@ -552,6 +554,17 @@ with sync_playwright() as p:
         page.locator('#stopBtn').click();page.wait_for_function("document.querySelector('#statusText').textContent==='NOT LISTENING'")
         assert page.locator('#replayPCM').is_hidden() and page.locator('#pcmReplaySelect').is_hidden() and page.locator('#pcmReplayAudio').get_attribute('src') is None,'Stop must release replay clips and URLs'
         assert page.evaluate('window.fake.drains.length')==0
+        before_evicted=page.evaluate('window.fake.transcribe')
+        page.locator('#pcmEditHold').check();page.locator('#startBtn').click()
+        page.wait_for_function("!document.querySelector('#pcmEditor').hidden && document.querySelector('#pcmEditWindow').options.length===1",timeout=7000)
+        page.evaluate("window.fake.pcmRing.end+=window.fake.pcmRing.capacity;window.fake.pcmRing.length=window.fake.pcmRing.capacity;document.querySelector('#pcmEditWindow').dispatchEvent(new Event('change'))")
+        assert page.locator('#pcmEditWindow option').count()==0
+        assert 'older than the 45-second ring' in page.locator('#pcmEditStatus').inner_text()
+        assert page.locator('#pcmEditRelease').is_enabled(),'Evicted original WAV must remain releasable'
+        page.locator('#pcmEditRelease').click()
+        page.wait_for_function(f'window.fake.transcribe>{before_evicted}',timeout=7000)
+        assert page.evaluate('window.fake.pcmUploads.length')==3,'Evicted held original must still submit its retained WAV'
+        page.locator('#stopBtn').click();page.wait_for_function("document.querySelector('#statusText').textContent==='NOT LISTENING'")
         assert not errors,errors
         overflow=page.evaluate('document.documentElement.scrollWidth-innerWidth')
         assert overflow<=0,overflow
