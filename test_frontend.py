@@ -14,12 +14,14 @@ for module in ('lens_pcm_core.js','lens_pcm_capture.js'):
     source=(root/'experiments'/'packet-a'/module).read_text()
     html=html.replace(f'<script src="/packet-a/{module}"></script>',f'<script>{source}</script>')
 stub='''<script>
-window.fake={recorders:[],stopped:0,quiet:false,noiseRms:null,meterReads:0,transcribe:0,confirmCount:0,pcmUploads:[],drains:[],token:'ready-token',capture:null,closed:[],frozen:[],profiles:[],mergeSuggestions:[],transcriptQueue:[],whisperActive:'base',
+window.fake={recorders:[],stopped:0,quiet:false,noiseRms:null,meterReads:0,transcribe:0,confirmCount:0,pcmUploads:[],drains:[],token:'ready-token',capture:null,closed:[],frozen:[],profiles:[],mergeSuggestions:[],transcriptQueue:[],whisperActive:'base',enrollmentTimerMs:[],
              dataSize:950,errors:[],voiceEnabled:[],pcmRenderOptions:[],captureLeaseSequence:0,aiRequests:0,aiBodies:[],aiRequestTimes:[],aiActive:0,aiMaxActive:0,aiDelayMs:0,aiEchoLatest:false,busy:false,takeovers:0};
 const PCM16Ring=window.LensPCM.PCM16Ring;
 window.LensPCM.PCM16Ring=class extends PCM16Ring{constructor(options){super(options);window.fake.pcmRing=this}};
 const renderPCM=window.LensPCM.WindowTimeline.prototype.render;
 window.LensPCM.WindowTimeline.prototype.render=function(id,options){window.fake.pcmRenderOptions.push({...options});return renderPCM.call(this,id,options)};
+const trackedTimeout=window.setTimeout.bind(window);
+window.setTimeout=function(callback,delay,...args){if(delay===7000||delay===10000)window.fake.enrollmentTimerMs.push(delay);return trackedTimeout(callback,delay,...args)};
 window.fetch=async(path,opts={})=>{
  const ok=(v)=>new Response(JSON.stringify(v),{status:200,headers:{'Content-Type':'application/json'}});
  if(path==='/api/status')return ok({app:'conversation-lens',protocol:3,token:window.fake.token,ready:true,model:'mock-local',stt:{ready:true},speakers:{ready:true,profiles:window.fake.profiles,mergeSuggestions:window.fake.mergeSuggestions}});
@@ -148,6 +150,19 @@ with sync_playwright() as p:
         page.get_by_role('button',name='Record a voice sample (7s)').click()
         page.wait_for_function("document.querySelector('#enrollQuality').getAttribute('aria-valuenow')==='100'")
         assert 'not speaker identity' in page.locator('#enrollQualityText').inner_text()
+        page.evaluate('window.fake.noiseRms=0')
+        page.wait_for_function("Number(document.querySelector('#enrollQuality').getAttribute('aria-valuenow'))<100")
+        page.evaluate('window.fake.noiseRms=.75')
+        page.wait_for_function("()=>{const m=document.querySelector('#enrollQualityText').textContent.match(/clipping in (\\d+)%/);return m&&Number(m[1])>0}")
+        assert page.evaluate('window.fake.enrollmentTimerMs.at(-1)')==7000
+        assert 'for seven seconds' not in page.locator('#enrollMessage').inner_text(),'Enrollment prompt must reflect the selected duration'
+        page.get_by_role('button',name='Cancel voice sample').click()
+        page.wait_for_function("document.querySelector('#enrollMessage').textContent.includes('Sample canceled')")
+        page.evaluate('window.fake.noiseRms=null')
+        page.locator('#enrollDuration').select_option('10')
+        page.get_by_role('button',name='Record a voice sample (10s)').click()
+        page.wait_for_function("document.querySelector('#enrollMessage').textContent.includes('Recording Preview for 10 seconds')")
+        assert page.evaluate('window.fake.enrollmentTimerMs.at(-1)')==10000,'Long follow-up must change the actual capture timer'
         page.get_by_role('button',name='Cancel voice sample').click()
         page.wait_for_function("document.querySelector('#enrollMessage').textContent.includes('Sample canceled')")
         page.locator('#enrollConsent').uncheck()
@@ -401,6 +416,10 @@ with sync_playwright() as p:
         page.locator('#manualText').fill('On a different topic, I will send the updated file.')
         page.get_by_role('button',name='Add line').click()
         page.wait_for_function("document.querySelector('#signals').textContent.includes('Topic transition')")
+        page.locator('#manualText').fill('I interrupted you and talked over your answer.')
+        page.get_by_role('button',name='Add line').click()
+        page.wait_for_function("document.querySelector('#signals').textContent.includes('Possible interruption')",timeout=5000)
+        assert 'does not independently establish timing' in page.locator('#signals').inner_text()
         page.locator('#customRulesPanel').evaluate('e=>e.open=true')
         page.locator('#customRulePhrase').fill('delivery date')
         page.locator('#customRuleObservation').fill('The owner asked to notice this delivery-date phrase.')
@@ -412,6 +431,11 @@ with sync_playwright() as p:
         assert custom_card.locator('button.evidence-link').count()==1
         custom_card.locator('button.evidence-link').click()
         assert page.evaluate("document.activeElement.id.startsWith('passage-')")
+        for _ in range(12):
+            page.locator('#manualText').fill('The delivery outline remains ready for review.')
+            page.get_by_role('button',name='Add line').click()
+        page.wait_for_function("document.querySelector('#signals').textContent.includes('Possible loop')",timeout=5000)
+        assert 'does not prove a stalemate' in page.locator('#signals').inner_text()
         for line in [
             'The orbital telescope measured distant galaxies with infrared sensors.',
             'Researchers calibrated the observatory using reference stars.',
