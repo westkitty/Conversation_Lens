@@ -42,6 +42,8 @@ window.fetch=async(path,opts={})=>{
   return ok({closed:true,erased:true,speakers:{ready:true,profiles:[]}});
  }
  if(path==='/api/speakers')return ok({speakers:{ready:true,profiles:window.fake.profiles}});
+ if(path==='/api/speakers/export')return ok({schemaVersion:1,profiles:[{name:'Temporary',vectors:[[1,...Array(255).fill(0)],[1,...Array(255).fill(0)]]}],sha256:'a'.repeat(64)});
+ if(path==='/api/speakers/import'){const body=JSON.parse(opts.body);window.fake.profiles=body.profiles.map(p=>({name:p.name,samples:p.vectors.length,active:p.vectors.length>=2}));return ok({speakers:{ready:true,profiles:window.fake.profiles,ramBytes:2048}})}
  if(path==='/api/speakers/boost'){
   const body=JSON.parse(opts.body),entry=window.fake.profiles.find(p=>p.name===body.name);
   if(entry)entry.boostSeconds=body.seconds;
@@ -140,6 +142,15 @@ with sync_playwright() as p:
         page.get_by_role('button',name='Cancel voice sample').click()
         page.wait_for_function("document.querySelector('#enrollMessage').textContent.includes('Sample canceled')")
         page.locator('#enrollConsent').uncheck()
+        import_bundle={'schemaVersion':1,'profiles':[{'name':'Temporary','vectors':[[1.0]+[0.0]*255,[1.0]+[0.0]*255]}],'sha256':'a'*64}
+        page.locator('#importProfiles').set_input_files({'name':'profiles.json','mimeType':'application/json','buffer':json.dumps(import_bundle).encode()})
+        page.wait_for_function("document.querySelector('#profileFileStatus').textContent.includes('Imported 1 profile')")
+        with page.expect_download() as download_info:
+            page.locator('#exportProfiles').click()
+        assert download_info.value.suggested_filename=='conversation-lens-voice-profiles-v1.json'
+        assert 'No profile file is stored' in page.locator('#profileFileStatus').inner_text()
+        page.get_by_role('button',name='Forget Temporary').click()
+        page.wait_for_function("!document.querySelector('#speakerProfiles').textContent.includes('Temporary')")
         if width<810:
             expected=['setupTitle','listenTitle','cueTitle','transcriptTitle','signalTitle','aiTitle','speakerTitle','anchorTitle']
             dom_order=lambda:page.evaluate("() => [...document.querySelectorAll('.grid > section')].map(e => e.querySelector('h2')?.id)")

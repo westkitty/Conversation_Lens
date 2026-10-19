@@ -38,6 +38,22 @@ except ValueError:pass
 else:raise AssertionError('Compaction accepted a missing profile')
 print('PASS explicit speaker compaction retains two diverse RAM exemplars and reports sample loss')
 
+bundle=s.speaker_profile_bundle();saved_names=set(s.SPEAKERS)
+s.SPEAKERS={'Discarded':[unit(3),unit(3)]}
+restored=s.import_speaker_profile_bundle(bundle)
+assert {profile['name'] for profile in restored['profiles']}==saved_names and 'Discarded' not in s.SPEAKERS
+bad_bundle=dict(bundle);bad_bundle['sha256']='0'*64
+try:s.import_speaker_profile_bundle(bad_bundle)
+except ValueError as error:assert 'integrity' in str(error).lower()
+else:raise AssertionError('Corrupt speaker profile bundle was imported')
+bad_version=dict(bundle);bad_version['schemaVersion']=True
+try:s.import_speaker_profile_bundle(bad_version)
+except ValueError:pass
+else:raise AssertionError('Boolean schema version was accepted as integer version one')
+assert {profile['name'] for profile in s.speaker_status()['profiles']}==saved_names
+s.forget_speakers()
+print('PASS explicit speaker profile export/import integrity and atomic replacement')
+
 s.forget_speakers()
 s.SPEAKERS.update({'Dale':[unit(0),unit(0)],'Morgan':[unit(1),unit(1)]})
 matching=s.speaker_evidence(vectors(0,0))
@@ -136,6 +152,10 @@ with http.server.ThreadingHTTPServer(('127.0.0.1',0),s.Handler) as server:
     assert whisper_inventory['models'] and whisper_inventory['active']==s.WHISPER_MODEL.name
     assert all('path' not in model for model in whisper_inventory['models']),'Inventory must not expose local model paths'
     origin='http://127.0.0.1:%d'%port
+    s.SPEAKERS.update({'Dale':[unit(0),unit(0)],'Morgan':[unit(1),unit(1)]})
+    export_request=urllib.request.Request(origin+'/api/speakers/export',headers={'X-Lens-Token':s.APP_TOKEN})
+    with urllib.request.urlopen(export_request,timeout=4) as res:profile_bundle=json.load(res)
+    assert len(profile_bundle['profiles'])==2 and len(profile_bundle['sha256'])==64
     def post(path,body,extra=None):
         headers={'Origin':origin,'X-Lens-Token':s.APP_TOKEN,'Content-Type':'application/json','X-Lens-Protocol':'3'}
         headers.update(extra or {})
@@ -145,6 +165,8 @@ with http.server.ThreadingHTTPServer(('127.0.0.1',0),s.Handler) as server:
         except urllib.error.HTTPError as err:return err.code,json.load(err)
     code,opened=post('/api/capture/open',{'consent':True,'owner':'tab-a1b2c3d4'})
     assert code==200 and opened['capture']
+    code,_=post('/api/speakers/import',profile_bundle)
+    assert code==409,'Profile import must refuse to replace profiles during capture'
     alternative=next((model for model in whisper_inventory['models'] if not model['active']),None)
     if alternative:
         original_model=s.WHISPER_MODEL
@@ -185,6 +207,12 @@ with http.server.ThreadingHTTPServer(('127.0.0.1',0),s.Handler) as server:
         assert code==503 and s.WHISPER_MODEL.name==alternative['name'],'Failed warm-up must retain the active model'
         s.WHISPER_MODEL=original_model;s.warm_whisper_model=original_warm
         print('PASS installed Whisper inventory, active-capture refusal, successful switch, and rollback on failed warm-up')
+    code,imported=post('/api/speakers/import',profile_bundle)
+    assert code==200 and len(imported['speakers']['profiles'])==2
+    corrupt=dict(profile_bundle);corrupt['sha256']='0'*64
+    code,_=post('/api/speakers/import',corrupt)
+    assert code==422 and len(s.SPEAKERS)==2,'Corrupt profile import must preserve existing in-memory profiles'
+    print('PASS authenticated profile export/import endpoints and import integrity rejection')
     print('PASS Stop freeze, exact-hash Keep authorization, changed-clip rejection, Mixed veto, and one-use drain')
     s.SPEAKERS['Dale']=[unit(0),unit(0)]
     boost_body=json.dumps({'name':'Dale','seconds':120}).encode()

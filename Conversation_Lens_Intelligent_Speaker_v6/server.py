@@ -771,6 +771,58 @@ def compact_speaker(name):
                 'removed': before - 2, 'speakerDistance': round(distance, 4)}
 
 
+def speaker_profile_bundle():
+    """Build an explicit opt-in export; normal session state remains RAM-only."""
+    with SPEAKERS_LOCK:
+        profiles = [{'name': name, 'vectors': [list(vector) for vector in vectors]}
+                    for name, vectors in sorted(SPEAKERS.items()) if len(vectors) >= 2]
+    if not profiles:
+        raise ValueError('No active voice profiles are available to export')
+    payload = {'schemaVersion': 1, 'profiles': profiles}
+    canonical = json.dumps(payload, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode()
+    return {**payload, 'sha256': hashlib.sha256(canonical).hexdigest()}
+
+
+def import_speaker_profile_bundle(bundle):
+    global PROFILE_EPOCH
+    if not isinstance(bundle, dict) or set(bundle) != {'schemaVersion', 'profiles', 'sha256'}:
+        raise ValueError('Invalid profile bundle shape')
+    if type(bundle.get('schemaVersion')) is not int or bundle.get('schemaVersion') != 1 or not isinstance(bundle.get('profiles'), list):
+        raise ValueError('Unsupported profile bundle version')
+    payload = {'schemaVersion': 1, 'profiles': bundle['profiles']}
+    canonical = json.dumps(payload, sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode()
+    digest = bundle.get('sha256')
+    if not isinstance(digest, str) or not re.fullmatch(r'[a-f0-9]{64}', digest) or hashlib.sha256(canonical).hexdigest() != digest:
+        raise ValueError('Profile bundle integrity check failed')
+    profiles = {}
+    if not 1 <= len(bundle['profiles']) <= SPEAKER_HARD_CAP:
+        raise ValueError('Profile bundle must contain one to eight profiles')
+    for entry in bundle['profiles']:
+        if not isinstance(entry, dict) or set(entry) != {'name', 'vectors'}:
+            raise ValueError('Invalid profile entry')
+        name, vectors = entry['name'], entry['vectors']
+        if not isinstance(name, str) or not SPEAKER_NAME_RE.fullmatch(name) or name in profiles:
+            raise ValueError('Invalid or duplicate speaker name')
+        if not isinstance(vectors, list) or not 2 <= len(vectors) <= 3:
+            raise ValueError('Each imported profile must have two or three voice samples')
+        clean_vectors = []
+        for vector in vectors:
+            if not isinstance(vector, list) or len(vector) != 256 or any(
+                    isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value)
+                    for value in vector):
+                raise ValueError('Invalid speaker embedding')
+            norm = math.sqrt(sum(float(value) ** 2 for value in vector))
+            if not .90 <= norm <= 1.10:
+                raise ValueError('Speaker embedding is not normalized')
+            clean_vectors.append([float(value) for value in vector])
+        profiles[name] = clean_vectors
+    with SPEAKERS_LOCK:
+        PROFILE_EPOCH += 1
+        SPEAKERS.clear(); SPEAKERS.update(profiles)
+        SPEAKER_LAST_SEEN.clear(); SPEAKER_BOOST_UNTIL.clear(); SPEAKER_META.clear(); ENROLLMENT_AUDIO_IDS.clear()
+    return speaker_status()
+
+
 def transcribe_audio(payload, media_type, lang, auto_names=False, capture_session=None,
                      admission=None, force_mixed=False):
     with CAPTURE_LOCK:
@@ -927,6 +979,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if path == '/api/speakers':
             self.respond(200, {'speakers': speaker_status()})
             return
+        if path == '/api/speakers/export':
+            if self.headers.get('X-Lens-Token') != APP_TOKEN:
+                self.respond(403, {'error': 'Token denied'})
+                return
+            try:
+                self.respond(200, speaker_profile_bundle())
+            except ValueError as err:
+                self.respond(422, {'error': str(err)})
+            return
         if path.startswith('/packet-a/'):
             relative = path.removeprefix('/packet-a/')
             if relative not in ('lens_pcm_core.js', 'lens_pcm_capture.js', 'lens_stop_client.js'):
@@ -951,7 +1012,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             pass
 
     def do_POST(self):
-        if not self.allowed() or self.path not in ('/api/analyze', '/api/transcribe', '/api/speakers/enroll', '/api/speakers/forget', '/api/capture/open', '/api/capture/close', '/api/capture/freeze', '/api/capture/drain', '/api/session/erase', '/api/ollama/check', '/api/speakers/boost', '/api/speakers/compact', '/api/whisper/switch'):
+        if not self.allowed() or self.path not in ('/api/analyze', '/api/transcribe', '/api/speakers/enroll', '/api/speakers/forget', '/api/capture/open', '/api/capture/close', '/api/capture/freeze', '/api/capture/drain', '/api/session/erase', '/api/ollama/check', '/api/speakers/boost', '/api/speakers/compact', '/api/whisper/switch', '/api/speakers/import'):
             self.respond(403, {'error': 'Forbidden'})
             return
         host = self.headers.get('Host')
@@ -1149,6 +1210,31 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 except (RuntimeError, OSError, subprocess.TimeoutExpired) as err:
                     self.respond(503, {'error': str(err) or 'Whisper model validation failed; previous model remains active'})
                 except ValueError as err:
+                    self.respond(422, {'error': str(err)})
+            finally:
+                STT_LOCK.release()
+            return
+        if self.path == '/api/speakers/import':
+            try:
+                count = int(self.headers.get('Content-Length', '-1'))
+                if not 0 < count <= 400_000:
+                    raise ValueError('Invalid profile bundle size')
+                bundle = json.loads(self.rfile.read(count))
+            except (ValueError, TypeError, UnicodeDecodeError, json.JSONDecodeError):
+                self.respond(400, {'error': 'Invalid profile bundle'})
+                return
+            if not STT_LOCK.acquire(blocking=False):
+                self.respond(429, {'error': 'Audio processing is running; try profile import after it finishes'})
+                return
+            try:
+                with CAPTURE_LOCK:
+                    if CAPTURE_SESSION is not None:
+                        self.respond(409, {'error': 'Stop microphone capture before importing profiles'})
+                        return
+                try:
+                    profiles = import_speaker_profile_bundle(bundle)
+                    self.respond(200, {'speakers': profiles})
+                except (ValueError, TypeError) as err:
                     self.respond(422, {'error': str(err)})
             finally:
                 STT_LOCK.release()
