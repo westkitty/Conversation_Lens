@@ -8,6 +8,8 @@
 
 Use participant labels A and B in this tracker. Do not save a recording or personal conversation notes. Enter only observed app behavior and participant ratings. Do not count generated speech or synthetic tests as human acceptance.
 
+**Separate native smoke check (October 19, 2026):** One owner-initiated controlled mic run produced two displayed mic passages and a local early-conversation observation; Stop, idle health, and Erase succeeded. Input-meter response was not independently verified, and whether the captured phrase was naturally spoken or speaker-played generated speech was not established. This does not change the two-person acceptance status above.
+
 ## Ten-minute procedure
 
 1. **0:00–1:00 — consent and setup.** Both people agree to the test. Open the installed native app, verify `NOT LISTENING`, select the in-app consent checkbox, and press Start. Confirm the app reports the Mac's physical input and the meter responds to room sound and speech.
