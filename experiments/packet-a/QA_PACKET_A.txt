@@ -1,0 +1,228 @@
+Conversation Lens Packet A — Final test evidence
+Execution target: hosted Linux test container, Python 3.13 / Node 22 / Chromium
+Status: isolated connected prototype; not installed in MacBook v6
+
+=== Node unit/integration ===
+TAP version 13
+# Subtest: real keep/drop client sends only two selected exact WAVs under a fresh drain lease
+ok 1 - real keep/drop client sends only two selected exact WAVs under a fresh drain lease
+  ---
+  duration_ms: 25.061275
+  type: 'test'
+  ...
+# Subtest: drop all revokes frozen lease without any drain token or clip upload
+ok 2 - drop all revokes frozen lease without any drain token or clip upload
+  ---
+  duration_ms: 1.575759
+  type: 'test'
+  ...
+# Subtest: failed freeze forbids drain, local client does not claim Stop was confirmed
+ok 3 - failed freeze forbids drain, local client does not claim Stop was confirmed
+  ---
+  duration_ms: 0.983996
+  type: 'test'
+  ...
+# Subtest: bad selection is rejected before remote authorization; clip remains selectable after fix
+ok 4 - bad selection is rejected before remote authorization; clip remains selectable after fix
+  ---
+  duration_ms: 2.765116
+  type: 'test'
+  ...
+# Subtest: server rejects one clip without turning it into a successful transcript
+ok 5 - server rejects one clip without turning it into a successful transcript
+  ---
+  duration_ms: 2.737744
+  type: 'test'
+  ...
+# Subtest: cancel drain invalidates generation and prevents any late result from being surfaced
+ok 6 - cancel drain invalidates generation and prevents any late result from being surfaced
+  ---
+  duration_ms: 2.825387
+  type: 'test'
+  ...
+# Subtest: busy speech worker returns retryable 429 without burning the selected one-use WAV
+ok 7 - busy speech worker returns retryable 429 without burning the selected one-use WAV
+  ---
+  duration_ms: 422.755439
+  type: 'test'
+  ...
+# Subtest: server close failure is shown as unverified and token stays available for retry
+ok 8 - server close failure is shown as unverified and token stays available for retry
+  ---
+  duration_ms: 2.613357
+  type: 'test'
+  ...
+# Subtest: streaming resampler invariant to chunk boundaries 16000
+ok 9 - streaming resampler invariant to chunk boundaries 16000
+  ---
+  duration_ms: 21.701332
+  type: 'test'
+  ...
+# Subtest: streaming resampler invariant to chunk boundaries 44100
+ok 10 - streaming resampler invariant to chunk boundaries 44100
+  ---
+  duration_ms: 19.973814
+  type: 'test'
+  ...
+# Subtest: streaming resampler invariant to chunk boundaries 48000
+ok 11 - streaming resampler invariant to chunk boundaries 48000
+  ---
+  duration_ms: 15.85246
+  type: 'test'
+  ...
+# Subtest: streaming resampler invariant to chunk boundaries 96000
+ok 12 - streaming resampler invariant to chunk boundaries 96000
+  ---
+  duration_ms: 30.502683
+  type: 'test'
+  ...
+# Subtest: ring preserves exact PCM samples through wraparound and refuses evicted source
+ok 13 - ring preserves exact PCM samples through wraparound and refuses evicted source
+  ---
+  duration_ms: 11.522971
+  type: 'test'
+  ...
+# Subtest: ring can ingest more than entire capacity without breaking absolute frame mapping
+ok 14 - ring can ingest more than entire capacity without breaking absolute frame mapping
+  ---
+  duration_ms: 8.552396
+  type: 'test'
+  ...
+# Subtest: WAV encoder writes canonical RIFF, PCM16 mono 16k and payload byte-exactly
+ok 15 - WAV encoder writes canonical RIFF, PCM16 mono 16k and payload byte-exactly
+  ---
+  duration_ms: 0.413324
+  type: 'test'
+  ...
+# Subtest: split, boundary drag and merge conserve exactly every frame; never duplicate or drop
+ok 16 - split, boundary drag and merge conserve exactly every frame; never duplicate or drop
+  ---
+  duration_ms: 12.692557
+  type: 'test'
+  ...
+# Subtest: merge at exactly 10 seconds is valid, but anything larger is refused
+ok 17 - merge at exactly 10 seconds is valid, but anything larger is refused
+  ---
+  duration_ms: 6.918288
+  type: 'test'
+  ...
+# Subtest: merge contiguous shorter spans preserves mixed identity and stops name learning
+ok 18 - merge contiguous shorter spans preserves mixed identity and stops name learning
+  ---
+  duration_ms: 5.845938
+  type: 'test'
+  ...
+# Subtest: pre-roll and post-roll yield real samples without mutating primary boundaries; reject excess
+ok 19 - pre-roll and post-roll yield real samples without mutating primary boundaries; reject excess
+  ---
+  duration_ms: 6.240463
+  type: 'test'
+  ...
+# Subtest: STOP can resubmit a frozen inflight clip from the ring without making it editable
+ok 20 - STOP can resubmit a frozen inflight clip from the ring without making it editable
+  ---
+  duration_ms: 4.349379
+  type: 'test'
+  ...
+# Subtest: bounded ring evictions make old clips unavailable and visible as dropped
+ok 21 - bounded ring evictions make old clips unavailable and visible as dropped
+  ---
+  duration_ms: 7.463801
+  type: 'test'
+  ...
+# Subtest: reject invalid state transitions and noncontiguous capture edits
+ok 22 - reject invalid state transitions and noncontiguous capture edits
+  ---
+  duration_ms: 4.406835
+  type: 'test'
+  ...
+# Subtest: PCM WAV format guards and digest exact bytes
+ok 23 - PCM WAV format guards and digest exact bytes
+  ---
+  duration_ms: 6.03887
+  type: 'test'
+  ...
+# Subtest: stop freeze cuts off stale live response then only explicit keep survives
+ok 24 - stop freeze cuts off stale live response then only explicit keep survives
+  ---
+  duration_ms: 4.088163
+  type: 'test'
+  ...
+# Subtest: do not accept late callbacks from previous drain nonce
+ok 25 - do not accept late callbacks from previous drain nonce
+  ---
+  duration_ms: 0.367505
+  type: 'test'
+  ...
+# Subtest: memory cap, no duplicate upload, cannot add new window after stopping
+ok 26 - memory cap, no duplicate upload, cannot add new window after stopping
+  ---
+  duration_ms: 0.432944
+  type: 'test'
+  ...
+# Subtest: reject editing a transient sending clip or invalid drain choice
+ok 27 - reject editing a transient sending clip or invalid drain choice
+  ---
+  duration_ms: 1.726778
+  type: 'test'
+  ...
+# Subtest: drain expiry discards remaining audio and prevents later commit
+ok 28 - drain expiry discards remaining audio and prevents later commit
+  ---
+  duration_ms: 0.339603
+  type: 'test'
+  ...
+# Subtest: rejected drain consumes clip once, no silent retry
+ok 29 - rejected drain consumes clip once, no silent retry
+  ---
+  duration_ms: 0.290208
+  type: 'test'
+  ...
+1..29
+# tests 29
+# suites 0
+# pass 29
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 529.831136
+
+=== Python coordinator + real localhost HTTP ===
+test_atomic_voice_update_never_runs_after_freeze (test_stop_drain.CoordinatorTests.test_atomic_voice_update_never_runs_after_freeze) ... ok
+test_concurrent_freeze_rejects_inflight_commit (test_stop_drain.CoordinatorTests.test_concurrent_freeze_rejects_inflight_commit) ... ok
+test_drop_and_selective_keep_mixed_veto (test_stop_drain.CoordinatorTests.test_drop_and_selective_keep_mixed_veto) ... ok
+test_duplicate_live_window_and_stale_nonce_rejected (test_stop_drain.CoordinatorTests.test_duplicate_live_window_and_stale_nonce_rejected) ... ok
+test_expiry_frozen_and_drain (test_stop_drain.CoordinatorTests.test_expiry_frozen_and_drain) ... ok
+test_explicit_discard_and_zero_leak_status (test_stop_drain.CoordinatorTests.test_explicit_discard_and_zero_leak_status) ... ok
+test_freeze_forbids_old_learning_and_only_exact_kept_clip_can_drain (test_stop_drain.CoordinatorTests.test_freeze_forbids_old_learning_and_only_exact_kept_clip_can_drain) ... ok
+test_invalid_descriptors_rejected_without_consuming_frozen_lease (test_stop_drain.CoordinatorTests.test_invalid_descriptors_rejected_without_consuming_frozen_lease) ... ok
+test_takeover_revokes_old_lease_and_old_frozen_token (test_stop_drain.CoordinatorTests.test_takeover_revokes_old_lease_and_old_frozen_token) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.001s
+
+OK
+test_all_drop_never_uploads_and_remote_origin_is_rejected (test_packet_a_server.HTTPIntegration.test_all_drop_never_uploads_and_remote_origin_is_rejected) ... ok
+test_full_open_freeze_select_drain_two_and_stale_replay (test_packet_a_server.HTTPIntegration.test_full_open_freeze_select_drain_two_and_stale_replay) ... ok
+test_main_page_and_transport_source_actually_served (test_packet_a_server.HTTPIntegration.test_main_page_and_transport_source_actually_served) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.527s
+
+OK
+
+=== Chromium inline standalone editing UI ===
+PASS INLINE UI 1200 click/drag split-merge, exact PCM counts, pre-roll, Keep/Drop, layout
+PASS INLINE UI 375 click/drag split-merge, exact PCM counts, pre-roll, Keep/Drop, layout
+NOTE: AudioWorklet/browser microphone tests require the actual localhost Brave runtime.
+
+=== Chromium connected UI -> actual Python localhost HTTP through Playwright bridge ===
+PASS bridged browser 1200 exact PCM->SHA manifest->freeze->keep 2/drop 1->actual HTTP WAV->server results
+PASS bridged browser 375 exact PCM->SHA manifest->freeze->keep 2/drop 1->actual HTTP WAV->server results
+PASS bridged browser Drop All: no upload, no transcript, capture revoked
+PASS chooser 5 windows, four-window cap, remembered Keep/Drop selections after reopen
+
+=== Static parsing ===
+Inline script syntax exported for parsing.
+STATIC PASS
