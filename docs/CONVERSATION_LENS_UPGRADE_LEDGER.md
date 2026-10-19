@@ -194,7 +194,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 16 | Sliding plus priority AI context | `server.py` `chosen_turns`; `test_live_upgrade.py` older-priority retention | PASS | No long-session capacity trial |
 | 17 | Exact/Fuzzy/Free grounding dial | `server.py` evidence validation; `test_live_upgrade.py` exact/fuzzy/free | PASS | None observed in current tests |
 | 18 | Offline interruption/repetition/topic-shift cards | Live HTML has repetition cues plus explicit “let me finish” and “different topic” phrase triggers; frontend exercises both | PARTIAL | No turn-level interruption or semantic topic-change classifier; trigger scope is intentionally literal |
-| 19 | In-place copyable next-step cards | Current next-line editor/copy control in live HTML | PARTIAL | Historical cards do not each have independent edit/copy controls |
+| 19 | In-place copyable next-step cards | Each historical coaching card now has its own editable next line and copy action; frontend asserts card-local edit and copied value | PASS | Copy uses the browser clipboard when available |
 | 20 | Mid-session coaching presets | Live HTML current settings flow to Ollama; `test_frontend.py` request payload | PASS | No provider/model switching during active request test |
 | 21 | Full/half speaker confidence strip | Evidence drawer renders accessible native meters for full, first/second half, and half-window consistency; frontend asserts values and probability caveat | PASS | Measures raw cosine only, not a calibrated confidence probability |
 | 22 | Speaker lock N windows/unpin | Live HTML lock control; `test_frontend.py` one-window pin and expiry | PASS | None observed in current browser checks |
@@ -202,7 +202,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 24 | Bookmarks/highlights in export | Live HTML marker actions and exporter; `test_frontend.py` bookmark/highlight actions | PARTIAL | Current export assertion does not verify marker contents |
 | 25 | Coaching pause, hot ASR | Live HTML pause and capture lifecycle | PARTIAL | Hot ASR action is not separately measured in this run |
 | 26 | Smart debounce/manual immediate cue | Live HTML scheduling and manual cue action | PARTIAL | Debounce latency and cancellation races lack focused timing tests |
-| 27 | Coaching timeline and per-card regenerate | Live HTML source-linked history | PARTIAL | Regeneration remains current-cue oriented, not per historical card |
+| 27 | Coaching timeline and per-card regenerate | Per-card action regenerates only the selected history card through opted-in local Ollama; frontend asserts the selected card's result | PASS | Requires user-enabled Ollama; source uses the current transcript context |
 | 28 | Grounding badge/retry looser | Live HTML grounding state and retry control | PASS | Retry interaction not exercised in this turn |
 | 29 | Private note/goal for next AI call | `server.py` Ollama payload; `test_live_upgrade.py` private note assertion | PASS | None observed in current tests |
 | 30 | Live VAD tunables and preview | Live HTML VAD sliders/graph; `test_frontend.py` synthetic meter segmentation | PASS | Production PCM tuning has not been compared to physical speech |
@@ -263,3 +263,8 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 - Added phrase-grounded “Turn-taking” and explicit “Topic transition” observations with wording that discloses their limits. Existing repetition cues remain local.
 - Added a session-derived, source-linked candidate Decisions & Actions list. It is rebuilt from transcript turns, uses `textContent`, does not persist, and labels each match as possible rather than settled.
 - QA-venv `test_frontend.py` passed at 1200px and 375px, covering both cue triggers, both candidate categories, and navigation to the supporting passage. Requirement 57 is PASS for that scope; requirement 18 remains PARTIAL because this does not infer interruptions or semantic topic changes.
+
+## Historical coaching controls — 2026-10-18
+
+- Each recent coaching card now owns an editable/copyable next-line field. The opt-in per-card Regenerate button sends the current transcript and selected local Ollama settings, then updates only that card; unavailable or busy AI states are explicit and leave existing cards intact.
+- QA-venv `test_frontend.py` passed at 1200px and 375px. It edits and copies a card-specific line, then verifies a local mocked Ollama response changes that card's suggestion. Rows 19 and 27 are PASS for this exercised path.

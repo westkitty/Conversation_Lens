@@ -88,6 +88,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
 .window-tuner output{color:var(--cyan);font-variant-numeric:tabular-nums}
 .overlap-heat{grid-column:1/-1;border:1px solid #bb7358;border-radius:7px;padding:7px;color:#ffd0aa;background:linear-gradient(90deg,#743d3d,#3a262a);font-size:11px;letter-spacing:.04em}
 .action-ledger{margin-top:15px;border-top:1px solid var(--edge);padding-top:10px}.action-ledger h3{font-size:13px;margin:0 0 5px}.action-item{border:1px solid var(--edge);background:#111923;border-radius:8px;padding:8px;margin-top:6px;font-size:12px}.action-item strong{color:var(--cyan);font-size:10px;text-transform:uppercase;letter-spacing:.06em}.action-item p{margin:5px 0;color:var(--ink)}
+.history-actions{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;margin-top:7px}.history-actions input{min-width:0;margin:0;padding:7px;font-size:12px}
 .window-tuner input[type=range]{width:100%;accent-color:var(--red)}
 .energy-plot{display:block;width:100%;height:72px;border:1px solid var(--edge);border-radius:8px;background:#0c1016;margin-top:7px}
 .duration-plot{display:block;width:100%;height:42px;border:1px solid var(--edge);border-radius:8px;background:#0c1016;margin-top:6px}
@@ -356,7 +357,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
     const signature=kind+'|'+state.turns.length+'|'+$('cueTitle').textContent+'|'+$('cueText').textContent;
     if(signature===ui.lastCue)return;
     ui.lastCue=signature;
-    ui.cues.unshift({id:Date.now(),sourceId,kind,title:$('cueTitle').textContent,why:$('cueText').textContent});
+    ui.cues.unshift({id:Date.now(),sourceId,kind,title:$('cueTitle').textContent,why:$('cueText').textContent,nextLine:$('nextLine').value});
     ui.cues.length=Math.min(30,ui.cues.length);
     renderCueTimeline();if($('filterCoached').checked)renderTranscript();
   }
@@ -367,6 +368,9 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
       const name=document.createElement('strong');name.textContent=c.kind.toUpperCase()+' · '+c.title;
       const desc=document.createElement('p');desc.textContent=c.why;card.append(name,desc);
       if(c.sourceId){const b=document.createElement('button');b.className='btn small ghost';b.textContent='Jump to passage '+c.sourceId;b.addEventListener('click',()=>{jumpToTurn(c.sourceId);openEvidence(c.sourceId)});card.append(b)}
+      const actions=document.createElement('div');actions.className='history-actions';const line=document.createElement('input');line.className='field';line.value=c.nextLine||'';line.maxLength=350;line.setAttribute('aria-label','Edit next line for coaching card '+c.id);line.addEventListener('input',()=>{c.nextLine=line.value});
+      const copyLine=document.createElement('button');copyLine.className='btn small ghost';copyLine.type='button';copyLine.textContent='Copy line';copyLine.addEventListener('click',()=>copy(c.nextLine||'',copyLine));
+      const regenerate=document.createElement('button');regenerate.className='btn small ghost regenerate-card';regenerate.type='button';regenerate.textContent='Regenerate';regenerate.disabled=!ai.enabled||!ai.ready;regenerate.setAttribute('aria-label','Regenerate coaching card '+c.id);regenerate.addEventListener('click',()=>regenerateCueCard(c.id));actions.append(line,copyLine,regenerate);card.append(actions);
       target.append(card);
     }
   }
@@ -445,6 +449,29 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
      $('groundingBadge').textContent=(i.evidence_status||'unknown').toUpperCase();
      $('retryLoose').hidden=!['rejected','approximate','ungrounded'].includes(i.evidence_status||'');
      $('aiReview').hidden=false;setAIStatus('LIVE · '+ai.model);setAIMessage('Model observation covers passage '+currentCount+(state.turns.length>currentCount?' ('+(state.turns.length-currentCount)+' newer)':'' )+'. It is a suggestion, not a verdict.');if(state.turns.length<=currentCount+1){$('cueTitle').textContent=i.next_step;$('cueText').textContent=i.observation;refreshHeroActions(source?source.id:null,'ai')}}catch(e){if(e.name!=='AbortError'&&gen===ai.session){setAIStatus('AI ERROR');setAIMessage((e.message||'AI request failed')+'. Local cues still work.');}}finally{ai.inFlight=false;if(ai.controller===controller)ai.controller=null;if(ai.pending&&ai.ready&&ai.enabled&&!state.paused) scheduleAI();}}
+
+ async function regenerateCueCard(cardID){
+   const card=ui.cues.find(item=>item.id===cardID);if(!card||!ai.enabled||!ai.ready){setAIMessage('Enable optional local AI coaching before regenerating a historical card.');return}
+   if(ai.inFlight){setAIMessage('Wait for the current local AI request to finish before regenerating a card.');return}
+   clearTimeout(ai.timer);ai.pending=false;ai.inFlight=true;const gen=ai.session,revision=ai.revision,controller=new AbortController();ai.controller=controller;setAIStatus('REGENERATING · '+ai.model);
+   const older=state.turns.slice(0,-8),priority=/\b(?:decide|decided|deadline|promise|agreed|need|must|important|next step|why|because|confused)\b/i;
+   const chosen=[...older.map((t,i)=>({t,i})).filter(o=>priority.test(o.t.text)).slice(-6).map(o=>o.t),...state.turns.slice(-8)];
+   const turns=chosen.map(t=>({speaker:(t.speaker.startsWith('name:')&&!t.manualSpeaker&&/provisional|heard-only|unverified|not verified/i.test(t.voiceNote))?'Unassigned':speakerLabel(t.speaker),text:t.text.slice(0,900),manual:t.manualSpeaker===true}));
+   const preset=$('coachPreset').value,fragment=preset==='custom'?$('customFragment').value:preset;
+   const request={goal:$('aim').selectedOptions[0].text,context:$('context').value,turns,note:$('privateNote').value,
+     grounding:$('groundingMode').value,system_fragment:fragment,ollama:{url:$('ollamaUrl').value.trim(),model:$('ollamaModel').value.trim(),timeout:Number($('ollamaTimeout').value),temperature:Number($('ollamaTemperature').value)}};
+   try{
+     const response=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json','X-Lens-Token':ai.token,'X-Lens-Protocol':'3'},body:JSON.stringify(request),signal:controller.signal});
+     if(!response.ok){const error=await response.json().catch(()=>({}));throw Error(error.error||'AI request failed ('+response.status+')')}
+     const data=await response.json(),insight=data.insight;if(gen!==ai.session||revision!==ai.revision||!ai.enabled||!ui.cues.some(item=>item.id===cardID))return;
+     if(!insight||typeof insight.observation!=='string'||typeof insight.next_step!=='string')throw Error('Invalid AI response');
+     const target=ui.cues.find(item=>item.id===cardID);target.kind='AI regeneration';target.title=insight.observation;target.why=insight.caution||'Regenerated from the current transcript; review the cited words.';target.nextLine=insight.next_step;
+     const normalize=s=>String(s||'').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim(),quote=normalize(insight.evidence);
+     const source=quote.length>=6?state.turns.slice(-80).find(turn=>normalize(turn.text).includes(quote)):null;if(source)target.sourceId=source.id;
+     renderCueTimeline();setAIStatus('LIVE · '+ai.model);setAIMessage('Historical card regenerated from the current transcript and local model. Review the source and wording.');
+   }catch(error){if(error.name!=='AbortError'&&gen===ai.session){setAIStatus('AI ERROR');setAIMessage((error.message||'Could not regenerate card')+'. Existing card remains available.')}}
+   finally{ai.inFlight=false;if(ai.controller===controller)ai.controller=null;if(ai.pending&&ai.ready&&ai.enabled&&!state.paused)scheduleAI()}
+ }
 
  function make(kind,title,why,tryLine,evidence,score=1){const matched=signalEvidence;signalEvidence=null;return {kind,title,why,tryLine,evidence,score,sourceId:matched?matched.id:null,sourceText:matched?matched.text:''}}
  function renderActionLedger(){

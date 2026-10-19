@@ -237,6 +237,17 @@ with sync_playwright() as p:
         page.locator('#getCueBtn').click()
         if width<810:page.locator('#sheetToggle').click()
         page.wait_for_function('window.fake.aiRequests>=2',timeout=3500)
+        history_card=page.locator('#coachingTimeline .history-card').first
+        card_line=history_card.locator('.history-actions input')
+        card_line.fill('Card-specific suggested question?')
+        assert card_line.input_value()=='Card-specific suggested question?'
+        page.evaluate("Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>window.fake.copied=text}});Object.defineProperty(window,'isSecureContext',{configurable:true,value:true})")
+        history_card.locator('.history-actions button').nth(0).click()
+        page.wait_for_function("window.fake.copied==='Card-specific suggested question?'")
+        regen=history_card.get_by_role('button',name='Regenerate')
+        assert regen.is_enabled()
+        regen.click();page.wait_for_function('window.fake.aiRequests>=3',timeout=4000)
+        page.wait_for_function("document.querySelector('#coachingTimeline .history-actions input').value==='What date should we agree on?'")
         page.locator('#aiEvidenceJump').wait_for(timeout=4000)
         page.locator('#aiEvidenceJump').click()
         assert page.evaluate('document.activeElement.id')=='passage-2'
