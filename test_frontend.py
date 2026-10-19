@@ -188,6 +188,7 @@ with sync_playwright() as p:
         page.evaluate('window.fake.recorders.at(-1).stop()')
         page.wait_for_function("document.querySelectorAll('.turn').length===1")
         assert page.locator('.who').last.inner_text()=='Dale ?'
+        assert 'MediaRecorder audio' in page.locator('#pcmReplaySelect').inner_text(),'Default WebM recorder clips should also enter bounded replay history'
         assert page.evaluate('window.fake.transcribe')==1
         # Second window closes on ~900ms of detected silence, after a minimum ~2.8s.
         page.evaluate("window.fake.transcriptQueue.push({text:'I want us to understand each other.',speaker:{label:'Dale',level:'probable',reason:'Tentative acoustic',evidence:{full:{best:'Dale',cosine:.9345,margin:.1456},first:{best:'Dale',cosine:.901,margin:.101},second:{best:'Dale',cosine:.909,margin:.112},halfCosine:.85,possibleOverlap:false,speechSeconds:2.5}},introduction:{name:'Dale',state:'strengthened',message:'Two matching windows'}})")
@@ -483,11 +484,13 @@ with sync_playwright() as p:
         assert pcm['contentType']=='audio/wav' and pcm['bytes']>50000 and pcm['forceMixed']=='true',pcm
         assert page.evaluate('window.fake.pcmUploads.length')==2,'Split windows must both be sent as canonical WAV'
         page.wait_for_function("document.querySelectorAll('.turn').length===2",timeout=3000)
-        assert page.locator('#replayPCM').is_visible() and page.locator('#pcmReplayAudio').get_attribute('src').startswith('blob:'), 'Latest processed PCM audio should be replayable from its bounded in-memory clip'
+        assert page.locator('#pcmReplaySelect option').count()==2 and page.locator('#replayPCM').is_visible() and page.locator('#pcmReplayAudio').get_attribute('src').startswith('blob:'), 'Recent processed audio should be replayable from its bounded in-memory list'
+        page.locator('#pcmReplaySelect').select_option(index=0)
+        assert page.locator('#pcmReplayAudio').get_attribute('src').startswith('blob:')
         assert 'overlap 1 (1.2s)' in page.locator('#talkTimeStats').inner_text()
         page.locator('#pauseIntakeBtn').click();assert page.locator('#pauseIntakeBtn').inner_text()=='Resume intake';page.locator('#pauseIntakeBtn').click()
         page.locator('#stopBtn').click();page.wait_for_function("document.querySelector('#statusText').textContent==='NOT LISTENING'")
-        assert page.locator('#replayPCM').is_hidden() and page.locator('#pcmReplayAudio').get_attribute('src') is None,'Stop must release the replay clip URL'
+        assert page.locator('#replayPCM').is_hidden() and page.locator('#pcmReplaySelect').is_hidden() and page.locator('#pcmReplayAudio').get_attribute('src') is None,'Stop must release replay clips and URLs'
         assert page.evaluate('window.fake.drains.length')==0
         assert not errors,errors
         overflow=page.evaluate('document.documentElement.scrollWidth-innerWidth')

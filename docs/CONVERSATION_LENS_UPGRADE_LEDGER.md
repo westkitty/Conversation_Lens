@@ -228,7 +228,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 50 | Rate limit and backpressure | Bounded queue/retry in app; Packet A 429 retention test | PASS | Main app saturation not stress-tested |
 | 51 | Finish/drop in-flight shutdown | Freeze, exact-hash drain lease, per-window Keep/Drop; backend tests | PASS | No physical multi-pending-window race test |
 | 52 | Versioned server-client messages | Protocol v3 required on protected requests; 426 mismatch regression | PASS | No older client compatibility matrix |
-| 53 | Recent-window replay/debug | Skipped live clips remain reprocessable; latest successfully processed PCM WAV is playable with native audio controls while the bounded capture session remains active | PARTIAL | Only one processed PCM window is retained for replay; MediaRecorder processed-window replay and multi-item history are absent; Stop releases replay bytes |
+| 53 | Recent-window replay/debug | Skipped live clips are reprocessable; last four processed PCM/MediaRecorder clips are available through native browser playback, capped at 2 MB total; frontend verifies both formats and Stop cleanup | PASS | Playback was verified by browser media state, not physical speaker output; history is RAM-only and clears on Stop |
 | 54 | Snapshot/restore | Version-1 JSON snapshot with SHA-256 validation, bounded validation, transcript labels/turns, bookmarks/highlights, coaching cards and private text restore; frontend tests verify corrupt-checksum and unsupported-version rollback | PASS | Audio voice notes and speaker profiles are excluded and explicitly disclosed; the separate profile export is opt-in; limits are 1 MB/300 turns and no long-session performance trial was run |
 | 55 | Multi-tab lease visibility/transfer | Explicit takeover/invalidation; `/api/health` exposes opaque tab owner and age; backend and mocked browser tests verify data and UI | PARTIAL | Physical two-tab takeover remains unverified |
 | 56 | Custom local cue rules | New session-only rule editor with max 8 literal phrase matches, bounded observation/question text, priority and source link; `test_frontend.py` asserts a live match and cleanup on Erase | PASS | Rules are literal substrings, not semantic conditions; no persistence |
@@ -372,3 +372,8 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 
 - Extended browser coverage for the existing bounded skipped-window path: pause intake, stop a buffered MediaRecorder window, verify the reason and retry action, reprocess while the active capture lease remains valid, and confirm the returned passage.
 - QA-venv `test_frontend.py` exercises this at 1200px and 375px. Requirement 7 is PASS for the paused-intake/retry path; worker-timeout and every skip reason remain outside this focused run.
+
+## Bounded recent-window replay — 2026-10-19
+
+- Expanded replay to the last four successfully processed audio clips from either PCM WAV or MediaRecorder, with a two-megabyte total cap and a 512 KB per-clip cap. Native audio controls select and play a clip; Stop releases every clip and object URL. No audio is written to disk by this feature.
+- QA-venv `test_frontend.py` verifies MediaRecorder and PCM entries, selection, two-window split submissions, and Stop cleanup at 1200px and 375px. Requirement 53 is PASS for bounded in-memory replay; physical speaker output was not tested.

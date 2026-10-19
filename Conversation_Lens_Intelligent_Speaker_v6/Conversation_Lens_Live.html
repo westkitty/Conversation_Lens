@@ -160,7 +160,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
        </div><label class="check"><input id="pcmEditHold" type="checkbox"><span>Hold PCM windows for sample-accurate review before transcription. The queue remains bounded; Stop still offers Keep/Drop.</span></label>
        <div id="pcmEditor" class="custom-rules" hidden><strong>Buffered PCM editor</strong><div class="micro">Waveform is drawn from the in-memory 16 kHz samples. Split and boundary edits block speaker-name learning.</div><canvas id="pcmEditCanvas" class="energy-plot" width="600" height="64" aria-label="Selected buffered PCM waveform"></canvas><label class="small-label" for="pcmEditWindow">Buffered window<select class="field" id="pcmEditWindow"></select></label><label class="small-label" for="pcmEditBoundary">Cut / shared boundary position <output id="pcmEditBoundaryValue">50%</output><input id="pcmEditBoundary" type="range" min="0" max="1000" step="1" value="500"></label><div class="row"><button id="pcmEditApply" class="btn small ghost" type="button">Split window</button><button id="pcmEditMerge" class="btn small ghost" type="button">Merge with next</button><button id="pcmEditRelease" class="btn small" type="button">Transcribe held windows</button></div><div id="pcmEditStatus" class="micro" role="status"></div></div>
        <div class="row"><button id="pauseIntakeBtn" class="btn small ghost" type="button">Pause new-window intake</button><span id="skipCount" class="micro">0 skipped</span></div>
-       <div id="skippedWindows" aria-live="polite"></div><div class="row"><button id="replayPCM" class="btn small ghost" type="button" hidden>Replay latest processed PCM window</button><audio id="pcmReplayAudio" controls preload="none" hidden aria-label="Latest processed PCM window replay"></audio></div>
+       <div id="skippedWindows" aria-live="polite"></div><div class="row"><label class="small-label" for="pcmReplaySelect">Recent audio windows<select id="pcmReplaySelect" class="field" hidden></select></label><button id="replayPCM" class="btn small ghost" type="button" hidden>Play selected window</button><button id="clearPCMReplay" class="btn small ghost" type="button" hidden>Clear replay list</button><audio id="pcmReplayAudio" controls preload="none" hidden aria-label="Selected recent microphone window replay"></audio></div>
      </div>
      <div class="interim" id="interim"  data-empty="true" aria-live="off">Recognized speech appears here as you talk.</div>
     <p class="note">Whisper transcribes silence-guided recording windows on the MacBook; audio clips are temporary. Session voiceprints stay in server RAM and disappear on exit. With spoken-name learning OFF, normal speaker matching still works for explicitly enrolled voices. AI coaching runs through Big Mac.</p>
@@ -257,7 +257,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
  const captureTabOwner=(()=>{try{let value=sessionStorage.getItem('lens-capture-tab-owner');if(!value){value='tab-'+Array.from(crypto.getRandomValues(new Uint8Array(4)),x=>x.toString(16).padStart(2,'0')).join('');sessionStorage.setItem('lens-capture-tab-owner',value)}return value}catch(e){return 'tab-00000000'}})();
  const customRules=[];
  const stt={ready:false,reason:'Checking local Whisper engine',model:'',stream:null,recorder:null,chunkTimer:null,
-    queue:[],sending:false,controller:null,inFlight:null,stopping:false,windowSerial:0,generation:0,readyToken:false,dropped:0,capture:'',lastPCMClip:null,pcmReplayUrl:'',
+    queue:[],sending:false,controller:null,inFlight:null,stopping:false,windowSerial:0,generation:0,readyToken:false,dropped:0,capture:'',replayHistory:[],pcmReplayUrl:'',
     context:null,source:null,meter:null,meterData:null,meterTimer:null,pcmCapture:null,pcmState:null,noiseFloor:.004,
     inputDetected:false,windowStarted:0,windowVoiceMs:0,windowLastVoiceAt:0,windowHasMeter:false,pcmEditHold:false,
      vad:{threshold:.009,silenceMs:900,minSpeechMs:250,hardCapMs:8900},
@@ -671,8 +671,10 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
    while(stt.skipped.length>4){const old=stt.skipped.pop();old.item=null}
    renderSkipped();
  }
- function clearPCMReplay(){if(stt.pcmReplayUrl)URL.revokeObjectURL(stt.pcmReplayUrl);stt.pcmReplayUrl='';stt.lastPCMClip=null;$('pcmReplayAudio').pause();$('pcmReplayAudio').removeAttribute('src');$('pcmReplayAudio').hidden=true;$('replayPCM').hidden=true}
- function showPCMReplay(clip){clearPCMReplay();stt.lastPCMClip=clip;stt.pcmReplayUrl=URL.createObjectURL(clip);$('pcmReplayAudio').src=stt.pcmReplayUrl;$('pcmReplayAudio').hidden=false;$('replayPCM').hidden=false}
+ function selectReplayWindow(){const item=stt.replayHistory.find(entry=>entry.id===$('pcmReplaySelect').value);if(!item)return;if(stt.pcmReplayUrl)URL.revokeObjectURL(stt.pcmReplayUrl);stt.pcmReplayUrl=URL.createObjectURL(item.clip);$('pcmReplayAudio').src=stt.pcmReplayUrl;$('pcmReplayAudio').hidden=false}
+ function renderReplayHistory(selectId=null){const select=$('pcmReplaySelect');select.replaceChildren();for(const item of stt.replayHistory){const option=document.createElement('option');option.value=item.id;option.textContent=item.id+' · '+item.kind+' · '+Math.ceil(item.clip.size/1024)+' KB';select.append(option)}const visible=stt.replayHistory.length>0;select.hidden=!visible;$('replayPCM').hidden=!visible;$('clearPCMReplay').hidden=!visible;if(!visible){if(stt.pcmReplayUrl)URL.revokeObjectURL(stt.pcmReplayUrl);stt.pcmReplayUrl='';$('pcmReplayAudio').pause();$('pcmReplayAudio').removeAttribute('src');$('pcmReplayAudio').hidden=true;return}select.value=selectId&&stt.replayHistory.some(item=>item.id===selectId)?selectId:stt.replayHistory.at(-1).id;selectReplayWindow()}
+ function clearPCMReplay(){stt.replayHistory=[];renderReplayHistory()}
+ function showPCMReplay(item){if(!item?.clip||item.clip.size>512*1024)return;stt.replayHistory.push({id:item.id,kind:item.clip.type==='audio/wav'?'PCM WAV':'MediaRecorder audio',clip:item.clip});while(stt.replayHistory.length>4||stt.replayHistory.reduce((n,x)=>n+x.clip.size,0)>2*1024*1024)stt.replayHistory.shift();renderReplayHistory(item.id)}
  function stopLocal(){
    stt.generation++;clearTimeout(stt.chunkTimer);stt.chunkTimer=null;
    if(stt.pcmCapture){const capture=stt.pcmCapture;stt.pcmCapture=null;capture.stop().catch(()=>{})}
@@ -848,7 +850,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
       }
      if(item.generation!==stt.generation||!state.wantsListen)break;
      if(out.discarded){stt.dropped++;setMsg('Stale result dropped after capture revocation.');updateQueueStatus();continue}
-     if(item.pcmWindow)showPCMReplay(item.clip);
+     showPCMReplay(item);
      const text=clean(out.text);
      let voice=out.speaker&&typeof out.speaker.label==='string'?out.speaker:{label:'Unknown',reason:'No match'};
      let ownerPinned=false;
@@ -1107,7 +1109,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
  $('enrollName').addEventListener('input',syncButtons);$('enrollConsent').addEventListener('change',syncButtons);$('enrollDuration').addEventListener('change',syncButtons);$('enrollBtn').addEventListener('click',beginEnroll);$('forgetBtn').addEventListener('click',()=>forgetSpeakers());
  $('whisperModel').addEventListener('change',syncButtons);$('refreshWhisperModels').addEventListener('click',()=>loadWhisperModels().catch(error=>{$('whisperModelStatus').textContent=error.message||'Model inventory unavailable'}));$('switchWhisperModel').addEventListener('click',switchWhisperModel);
  $('exportProfiles').addEventListener('click',exportSpeakerProfiles);$('importProfiles').addEventListener('change',()=>importSpeakerProfiles($('importProfiles').files?.[0]));
- $('replayPCM').addEventListener('click',()=>{const audio=$('pcmReplayAudio');audio.play().catch(()=>setMsg('PCM replay could not start. Use the audio controls to retry.'))});
+ $('replayPCM').addEventListener('click',()=>{const audio=$('pcmReplayAudio');audio.play().catch(()=>setMsg('Audio replay could not start. Use the audio controls to retry.'))});$('pcmReplaySelect').addEventListener('change',selectReplayWindow);$('clearPCMReplay').addEventListener('click',clearPCMReplay);
  $('pcmEditHold').addEventListener('change',()=>{stt.pcmEditHold=$('pcmEditHold').checked;if(!stt.pcmEditHold){releasePCMEdits();return}renderPCMEditor();$('pcmEditStatus').textContent=stt.pcmState?'New PCM windows will remain buffered until you release them.':'Hold is set for the next sample-accurate PCM capture.'});
  $('pcmEditWindow').addEventListener('change',renderPCMEditor);$('pcmEditBoundary').addEventListener('input',()=>{$('pcmEditBoundaryValue').textContent=(Number($('pcmEditBoundary').value)/10).toFixed(1)+'%'});$('pcmEditApply').addEventListener('click',applyPCMEdit);$('pcmEditMerge').addEventListener('click',mergePCMEdit);$('pcmEditRelease').addEventListener('click',releasePCMEdits);
  $('pcmMode').addEventListener('change',renderPCMEditor);
