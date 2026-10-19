@@ -179,11 +179,11 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
       <p id="evidenceSource"></p><div id="evidenceScores" class="evidence-score"></div><p id="evidenceReason" class="micro"></p>
     </aside>
     <form id="manualForm"  class="manual-row"><label class="hide" for="manualSpeaker">Speaker</label><select id="manualSpeaker" class="field" aria-label="Manual line speaker"><option value="shared">Unassigned (default)</option><option value="me">Me</option><option value="other">Other person</option></select><label class="hide" for="manualText">Conversation line</label><input id="manualText" class="field" placeholder="Type something said…" required maxlength="2000"><button class="btn" type="submit">Add line</button></form>
-    <div class="transcript-tools"><button class="btn small ghost" id="copyBtn">Copy transcript</button><button class="btn small ghost" id="copyBriefBtn">Copy GPT review prompt</button><button class="btn small ghost" id="exportTranscriptBtn">Export Markdown</button><button class="btn small ghost" id="exportPlainBtn">Export plain</button><button class="btn small ghost" id="clearBtn">Clear transcript</button><button class="btn small stop" id="eraseAllBtn" type="button">Erase all session data</button></div>
+    <div class="transcript-tools"><button class="btn small ghost" id="copyBtn">Copy transcript</button><button class="btn small ghost" id="copyBriefBtn">Copy GPT review prompt</button><button class="btn small ghost" id="exportTranscriptBtn">Export Markdown</button><button class="btn small ghost" id="exportPlainBtn">Export plain</button><button class="btn small ghost" id="snapshotBtn" type="button">Download session snapshot</button><label class="btn small ghost" for="restoreSnapshotFile">Restore snapshot</label><input id="restoreSnapshotFile" type="file" accept="application/json,.json" hidden><button class="btn small ghost" id="clearBtn">Clear transcript</button><button class="btn small stop" id="eraseAllBtn" type="button">Erase all session data</button><span id="snapshotStatus" class="micro" role="status" aria-live="polite"></span></div>
   </section>
 </div>
 <div class="stack right-col">
-  <section class="hero-cue" aria-live="polite" aria-atomic="true" data-collapsed="true"><button id="sheetToggle" class="btn small ghost" type="button" aria-expanded="false">Expand cue ↑</button><div class="caps">Latest grounded observation · pinned</div><h2 id="cueTitle">Waiting for conversation</h2><p id="cueText">Start listening or add a passage. Observations will be based on the words actually captured.</p><div class="coach-controls"><input id="nextLine" class="field" aria-label="Edit suggested next line" maxlength="350" placeholder="Your next line…"><button id="copyNextBtn" class="btn small ghost" type="button">Copy as my line</button><button id="getCueBtn" class="btn small primary" type="button">Get cue now</button></div><p id="coachingNeeds" class="coaching-needs">Needs transcript · local cues work without AI</p><p class="control-kbd">Space pause cues · C new cue · N/P navigate · E evidence · 1–9 assign · M Mixed</p></section>
+  <section class="hero-cue" aria-live="polite" aria-atomic="true" data-collapsed="true"><button id="sheetToggle" class="btn small ghost" type="button" aria-expanded="false">Expand cue ↑</button><div class="caps">Latest grounded observation · pinned</div><h2 id="cueTitle">Waiting for conversation</h2><p id="cueText">Start listening or add a passage. Observations will be based on the words actually captured.</p><div class="coach-controls"><input id="nextLine" class="field" aria-label="Edit suggested next line" maxlength="350" placeholder="Your next line…"><button id="copyNextBtn" class="btn small ghost" type="button">Copy as my line</button><button id="getCueBtn" class="btn small primary" type="button">Get cue now</button><button id="continueThoughtBtn" class="btn small ghost" type="button" disabled>Continue last thought</button></div><p id="coachingNeeds" class="coaching-needs">Needs transcript · local cues work without AI</p><p id="continueThoughtStatus" class="micro" role="status"></p><p class="control-kbd">Space pause cues · C new cue · N/P navigate · E evidence · 1–9 assign · M Mixed</p></section>
   <section class="panel" aria-labelledby="aiTitle">
  <div class="panel-head"><h2 id="aiTitle">Local AI / Big Mac</h2><small id="aiHealth" role="status">Checking connection...</small></div>
  <label class="check"><input id="aiToggle" type="checkbox" disabled><span><strong>Enable Big Mac AI analysis (off by default).</strong> Send captured transcript text and any context you enter through the private local tunnel for additional suggestions. No microphone audio or voiceprints are sent.</span></label>
@@ -238,6 +238,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
  // A new page session starts without inherited scenario text or browser-restored context.
  $('context').value='';
  const state={turns:[],turnSerial:0,wantsListen:false,paused:false,lastFinalAt:0};
+ const captureTabOwner=(()=>{try{let value=sessionStorage.getItem('lens-capture-tab-owner');if(!value){value='tab-'+Array.from(crypto.getRandomValues(new Uint8Array(4)),x=>x.toString(16).padStart(2,'0')).join('');sessionStorage.setItem('lens-capture-tab-owner',value)}return value}catch(e){return 'tab-00000000'}})();
  const customRules=[];
  const stt={ready:false,reason:'Checking local Whisper engine',stream:null,recorder:null,chunkTimer:null,
     queue:[],sending:false,controller:null,inFlight:null,stopping:false,windowSerial:0,generation:0,readyToken:false,dropped:0,capture:'',
@@ -247,7 +248,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
      series:[],cuts:[],durations:[],skipped:[],skipSerial:0,pausedIntake:false,
     levelMax:0,meterStarted:0};
  const LOCAL_WINDOW_MS=8900,MIN_WINDOW_MS=2800,END_SILENCE_MS=900;
- const ai={ready:false,enabled:false,token:'',model:'',timer:null,inFlight:false,pending:false,revision:0,session:0,lastStarted:0,lastResult:null,lastResultTurns:0,controller:null};
+ const ai={ready:false,enabled:false,token:'',model:'',timer:null,inFlight:false,pending:false,revision:0,session:0,lastStarted:0,lastResult:null,lastResultTurns:0,controller:null,continuation:''};
  let micProofTimer=null,editingId=null;
  const goals={observe:['notice what was actually said without assuming a topic or objective.','“Which point would be useful to clarify next?”'],understand:['clarify terms, questions, or differing interpretations.','“What does that mean in this conversation?”'],resolve:['identify decisions, owners, and practical next steps.','“What decision or next step, if any, was agreed?”'],repair:['check for misunderstandings and possible repair openings.','“What would help clarify what was meant?”'],boundary:['make requests, requirements, and preferences explicit.','“Is this a requirement, a preference, or a proposal?”']};
   const where={me:'Me',other:'Other',shared:'Unassigned',mixed:'Mixed'};
@@ -381,6 +382,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
   }
   function renderCueTimeline(){
     const target=$('coachingTimeline');target.replaceChildren();
+    $('continueThoughtBtn').disabled=!ai.enabled||!ai.ready||!ui.cues.length;
     for(const c of ui.cues.slice(0,10)){
       const card=document.createElement('div');card.className='history-card';
       const name=document.createElement('strong');name.textContent=c.kind.toUpperCase()+' · '+c.title;
@@ -444,6 +446,25 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
   }
   syncButtons();
  }
+ const snapshotCanonical=value=>JSON.stringify(value);
+ async function snapshotDigest(payload){const bytes=new TextEncoder().encode(snapshotCanonical(payload));const digest=await crypto.subtle.digest('SHA-256',bytes);return [...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+ async function downloadSnapshot(){
+   const payload={schema:'conversation-lens-session',version:1,createdAt:new Date().toISOString(),turns:state.turns.map(t=>({id:t.id,text:t.text,speaker:t.speaker,time:t.time,origin:t.origin,edited:!!t.edited,manualSpeaker:!!t.manualSpeaker,voiceNote:t.voiceNote||''})),bookmarks:[...ui.bookmarks],highlights:[...ui.highlights],coaching:ui.cues.map(c=>({id:c.id,sourceId:c.sourceId||null,kind:c.kind,title:c.title,why:c.why,nextLine:c.nextLine||''})),private:{context:$('context').value,privateNote:$('privateNote').value,aim:$('aim').value}};
+   const envelope={payload,sha256:await snapshotDigest(payload)};const blob=new Blob([JSON.stringify(envelope,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='conversation-lens-session.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);$('snapshotStatus').textContent='Snapshot downloaded. Audio and speaker profiles are excluded.';
+ }
+ function validateSnapshot(envelope){
+   const p=envelope?.payload;if(!p||p.schema!=='conversation-lens-session'||p.version!==1||!Array.isArray(p.turns)||!Array.isArray(p.bookmarks)||!Array.isArray(p.highlights)||!Array.isArray(p.coaching)||!p.private||typeof p.private!=='object')throw Error('Unsupported or malformed snapshot');
+   if(p.turns.length>300||p.coaching.length>30||p.bookmarks.length>300||p.highlights.length>300)throw Error('Snapshot exceeds session limits');
+   const ids=new Set();for(const t of p.turns){if(!Number.isInteger(t.id)||t.id<1||ids.has(t.id)||typeof t.text!=='string'||!t.text.trim()||t.text.length>2000||typeof t.time!=='string'||!['me','other','shared','mixed'].includes(t.speaker)&&!(typeof t.speaker==='string'&&/^name:[A-Za-z][A-Za-z0-9 '-]{0,29}$/.test(t.speaker)))throw Error('Invalid transcript passage');ids.add(t.id)}
+   for(const list of [p.bookmarks,p.highlights])if(list.some(id=>!ids.has(id)))throw Error('Snapshot marker references a missing passage');
+   for(const c of p.coaching)if(typeof c.title!=='string'||typeof c.kind!=='string'||typeof c.why!=='string'||c.title.length>300||c.why.length>1200||c.nextLine&&c.nextLine.length>350||c.sourceId!=null&&!ids.has(c.sourceId))throw Error('Invalid coaching card');
+   if(Object.values(p.private).some(v=>typeof v!=='string'||v.length>4000)||!['observe','understand','resolve','repair','boundary'].includes(p.private.aim))throw Error('Invalid private session fields');
+   return p;
+ }
+ $('snapshotBtn').addEventListener('click',()=>downloadSnapshot().catch(e=>$('snapshotStatus').textContent='Snapshot failed: '+e.message));
+ $('restoreSnapshotFile').addEventListener('change',async ev=>{const file=ev.target.files?.[0];ev.target.value='';if(!file)return;try{if(file.size>1024*1024)throw Error('Snapshot exceeds 1 MB');const envelope=JSON.parse(await file.text()),payload=validateSnapshot(envelope);if(await snapshotDigest(payload)!==envelope.sha256)throw Error('Checksum mismatch; live session was not changed');if(state.wantsListen)throw Error('Stop microphone capture before restoring');
+   invalidateAI(true);state.turns=payload.turns.map(t=>({...t,origin:['speech','typed','demo'].includes(t.origin)?t.origin:'typed',voiceNote:String(t.voiceNote||'').slice(0,170),evidence:null}));state.turnSerial=Math.max(0,...state.turns.map(t=>t.id));ui.bookmarks=new Set(payload.bookmarks);ui.highlights=new Set(payload.highlights);ui.cues=payload.coaching.map(c=>({...c}));ui.lastCue='';$('context').value=payload.private.context;$('privateNote').value=payload.private.privateNote;$('aim').value=payload.private.aim;renderTranscript();renderCueTimeline();analyze();syncButtons();$('snapshotStatus').textContent='Snapshot restored. Audio and speaker profiles were not imported.';
+  }catch(e){$('snapshotStatus').textContent='Restore failed: '+e.message} });
  function scheduleAI(urgent=false){
    ai.revision++;
    if(urgent)ai.urgent=true;
@@ -454,19 +475,19 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
    const wait=ai.urgent?0:Math.max(300,5500-(Date.now()-ai.lastStarted));
    ai.urgent=false;ai.timer=setTimeout(runAI,wait);
  }
- async function runAI(){if(!ai.pending||ai.inFlight||!ai.ready||!ai.enabled||state.paused||!state.turns.length)return;ai.pending=false;ai.inFlight=true;ai.lastStarted=Date.now();const gen=ai.session;const reqVersion=ai.revision;const currentCount=state.turns.length;const controller=new AbortController();ai.controller=controller;setAIStatus('THINKING · '+ai.model);setAIMessage('Analyzing through passage '+currentCount+'; you can keep talking.');const older=state.turns.slice(0,-8);
+ async function runAI(){if(!ai.pending||ai.inFlight||!ai.ready||!ai.enabled||state.paused||!state.turns.length)return;ai.pending=false;ai.inFlight=true;ai.lastStarted=Date.now();const gen=ai.session;const reqVersion=ai.revision;const currentCount=state.turns.length;const controller=new AbortController();ai.controller=controller;const continuation=ai.continuation;ai.continuation='';setAIStatus('THINKING · '+ai.model);setAIMessage(continuation?'Continuing the selected coaching thought through passage '+currentCount+'.':'Analyzing through passage '+currentCount+'; you can keep talking.');const older=state.turns.slice(0,-8);
      const priority=/\b(?:decide|decided|deadline|promise|agreed|need|must|important|next step|why|because|confused)\b/i;
      const chosen=[...older.map((t,i)=>({t,i})).filter(o=>priority.test(o.t.text)).slice(-6).map(o=>o.t),...state.turns.slice(-8)];
      const turns=chosen.map(t=>({speaker:(t.speaker.startsWith('name:')&&!t.manualSpeaker&&/provisional|heard-only|unverified|not verified/i.test(t.voiceNote))?'Unassigned':speakerLabel(t.speaker),text:t.text.slice(0,900),manual:t.manualSpeaker===true}));
      const preset=$('coachPreset').value;const fragment=preset==='custom' ? $('customFragment').value : preset;
      const ollama={url:$('ollamaUrl').value.trim(),model:$('ollamaModel').value.trim(),
        timeout:Number($('ollamaTimeout').value),temperature:Number($('ollamaTemperature').value)};
-     try{const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json','X-Lens-Token':ai.token},body:JSON.stringify({
-       goal:$('aim').selectedOptions[0].text,context:$('context').value,turns,note:$('privateNote').value,
+     try{const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json','X-Lens-Token':ai.token,'X-Lens-Protocol':'3'},body:JSON.stringify({
+       goal:$('aim').selectedOptions[0].text,context:$('context').value,turns,note:$('privateNote').value,continuation,
        grounding:$('groundingMode').value,system_fragment:fragment,ollama}),signal:controller.signal});if(!res.ok){const error=await res.json().catch(()=>({}));throw new Error(error.error||'AI request failed ('+res.status+')')}const data=await res.json();if(gen!==ai.session||reqVersion!==ai.revision||!ai.enabled||state.paused)return;const i=data.insight;if(!i||typeof i.observation!=='string'||typeof i.next_step!=='string')throw new Error('Invalid AI response');ai.lastResult=i;ai.lastResultTurns=currentCount;$('aiObservation').textContent=i.observation;$('aiEvidence').textContent=i.evidence||'No exact quotation supplied';const norm=s=>String(s||'').toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();const quote=norm(i.evidence);const source=quote.length>=6?state.turns.slice(-80).find(t=>norm(t.text).includes(quote)):null;const jump=$('aiEvidenceJump');jump.hidden=!source;if(source){jump.textContent='Review passage '+source.id;jump.onclick=()=>{jumpToTurn(source.id);openEvidence(source.id,i.evidence)}}else jump.onclick=null;$('aiNext').textContent=i.next_step;$('aiCaution').textContent=i.caution||'';
      $('groundingBadge').textContent=(i.evidence_status||'unknown').toUpperCase();
      $('retryLoose').hidden=!['rejected','approximate','ungrounded'].includes(i.evidence_status||'');
-     $('aiReview').hidden=false;setAIStatus('LIVE · '+ai.model);setAIMessage('Model observation covers passage '+currentCount+(state.turns.length>currentCount?' ('+(state.turns.length-currentCount)+' newer)':'' )+'. It is a suggestion, not a verdict.');if(state.turns.length<=currentCount+1){$('cueTitle').textContent=i.next_step;$('cueText').textContent=i.observation;refreshHeroActions(source?source.id:null,'ai')}}catch(e){if(e.name!=='AbortError'&&gen===ai.session){setAIStatus('AI ERROR');setAIMessage((e.message||'AI request failed')+'. Local cues still work.');}}finally{ai.inFlight=false;if(ai.controller===controller)ai.controller=null;if(ai.pending&&ai.ready&&ai.enabled&&!state.paused) scheduleAI();}}
+     $('aiReview').hidden=false;setAIStatus('LIVE · '+ai.model);setAIMessage('Model observation covers passage '+currentCount+(state.turns.length>currentCount?' ('+(state.turns.length-currentCount)+' newer)':'' )+'. It is a suggestion, not a verdict.');if(continuation)$('continueThoughtStatus').textContent='Generated from the selected prior thought and current transcript.';if(state.turns.length<=currentCount+1){$('cueTitle').textContent=i.next_step;$('cueText').textContent=i.observation;refreshHeroActions(source?source.id:null,'ai')}}catch(e){if(e.name!=='AbortError'&&gen===ai.session){setAIStatus('AI ERROR');setAIMessage((e.message||'AI request failed')+'. Local cues still work.');if(continuation)$('continueThoughtStatus').textContent='Continuation failed; the previous thought remains available.';}}finally{ai.inFlight=false;if(ai.controller===controller)ai.controller=null;if(ai.pending&&ai.ready&&ai.enabled&&!state.paused) scheduleAI();}}
 
  async function regenerateCueCard(cardID){
    const card=ui.cues.find(item=>item.id===cardID);if(!card||!ai.enabled||!ai.ready){setAIMessage('Enable optional local AI coaching before regenerating a historical card.');return}
@@ -812,11 +833,11 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
    stream.getAudioTracks().forEach(t=>t.addEventListener('ended',()=>{if(generation!==stt.generation)return;state.wantsListen=false;stopLocal();setStatus('off','MIC DISCONNECTED');setMsg('Microphone disconnected or permission revoked.');syncButtons()},{once:true}));
    setMsg('Establishing private capture session…');
    let lease;
-   try{lease=await postCapture('/api/capture/open',{consent:true})}
+   try{lease=await postCapture('/api/capture/open',{consent:true,owner:captureTabOwner})}
    catch(error){
      if(!/capture already active in another tab/i.test(error.message||'')||
         !window.confirm('Another Conversation Lens tab has the microphone session. Stop it there, or take over here and invalidate its next audio upload?'))throw error;
-     lease=await postCapture('/api/capture/open',{consent:true,takeover:true});
+     lease=await postCapture('/api/capture/open',{consent:true,takeover:true,owner:captureTabOwner});
    }
    if(generation!==stt.generation||!state.wantsListen){closeCapture(lease.capture,true);return}
    if(typeof lease.capture!=='string'||lease.capture.length<12)throw Error('Invalid server capture session');
@@ -1046,7 +1067,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
   $('checkModelBtn').addEventListener('click',()=>checkCustomModel().catch(e=>setAIMessage(e.message||'Model check failed')));
   async function loadDiagnostics(){
     const [health,trace]=await Promise.all([fetch('/api/health').then(x=>x.json()),fetch('/api/diagnostics').then(x=>x.json())]);
-    $('healthPill').textContent=health.ok?'LOCAL HEALTH OK · protocol '+health.protocol:'Health unknown';
+    $('healthPill').textContent=health.ok?'LOCAL HEALTH OK · protocol '+health.protocol+(health.captureActive?' · '+(health.captureOwner||'unknown tab')+' owns capture · '+health.captureAgeSeconds+'s':' · no active capture'):'Health unknown';
     $('diagnosticLog').textContent=(trace.events||[]).slice(-30).map(e=>
       new Date(e.at*1000).toLocaleTimeString()+' '+e.kind+' '+e.state+' '+e.elapsedMs+'ms').join('\n')||'No timing events yet.';
   }
@@ -1057,6 +1078,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
   $('exportPlainBtn').addEventListener('click',()=>exportSession(false));
   $('copyNextBtn').addEventListener('click',()=>copy($('nextLine').value,$('copyNextBtn')));
   $('getCueBtn').addEventListener('click',()=>{analyze();scheduleAI(true)});
+  $('continueThoughtBtn').addEventListener('click',()=>{const prior=ui.cues[0];if(!prior){$('continueThoughtStatus').textContent='There is no coaching thought to continue yet.';return}if(!ai.enabled||!ai.ready){$('continueThoughtStatus').textContent='Enable optional local AI coaching first.';return}ai.continuation=JSON.stringify({kind:prior.kind,title:prior.title,observation:prior.why,nextLine:prior.nextLine||''}).slice(0,900);$('continueThoughtStatus').textContent='Continuing the latest coaching card using the current transcript.';scheduleAI(true)});
  function setCueSheetOpen(open){const sheet=document.querySelector('.hero-cue');sheet.dataset.collapsed=String(!open);$('sheetToggle').textContent=open?'Collapse cue ↓':'Expand cue ↑';$('sheetToggle').setAttribute('aria-expanded',String(open))}
  $('sheetToggle').addEventListener('click',()=>setCueSheetOpen(document.querySelector('.hero-cue').dataset.collapsed==='true'));
  let cueTouchY=null;const cueSheet=document.querySelector('.hero-cue');

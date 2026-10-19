@@ -1,6 +1,8 @@
 """Chromium runtime + mocked microphone and fetch; validates v6 UI state, not real device accuracy."""
 from pathlib import Path
 import os
+import json
+import tempfile
 from playwright.sync_api import sync_playwright
 
 BROWSER_EXECUTABLE=os.environ.get('LENS_BROWSER_EXECUTABLE') or next((p for p in ('/Applications/Brave Browser.app/Contents/MacOS/Brave Browser','/usr/bin/chromium','/usr/bin/chromium-browser') if Path(p).is_file()),'/usr/bin/chromium')
@@ -44,7 +46,7 @@ window.fetch=async(path,opts={})=>{
   return ok({speakers:{ready:true,profiles:window.fake.profiles,ramBytes:2048}});
  }
  if(path==='/api/ollama/check')return ok({ready:true,model:'gemma3:4b',reason:'Model available'});
- if(path==='/api/health')return ok({ok:true,protocol:3,speakerRamBytes:2048});
+ if(path==='/api/health')return ok({ok:true,protocol:3,speakerRamBytes:2048,captureActive:!!window.fake.capture,captureOwner:window.fake.capture?'tab-a1b2c3d4':null,captureAgeSeconds:window.fake.capture?12:null});
  if(path==='/api/diagnostics')return ok({protocol:3,events:[{at:0,kind:'audio',state:'ok',elapsedMs:120}]});
  if(path==='/api/speakers/forget'){
   const name=JSON.parse(opts.body).name;
@@ -94,7 +96,8 @@ with sync_playwright() as p:
     for width in (1200,375):
         page=browser.new_page(viewport={'width':width,'height':830})
         errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
-        page.set_content(html)
+        page.route('http://localhost/**',lambda route:route.fulfill(status=200,content_type='text/html',body=html))
+        page.goto('http://localhost/')
         page.wait_for_function("document.querySelector('#capability').textContent.includes('LOCAL WHISPER READY')")
         assert not page.locator('#startBtn').is_enabled()
         assert not page.locator('#aiToggle').is_checked(),'Big Mac AI must be opt-in even when available'
@@ -127,6 +130,9 @@ with sync_playwright() as p:
         page.locator('#startBtn').click()
         page.wait_for_function("document.querySelector('#statusText').textContent.includes('LOCAL MIC ACTIVE')")
         assert page.evaluate('window.fake.capture') is not None
+        page.locator('#loadDiagnostics').evaluate("e=>e.closest('details').open=true")
+        page.locator('#loadDiagnostics').click()
+        page.wait_for_function("document.querySelector('#healthPill').textContent.includes('tab-a1b2c3d4 owns capture · 12s')")
         page.wait_for_function('window.fake.meterReads>2')
         assert page.locator('#levelText').inner_text().startswith('Input')
         # Ensure a bit of energy registered before forced early window close.
@@ -249,6 +255,12 @@ with sync_playwright() as p:
         assert regen.is_enabled()
         regen.click();page.wait_for_function('window.fake.aiRequests>=3',timeout=4000)
         page.wait_for_function("document.querySelector('#coachingTimeline .history-actions input').value==='What date should we agree on?'")
+        if width<810:page.locator('#sheetToggle').click()
+        page.locator('#continueThoughtBtn').click()
+        page.wait_for_function('window.fake.aiRequests>=4',timeout=4000)
+        continuation=page.evaluate('window.fake.aiBodies.at(-1).continuation')
+        assert 'AI regeneration' in continuation and 'current transcript' not in continuation
+        page.wait_for_function("document.querySelector('#continueThoughtStatus').textContent.includes('Generated')")
         page.locator('#aiEvidenceJump').wait_for(timeout=4000)
         page.locator('#aiEvidenceJump').click()
         assert page.evaluate('document.activeElement.id')=='passage-2'
@@ -297,6 +309,25 @@ with sync_playwright() as p:
         assert page.evaluate('window.fake.capture') is None
         assert page.evaluate('window.fake.stopped')>=1
         assert page.locator('#levelFill').get_attribute('style')=='width: 0%;'
+        page.locator('#privateNote').fill('Private snapshot note')
+        with page.expect_download() as snapshot_event:
+            page.locator('#snapshotBtn').click()
+        snapshot_path=snapshot_event.value.path()
+        snapshot=json.loads(Path(snapshot_path).read_text())
+        assert snapshot['payload']['schema']=='conversation-lens-session' and snapshot['payload']['version']==1
+        assert 'evidence' not in snapshot['payload']['turns'][0] and 'audio' not in snapshot['payload']
+        page.locator('#manualText').fill('Temporary replacement text')
+        page.get_by_role('button',name='Add line').click()
+        with tempfile.TemporaryDirectory() as td:
+            bad=dict(snapshot);bad['sha256']='0'*64;bad_path=Path(td)/'bad.json';bad_path.write_text(json.dumps(bad))
+            page.locator('#restoreSnapshotFile').set_input_files(str(bad_path))
+            page.wait_for_function("document.querySelector('#snapshotStatus').textContent.includes('Checksum mismatch')")
+            assert 'Temporary replacement text' in page.locator('#transcript').inner_text(),'bad snapshot must leave live data untouched'
+            page.locator('#restoreSnapshotFile').set_input_files(snapshot_path)
+        page.wait_for_function("document.querySelector('#snapshotStatus').textContent.includes('Snapshot restored')")
+        assert 'Temporary replacement text' not in page.locator('#transcript').inner_text()
+        assert 'Private snapshot note'==page.locator('#privateNote').input_value()
+        assert page.locator('#customRuleList').inner_text().find('outline')>=0,'owner cue rules intentionally remain session local'
         # A second tab cannot silently steal capture: user must approve the explicit takeover.
         page.evaluate('window.fake.busy=true')
         page.locator('#startBtn').click();page.wait_for_function("document.querySelector('#statusText').textContent.includes('LOCAL MIC ACTIVE')")

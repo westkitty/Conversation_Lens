@@ -229,13 +229,13 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 51 | Finish/drop in-flight shutdown | Freeze, exact-hash drain lease, per-window Keep/Drop; backend tests | PASS | No physical multi-pending-window race test |
 | 52 | Versioned server-client messages | Protocol v3 required on protected requests; 426 mismatch regression | PASS | No older client compatibility matrix |
 | 53 | Recent-window replay/debug | Skipped live clips can be reprocessed while lease remains active | PARTIAL | Processed-window debug replay is absent |
-| 54 | Snapshot/restore | No session snapshot/restore implementation | PARTIAL | Versioned checksum/atomic restore flow is not built |
-| 55 | Multi-tab lease visibility/transfer | Explicit takeover and invalidation; browser/backend tests | PARTIAL | Owner/age visibility is absent; physical multi-tab test remains |
+| 54 | Snapshot/restore | Explicit version-1 JSON snapshot with SHA-256 validation, bounded validation, atomic transcript/coaching/private-field restore; frontend checksum and rollback test | PASS | Audio, voice evidence, and speaker profiles are deliberately excluded; no long-session size trial |
+| 55 | Multi-tab lease visibility/transfer | Explicit takeover/invalidation; `/api/health` exposes opaque tab owner and lease age; `test_live_upgrade.py` verifies both | PARTIAL | Physical two-tab takeover and live UI owner/age presentation remain unverified |
 | 56 | Custom local cue rules | New session-only rule editor with max 8 literal phrase matches, bounded observation/question text, priority and source link; `test_frontend.py` asserts a live match and cleanup on Erase | PASS | Rules are literal substrings, not semantic conditions; no persistence |
 | 57 | Running action-item/decision extraction | New local source-linked candidate ledger; `test_frontend.py` asserts decision/action extraction and passage navigation | PASS | Phrase-based candidates only; no semantic deduplication or persistence |
 | 58 | Hotkey voice-note annotation | Separate private typed note exists | PARTIAL | Hotkey voice-note capture is absent |
 | 59 | Speaker comparison/talk-time stats | UI reports only measured `speechSeconds` from enrolled, non-overlap acoustic matches; Mixed/overlap/unknown/pinned/unmeasured windows are separately excluded; `test_frontend.py` verifies denominator and overlap accounting | PASS | Depends on the worker returning eligible speech-span measurements; manual labels never add speaker time |
-| 60 | Continue last coaching thought | Existing coaching history only | PARTIAL | Thread-aware continuation call is absent |
+| 60 | Continue last coaching thought | `continueThoughtBtn` sends the latest selected prior card plus current transcript through the explicit local AI request; backend bounds and instructs continuation | PASS | Local Ollama remains opt-in and must be reachable; only mocked UI and prompt composition tested |
 
 ### Current phase evidence
 
@@ -278,3 +278,18 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 
 - Added an owner-defined cue form capped at eight rules. Rules match literal case-insensitive phrases, use bounded text for the observation/question, provide low/normal/high priority, and link each cue to its matched passage. No regex, script, or code execution is accepted. Erase clears the rules; ordinary transcript clearing retains them for the session.
 - QA-venv `test_frontend.py` passed at 1200px and 375px, exercising a rule against an existing passage, verifying the source link, and verifying Erase cleanup. Requirement 56 is PASS for literal local phrase rules.
+
+## Session snapshot follow-up — 2026-10-19
+
+- Added owner-triggered JSON snapshot download with schema/version and SHA-256 checksum. It includes transcript text/labels/times, bookmarks/highlights, recent coaching cards, and private context/note/aim. It excludes audio, evidence metrics, and speaker profiles. Restore validates file size, schema, counts, field limits, source references, and checksum before replacing live data; capture must be stopped first.
+- QA-venv `test_frontend.py` passed at 1200px and 375px. It downloads/parses a snapshot, corrupts the checksum and confirms current transcript remains unchanged, then restores a valid snapshot and confirms the private note and transcript are restored. Requirement 54 is PASS for this tested path; large-session storage limits and non-Chromium engines were not tested.
+
+## Continue Thought follow-up — 2026-10-19
+
+- Added an explicit button that sends the newest coaching card as bounded continuation context with the current transcript to the existing opt-in local Ollama endpoint. Server instructions require advancing the thought without repeating it and re-grounding claims in the current transcript. The UI reports success/failure and retains the older card.
+- `test_live_upgrade.py` verifies continuation context reaches the Ollama prompt and is bounded by the existing 900-character limit. QA-venv `test_frontend.py` verifies the button sends the prior card and receives a new response at desktop/mobile widths. Requirement 60 is PASS for mocked request flow; natural model quality remains unmeasured.
+
+## Lease ownership follow-up — 2026-10-19
+
+- Capture-open records a validated opaque per-tab label and monotonic elapsed age; local `/api/health` reports both while a capture or drain lease is active and clears them on final close or erase. The diagnostics health label displays the current owner and age.
+- `test_live_upgrade.py` opens a capture with a synthetic tab identity and verifies active owner/age fields. Requirement 55 remains PARTIAL until a physical multi-tab takeover is exercised in Brave.

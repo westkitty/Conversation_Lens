@@ -84,6 +84,7 @@ try:
     s.urllib.request.urlopen=intercept
     payload={'grounding':'fuzzy','goal':'Resolve','note':'Find the next concrete decision',
         'context':'Timeline coordination','system_fragment':'Ask one short question.',
+        'continuation':'Earlier cue: ask what delivery date works.',
         'ollama':{'url':'http://localhost:11435','model':'another:4b','timeout':7,'temperature':0.1},
         'turns':[{'speaker':'Dale','manual':True,'text':'I need a little more time to finish.'}]}
     fuzzy=s.call_ollama(payload)
@@ -91,7 +92,7 @@ try:
     url,timeout,posted=captured[-1]
     assert url=='http://localhost:11435/api/generate' and timeout==7
     assert posted['model']=='another:4b' and posted['options']['temperature']==0.1
-    for word in ('Find the next concrete decision','Ask one short question.','Timeline coordination','owner-assigned label'):
+    for word in ('Find the next concrete decision','Ask one short question.','Timeline coordination','owner-assigned label','Earlier cue: ask what delivery date works.','Advance it using the current transcript'):
         assert word in posted['prompt'],word
     free=s.call_ollama(dict(payload,grounding='free'))
     assert free['evidence_status']=='ungrounded' and free['evidence']=='I need more time today'
@@ -120,8 +121,10 @@ with http.server.ThreadingHTTPServer(('127.0.0.1',0),s.Handler) as server:
         try:
             with urllib.request.urlopen(req,timeout=4) as res:return res.status,json.load(res)
         except urllib.error.HTTPError as err:return err.code,json.load(err)
-    code,opened=post('/api/capture/open',{'consent':True})
+    code,opened=post('/api/capture/open',{'consent':True,'owner':'tab-a1b2c3d4'})
     assert code==200 and opened['capture']
+    with urllib.request.urlopen('http://127.0.0.1:%d/api/health'%port,timeout=4) as res:lease_health=json.load(res)
+    assert lease_health['captureActive'] is True and lease_health['captureOwner']=='tab-a1b2c3d4' and lease_health['captureAgeSeconds']>=0
     frozen,freeze_result=post('/api/capture/freeze',{'capture':opened['capture']})
     assert frozen==200 and freeze_result['frozen'] is True
     kept=b'RIFF'+b'K'*2400;wrong=b'RIFF'+b'W'*2400

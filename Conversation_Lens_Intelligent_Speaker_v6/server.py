@@ -116,16 +116,20 @@ def chosen_turns(turns):
 # after a listener presses Stop. No mic session is opened by GET or on app load.
 CAPTURE_LOCK = threading.RLock()
 CAPTURE_SESSION = None
+CAPTURE_OWNER = None
+CAPTURE_OPENED_AT = None
 
 
-def open_capture_session(takeover=False):
+def open_capture_session(takeover=False, owner=None):
     """A second tab must explicitly request takeover; never silently revoke another tab."""
-    global CAPTURE_SESSION
+    global CAPTURE_SESSION, CAPTURE_OWNER, CAPTURE_OPENED_AT
     with CAPTURE_LOCK:
         try:
             CAPTURE_SESSION = DRAIN.open_capture(takeover=takeover)
         except LeaseConflict:
             return None
+        CAPTURE_OWNER = owner if isinstance(owner, str) and re.fullmatch(r'tab-[a-f0-9]{8}', owner) else 'unknown-tab'
+        CAPTURE_OPENED_AT = time.monotonic()
         return CAPTURE_SESSION
 
 
@@ -134,16 +138,20 @@ def capture_is_active(session):
 
 
 def close_capture_session(session=None, erase=False):
-    global CAPTURE_SESSION
+    global CAPTURE_SESSION, CAPTURE_OWNER, CAPTURE_OPENED_AT
     with CAPTURE_LOCK:
         if erase:
             CAPTURE_SESSION = None
+            CAPTURE_OWNER = None
+            CAPTURE_OPENED_AT = None
             DRAIN.drop_all()
             forget_speakers()
             return {'closed': True, 'erased': True, 'speakers': speaker_status()}
         if session and DRAIN.close(session):
             if CAPTURE_SESSION == session:
                 CAPTURE_SESSION = None
+                CAPTURE_OWNER = None
+                CAPTURE_OPENED_AT = None
             return {'closed': True}
         return {'closed': False}
 
@@ -202,6 +210,7 @@ def call_ollama(payload):
     grounding = payload.get('grounding', 'exact')
     if grounding not in ('exact', 'fuzzy', 'free'):
         raise ValueError('Invalid grounding mode')
+    continuation = bounded(payload.get('continuation'), 900).strip()
     cleaned = []
     for item in turns:
         if not isinstance(item, dict):
@@ -239,6 +248,9 @@ def call_ollama(payload):
     instructions = SYSTEM_PROMPT + ('\nOWNER-SELECTED COACHING STYLE:\n' + fragment if fragment else '')
     if private_note:
         instructions += '\nOWNER COACHING PRIORITY (NOT A TRANSCRIPT FACT):\n' + private_note
+    if continuation:
+        instructions += ('\nCONTINUE THE OWNER-SELECTED PRIOR COACHING THOUGHT (NOT TRANSCRIPT EVIDENCE):\n' +
+                         continuation + '\nAdvance it using the current transcript; do not merely repeat it. Recheck every claim against current transcript and follow the grounding dial.')
     if grounding == 'fuzzy':
         instructions += '\nGROUNDING DIAL: Approximate paraphrases are acceptable, but do not present them as exact words. Prefer matching transcript quotes.'
     elif grounding == 'free':
@@ -773,8 +785,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if path == '/api/health':
             with CAPTURE_LOCK:
                 occupied = CAPTURE_SESSION is not None
+                capture_owner = CAPTURE_OWNER if occupied else None
+                capture_age = max(0, int(time.monotonic() - CAPTURE_OPENED_AT)) if occupied and CAPTURE_OPENED_AT else None
             self.respond(200, {'ok': True, 'protocol': PROTOCOL_VERSION,
                                'captureActive': occupied, 'sttBusy': STT_LOCK.locked(),
+                               'captureOwner': capture_owner, 'captureAgeSeconds': capture_age,
                                'aiBusy': MODEL_LOCK.locked(), 'speakerRamBytes': speaker_status()['ramBytes'],
                                'captureDrain': DRAIN.state()})
             return
@@ -841,7 +856,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     if body.get('consent') is not True:
                         self.respond(403, {'error': 'Consent required to begin capture'})
                     else:
-                        capture = open_capture_session(takeover=body.get('takeover') is True)
+                        capture = open_capture_session(takeover=body.get('takeover') is True, owner=body.get('owner'))
                         if capture is None:
                             self.respond(409, {'error': 'Capture already active in another tab. Stop it or explicitly approve takeover.'})
                         else:
@@ -857,7 +872,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     except LeaseConflict as err:
                         self.respond(409, {'error': str(err)})
                     else:
-                        global CAPTURE_SESSION
+                        global CAPTURE_SESSION, CAPTURE_OWNER, CAPTURE_OPENED_AT
                         with CAPTURE_LOCK:
                             if CAPTURE_SESSION == capture:
                                 CAPTURE_SESSION = None

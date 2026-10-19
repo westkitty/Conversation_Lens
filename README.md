@@ -24,6 +24,9 @@ From this repository root:
 - **No browser speech fallback:** when local Whisper is unavailable, transcription falls back to manual text input, NOT a remote browser speech provider.
 - **Stop disposition and capture protocol:** protocol 3 freezes the server-side capture lease before Stop, revokes late results, and asks which already buffered audio windows to keep. Only exact SHA-256-authorized kept clips enter the bounded local drain lease; rejected or dropped clips are not submitted.
 - **Opt-in PCM capture:** the Listen panel now has an experimental AudioWorklet mode with a bounded 45-second in-memory ring, 16 kHz WAV windows, and adjustable context roll. MediaRecorder remains the default and fallback. The tested Packet A sample-accurate split/merge editor is not yet connected to the production UI; see the upgrade ledger for the 60-item status matrix.
+- **Explicit session snapshot:** the transcript tools can download and restore a versioned, SHA-256-checked JSON session snapshot. It contains transcript text/labels, bookmarks/highlights, recent coaching cards and private context/note/goal. It excludes audio, speaker evidence and voice profiles; stop capture before restoring.
+- **Continue a coaching thought:** when optional local Ollama coaching is enabled, the pinned cue can continue its latest card against the current transcript. The older card remains in history.
+- **Lease visibility:** the local diagnostics view reports the active capture tab's opaque session label and lease age; takeover still requires an explicit owner action.
 
 ## Tests
 
@@ -31,6 +34,7 @@ Run on the MacBook from this repository root using the following separate comman
 
     python3 test_backend.py
     python3 test_regressions.py
+    python3 test_live_upgrade.py
     "$HOME/Library/Application Support/ConversationLensQA/venv/bin/python" test_frontend.py
     "$HOME/Library/Application Support/ConversationLensQA/venv/bin/python" test_e2e.py
     python3 test_real_local_stack.py
