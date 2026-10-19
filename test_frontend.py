@@ -14,7 +14,7 @@ for module in ('lens_pcm_core.js','lens_pcm_capture.js'):
     source=(root/'experiments'/'packet-a'/module).read_text()
     html=html.replace(f'<script src="/packet-a/{module}"></script>',f'<script>{source}</script>')
 stub='''<script>
-window.fake={recorders:[],stopped:0,quiet:false,meterReads:0,transcribe:0,confirmCount:0,pcmUploads:[],drains:[],token:'ready-token',capture:null,closed:[],frozen:[],profiles:[],mergeSuggestions:[],transcriptQueue:[],whisperActive:'base',
+window.fake={recorders:[],stopped:0,quiet:false,noiseRms:null,meterReads:0,transcribe:0,confirmCount:0,pcmUploads:[],drains:[],token:'ready-token',capture:null,closed:[],frozen:[],profiles:[],mergeSuggestions:[],transcriptQueue:[],whisperActive:'base',
              dataSize:950,errors:[],voiceEnabled:[],pcmRenderOptions:[],captureLeaseSequence:0,aiRequests:0,aiBodies:[],aiRequestTimes:[],aiActive:0,aiMaxActive:0,aiDelayMs:0,aiEchoLatest:false,busy:false,takeovers:0};
 const PCM16Ring=window.LensPCM.PCM16Ring;
 window.LensPCM.PCM16Ring=class extends PCM16Ring{constructor(options){super(options);window.fake.pcmRing=this}};
@@ -101,7 +101,7 @@ window.MediaRecorder=class{
 };
 window.AudioContext=class{
  createMediaStreamSource(){return {connect(){},disconnect(){}}}
- createAnalyser(){return {fftSize:1024,getByteTimeDomainData(a){window.fake.meterReads++;for(let i=0;i<a.length;i++)a[i]=window.fake.quiet?128:128+Math.round(17*Math.sin(i/7));},getFloatTimeDomainData(a){for(let i=0;i<a.length;i++)a[i]=window.fake.quiet?0:.08*Math.sin(i/7)}}}
+ createAnalyser(){return {fftSize:1024,getByteTimeDomainData(a){window.fake.meterReads++;const amp=window.fake.noiseRms==null ? 17 : Math.SQRT2*window.fake.noiseRms*128;for(let i=0;i<a.length;i++)a[i]=window.fake.quiet?128:128+Math.round(amp*Math.sin(i/7));},getFloatTimeDomainData(a){const amp=window.fake.noiseRms==null ? .08 : Math.SQRT2*window.fake.noiseRms;for(let i=0;i<a.length;i++)a[i]=window.fake.quiet?0:amp*Math.sin(i/7)}}}
  resume(){return Promise.resolve()}
  close(){return Promise.resolve()}
 };
@@ -573,6 +573,15 @@ with sync_playwright() as p:
         page.locator('#pcmEditRelease').click()
         page.wait_for_function(f'window.fake.transcribe>{before_evicted}',timeout=7000)
         assert page.evaluate('window.fake.pcmUploads.length')==3,'Evicted held original must still submit its retained WAV'
+        page.locator('#stopBtn').click();page.wait_for_function("document.querySelector('#statusText').textContent==='NOT LISTENING'")
+        page.locator('#pcmMode').uncheck();page.evaluate('window.fake.quiet=false;window.fake.noiseRms=.007')
+        page.locator('#startBtn').click();page.wait_for_function("document.querySelector('#statusText').textContent.includes('LOCAL MIC ACTIVE')")
+        initial_cut=float(page.locator('#vadNoiseStatus').inner_text().split('effective cut: ')[1])
+        page.wait_for_function("parseFloat(document.querySelector('#vadNoiseStatus').textContent.split('effective cut: ')[1])>0.0105",timeout=5000)
+        raised_cut=float(page.locator('#vadNoiseStatus').inner_text().split('effective cut: ')[1])
+        assert raised_cut>initial_cut, (initial_cut,raised_cut)
+        page.evaluate('window.fake.noiseRms=0')
+        page.wait_for_function(f"parseFloat(document.querySelector('#vadNoiseStatus').textContent.split('effective cut: ')[1])<{raised_cut}",timeout=5000)
         page.locator('#stopBtn').click();page.wait_for_function("document.querySelector('#statusText').textContent==='NOT LISTENING'")
         assert not errors,errors
         overflow=page.evaluate('document.documentElement.scrollWidth-innerWidth')

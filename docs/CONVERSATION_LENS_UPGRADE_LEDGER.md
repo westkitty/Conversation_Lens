@@ -177,7 +177,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | ID | Requirement | Current evidence / implementation | Status | Remaining gap |
 |---:|---|---|---|---|
 | 1 | Persistent pinned coaching rail | Live HTML `.hero-cue`; `test_frontend.py` desktop/mobile | PASS | None observed in current browser checks |
-| 2 | Energy/silence graph; drag split/merge | Production PCM hold/editor draws the bounded ring waveform and supports sample-index split, draggable shared-boundary adjustment and adjacent merge; QA-venv `test_frontend.py` executes split/move/merge/re-split at 1200px and 375px, physical Brave AudioWorklet capture exercised edits, and a focused regression covers held-window ring eviction and retained-WAV release | PASS | Natural speech-boundary usefulness and MediaRecorder fallback editing remain unverified |
+| 2 | Energy/silence graph; drag split/merge | Production graph distinguishes the manual threshold from each sample's effective adaptive threshold; PCM editor supports sample-index split, draggable shared-boundary adjustment and adjacent merge; QA-venv `test_frontend.py` covers graph and editor at 1200px/375px, physical Brave AudioWorklet capture exercised edits, and regressions cover ring eviction/release | PASS | Natural speech-boundary usefulness and MediaRecorder fallback editing remain unverified |
 | 3 | In-place speaker reassignment | Live HTML transcript speaker select; `test_frontend.py` reassignment | PASS | None observed in current browser checks |
 | 4 | Grounded evidence drawer | Live HTML evidence drawer; `test_frontend.py` cosine and margin display | PASS | Evidence remains measurements, not calibrated probabilities |
 | 5 | Keyboard controls | Live HTML keyboard handlers; `test_frontend.py` M and numeric assignment | PASS | Full shortcut set not independently enumerated |
@@ -206,7 +206,7 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 | 28 | Grounding badge/retry looser | Live HTML grounding state and retry control | PASS | Retry interaction not exercised in this turn |
 | 29 | Private note/goal for next AI call | `server.py` Ollama payload; `test_live_upgrade.py` private note assertion | PASS | None observed in current tests |
 | 30 | Live VAD tunables and preview | Live HTML VAD sliders/graph; `test_frontend.py` synthetic meter segmentation | PASS | Production PCM tuning has not been compared to physical speech |
-| 31 | Adaptive noise floor | Live HTML RMS noise estimate; browser meter regression | PARTIAL | No ambient-noise or changing-noise physical run |
+| 31 | Adaptive noise floor | QA-venv `test_frontend.py` supplies steady low-level background RMS, verifies the effective threshold rises as the estimate adapts and falls as the input drops; live UI exposes adaptive floor/effective threshold and graphs the effective line | PASS | Physical changing-noise behavior was not separately measured |
 | 32 | Half-window overlap heat | Half-cosine divergence heat bar and possible Mixed/overlap veto are shown in evidence drawer; frontend checks a synthetic 0.0080 gap | PARTIAL | Divergence is explicitly diagnostic, not an overlap probability; natural overlap accuracy is unverified |
 | 33 | Enrollment quality meter | Explicit enrollment displays measured signal-present and clipping rates before updating the profile; mocked Brave test checks the live meter and cancel path | PARTIAL | Signal preview is not calibrated against speaker-model quality or natural voices; server enrollment checks remain authoritative |
 | 34 | Instant speaker drop | Per-profile Remove immediately clears only that RAM voice profile; `test_frontend.py` verifies no confirmation and transcript label preservation | PASS | Forget All still requires confirmation |
@@ -425,3 +425,9 @@ This is an executable-evidence status snapshot, not a completion declaration. `P
 
 - Extended the local browser flow to pause coaching after the first transcript passage, allow a second audio window to complete, assert its transcription request and passage still arrive, and resume coaching. This distinguishes the cue pause from microphone/ASR capture.
 - QA-venv `test_frontend.py` passed at 1200px and 375px. Requirement #25 advances to PASS for the tested capture path; the mock verifies client behavior, not a physical microphone pause/resume run.
+
+### Follow-up execution checkpoint — October 19, 2026 (adaptive noise-floor visibility)
+
+- Corrected the energy graph: the dashed line is the configured minimum RMS threshold, while the solid adaptive line now plots the effective per-sample cut threshold used by segmentation. The UI also reports the current adaptive RMS floor and effective cut value.
+- Added a varying-background fixture to the production frontend regression. It supplies steady low-level ambient input, observes the effective threshold rise as the noise estimate adapts, then drops the input and observes the threshold fall. QA-venv `test_frontend.py` passed at 1200px and 375px.
+- Requirement #31 advances to PASS for tested meter adaptation and visible threshold reporting. Physical changing-noise behavior remains unmeasured; no user audio is used.

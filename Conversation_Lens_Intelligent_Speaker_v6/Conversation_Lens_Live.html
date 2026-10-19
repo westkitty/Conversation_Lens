@@ -148,7 +148,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
     <div class="level-row"><div class="level-rail" role="meter" aria-label="Microphone input level" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="levelRail"><div id="levelFill" class="level-fill"></div></div><span id="levelText">Input meter idle</span><span id="windowText">Silence-guided segments</span><span id="queueText" role="status" aria-live="polite" data-loss="false">Queue idle</span></div>
     <div id="workerQueue" class="micro" role="status" aria-live="polite">No active audio windows.</div>
     <div class="window-tuner"><div class="panel-head"><strong class="small-label">Live cuts &amp; recording windows</strong><small>Meter-based cut timing · 115 ms resolution</small></div>
-       <canvas id="energyCanvas" class="energy-plot" width="600" height="72" role="img" aria-label="Current window energy and silence threshold timeline"></canvas>
+       <canvas id="energyCanvas" class="energy-plot" width="600" height="72" role="img" aria-label="Current window energy and effective adaptive silence threshold timeline"></canvas><div id="vadNoiseStatus" class="micro" role="status" aria-live="polite">Adaptive RMS floor: 0.0040 · effective cut: 0.0104</div>
        <div id="cutHistory">No cut recorded.</div><div id="durationDistribution">Window history: none</div><canvas id="durationHistogram" class="duration-plot" width="600" height="42" role="img" aria-label="Recent window duration histogram from one to nine seconds"></canvas>
        <div class="two" style="margin-top:10px">
          <label for="vadThreshold">Silence threshold / RMS <output id="vadThresholdValue">0.009</output><input type="range" id="vadThreshold" min="0.006" max="0.025" step="0.001" value="0.009"></label>
@@ -619,6 +619,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
  }
  function renderQueueDashboard(){const host=$('workerQueue'),entries=[];if(stt.inFlight)entries.push({item:stt.inFlight,state:'transcribing locally'});for(const item of stt.queue)entries.push({item,state:stt.pcmEditHold&&item.pcmWindow?'held for PCM edit':(item.retries?'queued for retry '+item.retries:'queued for local transcription')});host.replaceChildren();if(!entries.length){host.textContent=state.wantsListen?'No queued or in-flight audio windows.':'No active audio windows.';return}for(const entry of entries.slice(0,4)){const row=document.createElement('div');row.textContent=entry.item.id+' · '+entry.state;host.append(row)}}
  function updateQueueStatus(){const indicator=$('queueText');const pending=stt.queue.length+(stt.sending?1:0);const dropped=stt.dropped;indicator.dataset.loss=String(dropped>0);renderSkipped();renderQueueDashboard();$('pauseIntakeBtn').textContent=stt.pausedIntake?'Resume intake':'Pause new-window intake';indicator.textContent=!state.wantsListen?(dropped?dropped+' recording window(s) skipped · stopped':'Queue idle'):(pending?'Processing '+pending+' window(s)'+(dropped?' · '+dropped+' skipped':''):(dropped?dropped+' window(s) skipped':'Up to date'))}
+ function updateNoiseStatus(){const effective=Math.max(stt.vad.threshold,stt.noiseFloor*2.6);$('vadNoiseStatus').textContent='Adaptive RMS floor: '+stt.noiseFloor.toFixed(4)+' · effective cut: '+effective.toFixed(4)}
  function drawEnergy(){
    const canvas=$('energyCanvas'),ctx=canvas.getContext('2d');if(!ctx)return;
    const w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);
@@ -626,10 +627,13 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
    ctx.strokeStyle='#354754';ctx.beginPath();ctx.moveTo(0,h-14);ctx.lineTo(w,h-14);ctx.stroke();
    const points=stt.series;if(!points.length)return;
    const rmsScale=.05,span=stt.vad.hardCapMs;
-   ctx.strokeStyle='#d6ae8a';ctx.beginPath();
+   ctx.strokeStyle='#d6ae8a';ctx.setLineDash([5,4]);ctx.beginPath();
    const floor=stt.vad.threshold;
    ctx.moveTo(0,h-12-Math.min(1,floor/rmsScale)*(h-20));
-   ctx.lineTo(w,h-12-Math.min(1,floor/rmsScale)*(h-20));ctx.stroke();
+   ctx.lineTo(w,h-12-Math.min(1,floor/rmsScale)*(h-20));ctx.stroke();ctx.setLineDash([]);
+   ctx.strokeStyle='#edc483';ctx.beginPath();
+   points.forEach((v,i)=>{const x=Math.min(w,v.elapsed/span*w),y=h-12-Math.min(1,v.threshold/rmsScale)*(h-20);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});
+   ctx.stroke();
    ctx.strokeStyle='#98d8d7';ctx.beginPath();
    points.forEach((v,i)=>{
      const x=Math.min(w,v.elapsed/span*w),y=h-12-Math.min(1,v.rms/rmsScale)*(h-20);
@@ -707,7 +711,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
      stt.context=new AudioCtor();stt.source=stt.context.createMediaStreamSource(stream);
      stt.meter=stt.context.createAnalyser();stt.meter.fftSize=1024;
      stt.source.connect(stt.meter); // no connection to speakers; never echo the conversation
-     stt.meterData=new Uint8Array(stt.meter.fftSize);stt.noiseFloor=.004;
+     stt.meterData=new Uint8Array(stt.meter.fftSize);stt.noiseFloor=.004;updateNoiseStatus();
      stt.meterStarted=performance.now();stt.inputDetected=false;
      stt.context.resume().catch(()=>{});
      stt.meterTimer=setInterval(()=>{
@@ -730,7 +734,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
           if(stt.series.length>100)stt.series.shift();
           drawEnergy();
         }
-       if(!speech)stt.noiseFloor=stt.noiseFloor*.98+Math.min(.015,rms)*.02;
+       if(!speech){stt.noiseFloor=stt.noiseFloor*.98+Math.min(.015,rms)*.02;updateNoiseStatus()}
        if(speech&&stt.recorder?.state==='recording'){
          stt.windowVoiceMs+=115;stt.windowLastVoiceAt=now;
        }
@@ -793,7 +797,7 @@ html[data-low-motion="on"] *,html[data-low-motion="on"] *:before,html[data-low-m
    const at=added.end,ms=at/16,threshold=Math.max(stt.vad.threshold,stt.noiseFloor*2.6),speech=rms>threshold;
    stt.series.push({elapsed:ms-(p.lastCutMs||0),rms,threshold});if(stt.series.length>100)stt.series.shift();drawEnergy();
    const level=Math.min(100,Math.round(rms*850));$('levelFill').style.width=level+'%';$('levelRail').setAttribute('aria-valuenow',String(level));$('levelText').textContent=level>8?'Input · '+level+'%':'Quiet · '+level+'%';
-   if(!speech)stt.noiseFloor=stt.noiseFloor*.98+Math.min(.015,rms)*.02;
+   if(!speech){stt.noiseFloor=stt.noiseFloor*.98+Math.min(.015,rms)*.02;updateNoiseStatus()}
    if(speech){if(p.windowStart==null)p.windowStart=Math.max(p.cursor,added.start-Math.round(Number($('pcmPreRoll').value)*16));p.lastVoiceAt=ms;p.voiceMs+=n/16}
    if(p.windowStart!=null){const elapsed=ms-p.windowStart/16;$('windowText').textContent=Math.round(elapsed/1000)+'s / up to 9s';
      if(elapsed>=MIN_WINDOW_MS&&p.voiceMs>=stt.vad.minSpeechMs&&(ms-p.lastVoiceAt)>=stt.vad.silenceMs){recordCut('PCM silence',elapsed);if(enqueuePCMWindow(p.windowStart,at,'silence')){p.lastCutMs=ms;p.windowStart=null;p.voiceMs=0;stt.series=[]}}
